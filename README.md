@@ -89,8 +89,3 @@ Make sure you have the following installed:
 - MySQL
 - Docker 
 
-### Frontend Setup
-```bash
-cd frontend
-npm install
-ng serve
