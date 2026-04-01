@@ -61,7 +61,7 @@ public class SavingsDepositController {
 
 
 
-    // recherche avancée
+    // recherche avancée stream
     @GetMapping("/search/{userId}")
     public List<SavingsDeposit> searchDeposits(
             @PathVariable Long userId,

@@ -72,7 +72,6 @@ public class VoucherController {
 
 
 
-
     // GET /qr/{id} → retourne une image PNG du QR Code
     @GetMapping(value="/qr/{id}", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<?> getVoucherQR(@PathVariable Long id) throws Exception {
