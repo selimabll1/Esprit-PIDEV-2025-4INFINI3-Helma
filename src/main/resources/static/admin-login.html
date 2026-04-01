@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELMA — Connexion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F7F7F7;
+            --surface: #FFFFFF;
+            --surface-soft: #F0F4F2;
+            --text: #062A2B;
+            --text-soft: #597171;
+            --secondary: #0B3B3C;
+            --accent: #E9C460;
+            --mint: #2A9D8F;
+            --line: #DCE7E5;
+            --shadow: 0 24px 80px rgba(6, 42, 43, 0.08);
+            --danger: #C86B5D;
+            --danger-bg: #FFF4F1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background:
+                    radial-gradient(circle at top left, rgba(233, 196, 96, 0.22), transparent 32%),
+                    radial-gradient(circle at bottom right, rgba(42, 157, 143, 0.18), transparent 28%),
+                    var(--bg);
+            color: var(--text);
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 1160px;
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 28px;
+            align-items: stretch;
+        }
+
+        .brand-panel,
+        .login-panel {
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(11, 59, 60, 0.08);
+            border-radius: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .brand-panel {
+            position: relative;
+            overflow: hidden;
+            padding: 42px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 720px;
+        }
+
+        .brand-panel::before,
+        .brand-panel::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+        }
+
+        .brand-panel::before {
+            width: 260px;
+            height: 260px;
+            background: rgba(233, 196, 96, 0.16);
+            top: -110px;
+            right: -90px;
+        }
+
+        .brand-panel::after {
+            width: 280px;
+            height: 280px;
+            background: rgba(42, 157, 143, 0.10);
+            bottom: -120px;
+            left: -80px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            background: rgba(233, 196, 96, 0.18);
+            color: var(--secondary);
+            border: 1px solid rgba(233, 196, 96, 0.45);
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+        }
+
+        .headline {
+            max-width: 520px;
+            margin-top: 28px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .headline h1 {
+            font-size: clamp(44px, 7vw, 70px);
+            line-height: .94;
+            letter-spacing: -0.05em;
+            margin-bottom: 18px;
+            color: var(--text);
+        }
+
+        .headline p {
+            max-width: 480px;
+            color: var(--text-soft);
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .brand-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 34px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .mini-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            padding: 20px;
+        }
+
+        .mini-card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--secondary);
+        }
+
+        .mini-card p {
+            color: var(--text-soft);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .palette {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .swatch {
+            flex: 1;
+            min-height: 92px;
+            border-radius: 18px;
+            border: 1px solid rgba(6, 42, 43, 0.08);
+            display: flex;
+            align-items: end;
+            justify-content: center;
+            padding: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255,255,255,.95);
+            letter-spacing: .04em;
+        }
+
+        .swatch.light { color: var(--text); }
+
+        .login-panel {
+            padding: 38px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 34px;
+        }
+
+        .login-logo h2 {
+            font-size: 34px;
+            font-weight: 800;
+            color: var(--secondary);
+            letter-spacing: -0.05em;
+        }
+
+        .login-logo span {
+            color: var(--text-soft);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .18em;
+        }
+
+        .title {
+            margin-bottom: 26px;
+        }
+
+        .title h3 {
+            font-size: 30px;
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .title p {
+            color: var(--text-soft);
+            line-height: 1.75;
+            font-size: 14px;
+        }
+
+        .info-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .info-chip {
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: var(--surface-soft);
+            padding: 16px 18px;
+        }
+
+        .info-chip strong {
+            display: block;
+            font-size: 13px;
+            color: var(--secondary);
+            margin-bottom: 6px;
+        }
+
+        .info-chip span {
+            font-size: 12px;
+            line-height: 1.7;
+            color: var(--text-soft);
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--secondary);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .field input {
+            width: 100%;
+            height: 58px;
+            border-radius: 18px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            padding: 0 18px;
+            outline: none;
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+        }
+
+        .field input:focus {
+            border-color: rgba(42, 157, 143, .65);
+            box-shadow: 0 0 0 4px rgba(42, 157, 143, .12);
+            transform: translateY(-1px);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            appearance: none;
+            border: none;
+            border-radius: 18px;
+            height: 56px;
+            padding: 0 22px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+
+        .btn-primary {
+            flex: 1;
+            background: linear-gradient(135deg, var(--secondary), var(--mint));
+            color: white;
+            box-shadow: 0 18px 32px rgba(11, 59, 60, 0.16);
+        }
+
+        .btn-secondary {
+            background: var(--surface-soft);
+            color: var(--secondary);
+            border: 1px solid var(--line);
+        }
+
+        .quick-fill {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .quick-fill button {
+            border-radius: 999px;
+            border: 1px solid rgba(11, 59, 60, 0.10);
+            background: #fff;
+            color: var(--secondary);
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 10px 14px;
+            cursor: pointer;
+        }
+
+        .msg {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            display: none;
+            border: 1px solid transparent;
+        }
+
+        .msg.error {
+            display: block;
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-color: rgba(200, 107, 93, 0.28);
+        }
+
+        .msg.success {
+            display: block;
+            background: rgba(42, 157, 143, 0.10);
+            color: var(--mint);
+            border-color: rgba(42, 157, 143, 0.26);
+        }
+
+        .footnote {
+            margin-top: 18px;
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.75;
+        }
+
+        code {
+            font-family: inherit;
+            font-weight: 700;
+            color: var(--secondary);
+            background: rgba(233, 196, 96, 0.16);
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+
+        @media (max-width: 980px) {
+            .shell { grid-template-columns: 1fr; }
+            .brand-panel { min-height: auto; }
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 16px; }
+            .brand-panel, .login-panel { border-radius: 24px; }
+            .brand-panel, .login-panel { padding: 24px; }
+            .brand-grid, .info-bar { grid-template-columns: 1fr; }
+            .actions { flex-direction: column; }
+            .headline h1 { font-size: 42px; }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <section class="brand-panel">
+        <div>
+            <div class="eyebrow">HELMA • Empower · Innovate · Growth</div>
+            <div class="headline">
+                <h1>Une connexion plus propre, plus réelle, plus belle.</h1>
+                <p>
+                    Admin garde son accès hardcodé, mais les autres utilisateurs passent maintenant
+                    par un vrai login backend. Ensuite chacun arrive sur sa vue adaptée, avec une interface
+                    cohérente, claire et élégante.
+                </p>
+            </div>
+
+            <div class="brand-grid">
+                <div class="mini-card">
+                    <h3>Admin séparé</h3>
+                    <p>Le compte admin reste volontairement hardcodé côté front pour tes tests et ton mode démo.</p>
+                </div>
+                <div class="mini-card">
+                    <h3>Users réels</h3>
+                    <p>Les utilisateurs normaux passent par <strong>/auth/login</strong> et récupèrent leur vraie session locale.</p>
+                </div>
+                <div class="mini-card">
+                    <h3>Dashboard personnel</h3>
+                    <p>Le dashboard charge les vraies données du user connecté, avec export PDF, logout et coach IA.</p>
+                </div>
+                <div class="mini-card">
+                    <h3>Nouvelle palette</h3>
+                    <p>Refonte visuelle basée sur le blanc cassé, le teal profond, le mint et l’accent sable HELMA.</p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="palette">
+                <div class="swatch" style="background:#062A2B">#062A2B</div>
+                <div class="swatch" style="background:#0B3B3C">#0B3B3C</div>
+                <div class="swatch light" style="background:#E9C460">#E9C460</div>
+                <div class="swatch light" style="background:#F7F7F7;border-color:#d8dddd">#F7F7F7</div>
+                <div class="swatch" style="background:#2A9D8F">#2A9D8F</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="login-panel">
+        <div class="login-logo">
+            <h2>HELMA</h2>
+            <span>sign in</span>
+        </div>
+
+        <div class="title">
+            <h3>Connexion plateforme</h3>
+            <p>
+                Admin reste spécial. Tous les autres utilisateurs utilisent maintenant le vrai login.
+                Une fois connecté, le dashboard charge la bonne identité et la bonne vue.
+            </p>
+        </div>
+
+        <div class="info-bar">
+            <div class="info-chip">
+                <strong>Admin démo</strong>
+                <span><code>admin@helma.tn</code> / <code>password</code></span>
+            </div>
+            <div class="info-chip">
+                <strong>User démo</strong>
+                <span><code>user@helma.tn</code> / <code>test123</code></span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="name@helma.tn" autocomplete="username">
+        </div>
+
+        <div class="field">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+                   onkeydown="if(event.key==='Enter') login()">
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="loginBtn" onclick="login()">Se connecter</button>
+            <button class="btn btn-secondary" onclick="clearForm()">Effacer</button>
+        </div>
+
+        <div class="quick-fill">
+            <button onclick="fillAdmin()">Remplir admin</button>
+            <button onclick="fillUser()">Remplir user démo</button>
+        </div>
+
+        <div class="msg" id="msg"></div>
+
+        <p class="footnote">
+            Quand l’email correspond à <code>admin@helma.tn</code>, le login reste hardcodé.
+            Sinon, la page appelle le backend et stocke une vraie session locale avec les infos du user.
+        </p>
+    </section>
+</div>
+
+<script>
+    const STORAGE_KEY = 'helma_session';
+
+    function getSession() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function saveSession(session) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    }
+
+    function clearLegacyState() {
+        localStorage.removeItem('helma_admin');
+        localStorage.removeItem('helma_admin_email');
+        localStorage.removeItem('helma_uid');
+    }
+
+    function showMsg(text, type) {
+        const el = document.getElementById('msg');
+        el.className = 'msg ' + type;
+        el.textContent = text;
+    }
+
+    function redirectFor(session) {
+        if (!session) return;
+        if (session.role === 'ADMIN') {
+            location.href = '/f/admin-risk-cases.html';
+            return;
+        }
+        location.href = '/f/dashboard.html';
+    }
+
+    function fillAdmin() {
+        document.getElementById('email').value = 'admin@helma.tn';
+        document.getElementById('password').value = 'password';
+        document.getElementById('email').focus();
+    }
+
+    function fillUser() {
+        document.getElementById('email').value = 'user@helma.tn';
+        document.getElementById('password').value = 'test123';
+        document.getElementById('email').focus();
+    }
+
+    function clearForm() {
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('msg').className = 'msg';
+        document.getElementById('msg').textContent = '';
+    }
+
+    async function login() {
+        const email = document.getElementById('email').value.trim().toLowerCase();
+        const password = document.getElementById('password').value;
+        const btn = document.getElementById('loginBtn');
+
+        if (!email || !password) {
+            showMsg('Merci de renseigner l’email et le mot de passe.', 'error');
+            return;
+        }
+
+        clearLegacyState();
+        btn.disabled = true;
+        btn.textContent = 'Connexion…';
+
+        try {
+            if (email === 'admin@helma.tn') {
+                if (password !== 'password') {
+                    throw new Error('Identifiants admin invalides. Utilise admin@helma.tn / password');
+                }
+
+                saveSession({
+                    id: null,
+                    role: 'ADMIN',
+                    fullName: 'Helma Admin',
+                    email: 'admin@helma.tn',
+                    isEntrepreneur: false,
+                    accessToken: 'admin-hardcoded',
+                    hardcoded: true
+                });
+
+                showMsg('Connexion admin réussie — redirection…', 'success');
+                setTimeout(() => redirectFor(getSession()), 450);
+                return;
+            }
+
+            const response = await fetch('/f/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            let data = null;
+            try { data = await response.json(); } catch (_) {}
+
+            if (!response.ok) {
+                throw new Error(data?.message || 'Email ou mot de passe invalide');
+            }
+
+            if (!data?.user) {
+                throw new Error('Réponse login incomplète côté backend.');
+            }
+
+            saveSession({
+                id: data.user.id,
+                role: data.user.role,
+                fullName: data.user.fullName,
+                email: data.user.email,
+                isEntrepreneur: data.user.isEntrepreneur,
+                accessToken: data.accessToken,
+                hardcoded: false
+            });
+
+            showMsg('Connexion réussie — bienvenue ' + (data.user.fullName || 'sur HELMA') + '.', 'success');
+            setTimeout(() => redirectFor(getSession()), 450);
+        } catch (error) {
+            showMsg(error.message || 'Connexion impossible pour le moment.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Se connecter';
+        }
+    }
+
+    (() => {
+        const session = getSession();
+        if (session?.role) {
+            redirectFor(session);
+        }
+    })();
+</script>
+</body>
+</html>

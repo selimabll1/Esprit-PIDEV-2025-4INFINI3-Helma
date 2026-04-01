@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helma — User Login</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #081120;
+            --bg2: #10182d;
+            --card: rgba(16, 24, 45, 0.82);
+            --line: rgba(255,255,255,.08);
+            --text: #eef2ff;
+            --muted: #aab4d6;
+            --accent: #6d5efc;
+            --accent2: #2dd4bf;
+            --danger: #ff8f9b;
+            --success: #86efac;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background:
+                    radial-gradient(circle at top left, rgba(109,94,252,.20), transparent 30%),
+                    radial-gradient(circle at bottom right, rgba(45,212,191,.12), transparent 28%),
+                    linear-gradient(135deg, var(--bg), var(--bg2));
+            padding: 28px;
+        }
+        .shell {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.1fr .95fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 30px 60px rgba(0,0,0,.28);
+        }
+        .hero {
+            padding: 34px;
+            display: grid;
+            gap: 22px;
+        }
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            width: fit-content;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.08);
+            color: var(--muted);
+            font-size: 14px;
+        }
+        .brand b { color: var(--text); }
+        h1 {
+            margin: 0;
+            font-size: clamp(34px, 5vw, 62px);
+            line-height: 1.02;
+            letter-spacing: -.03em;
+        }
+        .lead {
+            margin: 0;
+            color: var(--muted);
+            font-size: 18px;
+            line-height: 1.7;
+            max-width: 60ch;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .feature {
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+        }
+        .feature h3 {
+            margin: 0 0 8px;
+            font-size: 15px;
+        }
+        .feature p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .auth {
+            padding: 28px;
+            display: grid;
+            gap: 18px;
+            align-content: start;
+        }
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .auth h2 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .sub {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .status {
+            min-height: 46px;
+            border-radius: 16px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(255,255,255,.03);
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        .status.success { color: var(--success); }
+        .status.error { color: var(--danger); }
+        .status.warning { color: #f6d365; }
+        label {
+            display: block;
+            margin: 0 0 8px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+        input, select {
+            width: 100%;
+            border: 1px solid rgba(255,255,255,.10);
+            border-radius: 16px;
+            padding: 14px 16px;
+            background: rgba(3, 8, 20, .62);
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: rgba(109,94,252,.8);
+            box-shadow: 0 0 0 4px rgba(109,94,252,.14);
+        }
+        .row { display: grid; gap: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        button {
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            border-radius: 16px;
+            padding: 14px 16px;
+            font-size: 15px;
+        }
+        .primary {
+            background: linear-gradient(135deg, var(--accent), #4c8bf5);
+            color: white;
+            box-shadow: 0 20px 35px rgba(76, 139, 245, .24);
+        }
+        .secondary {
+            background: rgba(255,255,255,.05);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        .ghost {
+            background: transparent;
+            color: var(--muted);
+            border: 1px dashed rgba(255,255,255,.16);
+        }
+        .quick {
+            display: grid;
+            gap: 10px;
+        }
+        .quick-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .quick-list {
+            display: grid;
+            gap: 10px;
+            max-height: 270px;
+            overflow: auto;
+            padding-right: 2px;
+        }
+        .user-card {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+        }
+        .user-card h4 {
+            margin: 0 0 4px;
+            font-size: 15px;
+        }
+        .user-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .hint {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        @media (max-width: 980px) {
+            .shell { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            body { padding: 14px; }
+            .hero, .auth { padding: 22px; }
+            .feature-grid, .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <section class="panel hero">
+        <div class="brand"><span>●</span><b>Helma</b><span>finance cockpit</span></div>
+        <div>
+            <h1>Login utilisateur propre, pas ce bazar admin.</h1>
+            <p class="lead">
+                Cette page te connecte comme <strong>USER réel depuis la base</strong>. Ensuite tu entres dans le dashboard,
+                puis tu navigues vers la saisie, le coach, les budgets, les goals et les rapports PDF.
+            </p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>Connexion DB</h3>
+                <p>Login via <code>/auth/login</code>, puis chargement du vrai profil utilisateur depuis <code>/api/users</code>.</p>
+            </div>
+            <div class="feature">
+                <h3>Quick access dev</h3>
+                <p>Tu peux aussi entrer directement avec un utilisateur déjà en base pour tester plus vite sans te bloquer.</p>
+            </div>
+            <div class="feature">
+                <h3>Session claire</h3>
+                <p>La session USER est séparée de la session ADMIN statique pour éviter les redirections absurdes.</p>
+            </div>
+            <div class="feature">
+                <h3>UI plus propre</h3>
+                <p>Écran modernisé, logique simple, messages visibles, et navigation nette vers dashboard ou admin.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel auth">
+        <div class="top-row">
+            <div>
+                <h2>User Login</h2>
+                <p class="sub">Compte de test par défaut: <strong>user@helma.tn</strong> / <strong>test123</strong>.</p>
+            </div>
+            <div class="tag">admin séparé → <a href="/f/admin-login.html" style="color:#fff;text-decoration:none;">Admin Login</a></div>
+        </div>
+
+        <div id="statusBox" class="status">Chargement des utilisateurs de la base…</div>
+
+        <div class="row">
+            <div>
+                <label for="email">Email</label>
+                <input id="email" type="email" value="user@helma.tn" placeholder="user@helma.tn">
+            </div>
+            <div>
+                <label for="password">Mot de passe</label>
+                <input id="password" type="password" value="test123" placeholder="test123" onkeydown="if(event.key==='Enter'){loginUser();}">
+            </div>
+        </div>
+
+        <div class="grid">
+            <button class="primary" onclick="loginUser()">Entrer dans le dashboard</button>
+            <button class="secondary" onclick="openAdmin()">Aller à l'admin statique</button>
+        </div>
+
+        <div class="quick">
+            <div class="quick-head">
+                <strong>Quick access depuis la DB</strong>
+                <button class="ghost" onclick="loadUsers()">Recharger la liste</button>
+            </div>
+            <div id="quickList" class="quick-list"></div>
+            <div class="hint">
+                Le quick access lit les vrais utilisateurs de la base via <code>/api/users</code>. Les comptes admin n'apparaissent pas ici.
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const API = '/f/api';
+    const APP = '/f';
+    let users = [];
+
+    function setStatus(message, type = 'info') {
+        const box = document.getElementById('statusBox');
+        box.textContent = message;
+        box.className = 'status';
+        if (type === 'success') box.classList.add('success');
+        if (type === 'error') box.classList.add('error');
+        if (type === 'warning') box.classList.add('warning');
+    }
+
+    function esc(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    async function request(url, options = {}) {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            let message = 'HTTP ' + response.status;
+            try {
+                const txt = await response.text();
+                if (txt) message = txt;
+            } catch (e) {}
+            throw new Error(message);
+        }
+        if (response.status === 204) return null;
+        const contentType = response.headers.get('content-type') || '';
+        return contentType.includes('application/json') ? response.json() : response.text();
+    }
+
+    function saveUserSession(user, token = '') {
+        const session = {
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role,
+            isEntrepreneur: user.isEntrepreneur
+        };
+        localStorage.setItem('helma_user_session', JSON.stringify(session));
+        localStorage.setItem('helma_selected_user_id', String(user.id));
+        if (token) localStorage.setItem('helma_access_token', token);
+        localStorage.removeItem('helma_admin_static');
+    }
+
+    function openAdmin() {
+        window.location.href = APP + '/admin-login.html';
+    }
+
+    function renderQuickUsers() {
+        const quickList = document.getElementById('quickList');
+        const nonAdmins = users.filter(u => u.role !== 'ADMIN');
+
+        if (!nonAdmins.length) {
+            quickList.innerHTML = '<div class="hint">Aucun utilisateur USER trouvé en base. Vérifie DevDataInitializer ou crée un user.</div>';
+            return;
+        }
+
+        quickList.innerHTML = nonAdmins.map(user => `
+            <div class="user-card">
+                <div>
+                    <h4>${esc(user.fullName)}</h4>
+                    <p>${esc(user.email)} · #${user.id} · ${user.isEntrepreneur ? 'Entrepreneur' : 'Non entrepreneur'}</p>
+                </div>
+                <button class="secondary" onclick="quickLogin(${user.id})">Continuer</button>
+            </div>
+        `).join('');
+    }
+
+    async function loadUsers() {
+        try {
+            setStatus('Chargement des utilisateurs depuis la base…');
+            users = await request(API + '/users');
+            renderQuickUsers();
+            if (users.length) setStatus('Utilisateurs chargés. Tu peux te connecter normalement ou utiliser le quick access.', 'success');
+            else setStatus('Aucun utilisateur trouvé dans la base.', 'warning');
+        } catch (error) {
+            console.error(error);
+            setStatus('Impossible de charger /api/users : ' + error.message, 'error');
+        }
+    }
+
+    async function loginUser() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) {
+            setStatus('Remplis email et mot de passe.', 'warning');
+            return;
+        }
+
+        try {
+            setStatus('Vérification des identifiants…');
+            const auth = await request(APP + '/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!users.length) {
+                users = await request(API + '/users');
+            }
+
+            const user = users.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+            if (!user) {
+                throw new Error('Login OK, mais utilisateur introuvable dans /api/users.');
+            }
+            if (user.role === 'ADMIN') {
+                setStatus('Ce compte est ADMIN. Utilise la page Admin Login, pas le dashboard USER.', 'warning');
+                return;
+            }
+
+            saveUserSession(user, auth.accessToken || '');
+            setStatus('Connexion réussie. Redirection vers le dashboard…', 'success');
+            window.location.href = APP + '/dashboard.html';
+        } catch (error) {
+            console.error(error);
+            setStatus('Échec login : ' + error.message, 'error');
+        }
+    }
+
+    function quickLogin(userId) {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        saveUserSession(user);
+        setStatus('Session dev ouverte pour ' + user.fullName + '. Redirection…', 'success');
+        setTimeout(() => {
+            window.location.href = APP + '/dashboard.html';
+        }, 180);
+    }
+
+    window.addEventListener('load', loadUsers);
+</script>
+</body>
+</html>

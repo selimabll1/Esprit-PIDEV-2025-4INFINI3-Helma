@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELMA — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F7F7F7;
+            --surface: #FFFFFF;
+            --surface-soft: #F0F4F2;
+            --text: #062A2B;
+            --text-soft: #637B7B;
+            --secondary: #0B3B3C;
+            --accent: #E9C460;
+            --mint: #2A9D8F;
+            --danger: #C86B5D;
+            --line: #DCE7E5;
+            --success-soft: rgba(42, 157, 143, 0.10);
+            --warning-soft: rgba(233, 196, 96, 0.18);
+            --danger-soft: rgba(200, 107, 93, 0.12);
+            --shadow: 0 20px 70px rgba(6, 42, 43, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(233, 196, 96, 0.18), transparent 22%),
+                radial-gradient(circle at bottom right, rgba(42, 157, 143, 0.10), transparent 24%),
+                var(--bg);
+            color: var(--text);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 18px 28px;
+            background: rgba(247, 247, 247, 0.86);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(11, 59, 60, 0.08);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-mark {
+            width: 46px;
+            height: 46px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--secondary), var(--mint));
+            color: white;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            font-weight: 800;
+            box-shadow: 0 14px 28px rgba(11, 59, 60, 0.15);
+        }
+
+        .brand-copy h1 {
+            font-size: 20px;
+            letter-spacing: -0.04em;
+            color: var(--secondary);
+        }
+
+        .brand-copy p {
+            color: var(--text-soft);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .btn,
+        .select {
+            height: 46px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--secondary);
+            padding: 0 16px;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .select {
+            min-width: 240px;
+            outline: none;
+        }
+
+        .btn {
+            cursor: pointer;
+            transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+
+        .btn-primary {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--secondary), var(--mint));
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(11, 59, 60, 0.14);
+        }
+
+        .btn-accent {
+            background: rgba(233, 196, 96, 0.16);
+            border-color: rgba(233, 196, 96, 0.40);
+            color: var(--secondary);
+        }
+
+        .btn-ghost {
+            background: rgba(255,255,255,0.78);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 390px minmax(0, 1fr);
+            gap: 24px;
+            padding: 28px;
+            align-items: start;
+        }
+
+        .panel,
+        .card {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(11, 59, 60, 0.08);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .coach-panel {
+            position: sticky;
+            top: 98px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-height: calc(100vh - 128px);
+        }
+
+        .coach-header {
+            padding: 20px;
+            border-radius: 24px;
+            background: linear-gradient(160deg, rgba(11, 59, 60, 0.96), rgba(42, 157, 143, 0.88));
+            color: #fff;
+        }
+
+        .coach-header small {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+        }
+
+        .coach-header h2 {
+            font-size: 28px;
+            line-height: 1.05;
+            letter-spacing: -0.05em;
+            margin: 18px 0 10px;
+        }
+
+        .coach-header p {
+            color: rgba(255,255,255,0.82);
+            line-height: 1.7;
+            font-size: 13px;
+        }
+
+        .coach-history {
+            flex: 1;
+            min-height: 320px;
+            max-height: calc(100vh - 420px);
+            overflow: auto;
+            padding-right: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bubble {
+            max-width: 92%;
+            border-radius: 22px;
+            padding: 14px 16px;
+            line-height: 1.7;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .bubble.user {
+            align-self: flex-end;
+            background: rgba(233, 196, 96, 0.22);
+            color: var(--secondary);
+        }
+
+        .bubble.assistant {
+            align-self: flex-start;
+            background: var(--surface-soft);
+            color: var(--text);
+            border: 1px solid var(--line);
+        }
+
+        .bubble.system {
+            align-self: center;
+            max-width: 100%;
+            background: transparent;
+            color: var(--text-soft);
+            border: 1px dashed var(--line);
+            text-align: center;
+        }
+
+        .quick-prompts {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-prompts button {
+            border: none;
+            border-radius: 999px;
+            background: rgba(11, 59, 60, 0.06);
+            color: var(--secondary);
+            padding: 10px 12px;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .coach-input {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+        }
+
+        .coach-input textarea {
+            min-height: 112px;
+            resize: vertical;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            padding: 14px 16px;
+            font: inherit;
+            color: var(--text);
+            outline: none;
+        }
+
+        .coach-input textarea:focus,
+        .select:focus {
+            border-color: rgba(42, 157, 143, .60);
+            box-shadow: 0 0 0 4px rgba(42, 157, 143, 0.10);
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .hero {
+            padding: 26px;
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .hero-text h2 {
+            font-size: clamp(28px, 3vw, 40px);
+            line-height: 1;
+            letter-spacing: -0.05em;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .hero-text p {
+            color: var(--text-soft);
+            line-height: 1.75;
+            font-size: 14px;
+            max-width: 760px;
+        }
+
+        .identity-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 999px;
+            background: rgba(233, 196, 96, 0.16);
+            color: var(--secondary);
+            border: 1px solid rgba(233, 196, 96, 0.38);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .hero-grid,
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .metric {
+            padding: 18px;
+            border-radius: 22px;
+            background: var(--surface-soft);
+            border: 1px solid var(--line);
+        }
+
+        .metric-label {
+            color: var(--text-soft);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            line-height: 1;
+            letter-spacing: -0.05em;
+            font-weight: 800;
+            color: var(--secondary);
+        }
+
+        .metric-sub {
+            margin-top: 8px;
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .accent-success { color: var(--mint); }
+        .accent-danger { color: var(--danger); }
+        .accent-warning { color: #b68b17; }
+
+        .card {
+            padding: 22px;
+        }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .card-head h3 {
+            color: var(--secondary);
+            font-size: 20px;
+            letter-spacing: -0.04em;
+        }
+
+        .card-head p {
+            color: var(--text-soft);
+            font-size: 13px;
+        }
+
+        .status-banner {
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: var(--surface-soft);
+            color: var(--secondary);
+            border: 1px solid var(--line);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .status-banner.ok {
+            background: var(--success-soft);
+            color: var(--mint);
+            border-color: rgba(42, 157, 143, 0.24);
+        }
+
+        .status-banner.err {
+            background: var(--danger-soft);
+            color: var(--danger);
+            border-color: rgba(200, 107, 93, 0.20);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+            font-size: 13px;
+        }
+
+        th {
+            color: var(--text-soft);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 700;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .pill.success { background: var(--success-soft); color: var(--mint); }
+        .pill.warning { background: var(--warning-soft); color: #9a7412; }
+        .pill.danger  { background: var(--danger-soft); color: var(--danger); }
+        .pill.neutral { background: rgba(11, 59, 60, 0.06); color: var(--secondary); }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .insight,
+        .goal {
+            padding: 16px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: var(--surface-soft);
+        }
+
+        .insight.alert { background: var(--danger-soft); border-color: rgba(200, 107, 93, 0.16); }
+        .insight.positive { background: var(--success-soft); border-color: rgba(42, 157, 143, 0.16); }
+
+        .insight strong,
+        .goal strong {
+            display: block;
+            font-size: 14px;
+            color: var(--secondary);
+            margin-bottom: 6px;
+        }
+
+        .insight span,
+        .goal span {
+            color: var(--text-soft);
+            line-height: 1.7;
+            font-size: 13px;
+        }
+
+        .progress {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(11, 59, 60, 0.08);
+            overflow: hidden;
+            margin: 12px 0 10px;
+        }
+
+        .progress > i {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--secondary), var(--mint));
+        }
+
+        .muted {
+            color: var(--text-soft);
+            font-size: 12px;
+        }
+
+        .empty {
+            padding: 28px 0;
+            color: var(--text-soft);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 16px;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        @media (max-width: 1280px) {
+            .layout { grid-template-columns: 1fr; }
+            .coach-panel { position: static; min-height: auto; }
+            .coach-history { max-height: 360px; }
+        }
+
+        @media (max-width: 900px) {
+            .hero-grid,
+            .card-grid,
+            .two-col { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 720px) {
+            .topbar,
+            .layout { padding: 16px; }
+            .hero-grid,
+            .card-grid,
+            .two-col,
+            .coach-input { grid-template-columns: 1fr; }
+            .topbar { align-items: flex-start; }
+            .topbar-actions { width: 100%; justify-content: flex-start; }
+            .select { min-width: 100%; }
+            .coach-panel, .card, .hero, .panel { border-radius: 24px; }
+        }
+    </style>
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+        <div class="brand-mark">H</div>
+        <div class="brand-copy">
+            <h1>HELMA Dashboard</h1>
+            <p id="headerSubtitle">Vue personnalisée</p>
+        </div>
+    </div>
+
+    <div class="topbar-actions">
+        <select id="adminUserSelect" class="select" style="display:none" onchange="onAdminPreviewChange()"></select>
+        <button class="btn btn-ghost" onclick="reloadAll()">Rafraîchir</button>
+        <button class="btn btn-accent" onclick="downloadPdf()">Exporter PDF</button>
+        <button class="btn btn-ghost" id="adminConsoleBtn" style="display:none" onclick="location.href='/f/admin-risk-cases.html'">Console admin</button>
+        <button class="btn btn-ghost" onclick="location.href='/f/entry.html'">Saisie</button>
+        <button class="btn btn-primary" onclick="logout()">Log out</button>
+    </div>
+</header>
+
+<main class="layout">
+    <aside class="panel coach-panel">
+        <div class="coach-header">
+            <small>Coach AI • FinCoach</small>
+            <h2>Ton coach financier reste à gauche, en vraie conversation.</h2>
+            <p id="coachIntro">Pose une question sur ta trésorerie, tes dépenses, ton badge de confiance ou ton runway.</p>
+        </div>
+
+        <div class="quick-prompts">
+            <button onclick="sendQuickPrompt('Analyse ma situation financière actuelle.')">Analyse ma situation</button>
+            <button onclick="sendQuickPrompt('Comment réduire mes dépenses ce mois-ci ?')">Réduire mes dépenses</button>
+            <button onclick="sendQuickPrompt('Explique-moi mon runway et ce que je dois faire.')">Expliquer mon runway</button>
+        </div>
+
+        <div class="coach-history" id="chatHistory">
+            <div class="bubble system">Ton historique FinCoach va apparaître ici.</div>
+        </div>
+
+        <div class="coach-input">
+            <textarea id="chatInput" placeholder="Écris ton message ici…" onkeydown="handleChatKey(event)"></textarea>
+            <button class="btn btn-primary" id="sendBtn" onclick="sendMsg()">Envoyer</button>
+        </div>
+    </aside>
+
+    <section class="content">
+        <section class="card hero">
+            <div class="hero-top">
+                <div class="hero-text">
+                    <div class="identity-chip" id="identityChip">Chargement de l'identité…</div>
+                    <h2 id="heroTitle">Bonjour 👋</h2>
+                    <p id="heroDescription">Ton dashboard financier personnel est en cours de chargement.</p>
+                </div>
+                <div class="status-banner" id="statusBar">Initialisation…</div>
+            </div>
+
+            <div class="hero-grid">
+                <div class="metric">
+                    <div class="metric-label">Trust badge</div>
+                    <div class="metric-value" id="badgeValue">—</div>
+                    <div class="metric-sub" id="badgeSub">—</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Runway</div>
+                    <div class="metric-value" id="runwayValue">—</div>
+                    <div class="metric-sub" id="runwaySub">—</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Net flow</div>
+                    <div class="metric-value" id="netFlowValue">—</div>
+                    <div class="metric-sub" id="netFlowSub">—</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Health score</div>
+                    <div class="metric-value" id="healthValue">—</div>
+                    <div class="metric-sub" id="healthSub">—</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card-grid">
+            <article class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Cash flow historique</h3>
+                        <p>Vue des derniers mois</p>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Mois</th>
+                        <th>Revenus</th>
+                        <th>Dépenses</th>
+                        <th>Net</th>
+                    </tr>
+                    </thead>
+                    <tbody id="cashFlowTable"><tr><td colspan="4" class="empty">Chargement…</td></tr></tbody>
+                </table>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Forecast</h3>
+                        <p>Projection court terme</p>
+                    </div>
+                    <span class="pill neutral" id="forecastBadge">—</span>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Mois</th>
+                        <th>Revenus</th>
+                        <th>Dépenses</th>
+                        <th>Net</th>
+                    </tr>
+                    </thead>
+                    <tbody id="forecastTable"><tr><td colspan="4" class="empty">Chargement…</td></tr></tbody>
+                </table>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Budgets du mois</h3>
+                        <p>Plafonds actifs</p>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Catégorie</th>
+                        <th>Plafond</th>
+                        <th>Mois</th>
+                    </tr>
+                    </thead>
+                    <tbody id="budgetTable"><tr><td colspan="3" class="empty">Chargement…</td></tr></tbody>
+                </table>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Risk cases</h3>
+                        <p>Points de vigilance ouverts</p>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Score</th>
+                        <th>Statut</th>
+                        <th>Détecté</th>
+                    </tr>
+                    </thead>
+                    <tbody id="riskTable"><tr><td colspan="3" class="empty">Chargement…</td></tr></tbody>
+                </table>
+            </article>
+
+            <article class="card two-col full-width">
+                <div>
+                    <div class="card-head">
+                        <div>
+                            <h3>Insights clés</h3>
+                            <p>Ce que ton dashboard te recommande maintenant</p>
+                        </div>
+                    </div>
+                    <div class="stack" id="insightsList"><div class="empty">Chargement…</div></div>
+                </div>
+
+                <div>
+                    <div class="card-head">
+                        <div>
+                            <h3>Savings goals</h3>
+                            <p>Progression de tes objectifs</p>
+                        </div>
+                    </div>
+                    <div class="stack" id="goalsList"><div class="empty">Chargement…</div></div>
+                </div>
+            </article>
+
+            <article class="card full-width">
+                <div class="card-head">
+                    <div>
+                        <h3>Transactions récentes</h3>
+                        <p>Les derniers mouvements détectés</p>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Catégorie</th>
+                        <th>Type</th>
+                        <th>Montant</th>
+                    </tr>
+                    </thead>
+                    <tbody id="transactionsTable"><tr><td colspan="4" class="empty">Chargement…</td></tr></tbody>
+                </table>
+            </article>
+        </section>
+    </section>
+</main>
+
+<script>
+    const API = '/f/api';
+    const STORAGE_KEY = 'helma_session';
+    const PREVIEW_KEY = 'helma_preview_user_id';
+    let session = null;
+    let viewedUserId = null;
+    let adminUsers = [];
+    let currentUserLabel = '';
+
+    function getSession() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function saveSession(value) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function logout() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(PREVIEW_KEY);
+        localStorage.removeItem('helma_admin');
+        localStorage.removeItem('helma_admin_email');
+        localStorage.removeItem('helma_uid');
+        location.href = '/f/admin-login.html';
+    }
+
+    function coerceLegacyAdmin() {
+        if (localStorage.getItem('helma_admin') === 'true') {
+            const legacy = {
+                id: null,
+                role: 'ADMIN',
+                fullName: 'Helma Admin',
+                email: localStorage.getItem('helma_admin_email') || 'admin@helma.tn',
+                isEntrepreneur: false,
+                accessToken: 'admin-hardcoded',
+                hardcoded: true
+            };
+            saveSession(legacy);
+            localStorage.removeItem('helma_admin');
+            localStorage.removeItem('helma_admin_email');
+            return legacy;
+        }
+        return null;
+    }
+
+    function requireSession() {
+        session = getSession() || coerceLegacyAdmin();
+        if (!session?.role) {
+            location.href = '/f/admin-login.html';
+            throw new Error('No session');
+        }
+        document.getElementById('adminConsoleBtn').style.display = session.role === 'ADMIN' ? 'inline-flex' : 'none';
+    }
+
+    function fmtNumber(value, decimals = 0) {
+        if (value == null || value === '') return '—';
+        return Number(value).toLocaleString('fr-FR', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    }
+
+    function fmtMoney(value) {
+        if (value == null || value === '') return '—';
+        return fmtNumber(value, 0) + ' TND';
+    }
+
+    function fmtMonth(value) {
+        if (!value) return '—';
+        return new Date(value + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+    }
+
+    function fmtDate(value) {
+        if (!value) return '—';
+        return new Date(value).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function getPill(status) {
+        const s = String(status || '').toUpperCase();
+        if (s === 'OPEN' || s === 'CRITICAL') return ['danger', s];
+        if (s === 'WARNING' || s === 'FRAGILE') return ['warning', s];
+        if (s === 'HEALTHY' || s === 'SAFE' || s === 'RESOLVED') return ['success', s];
+        return ['neutral', s || 'N/A'];
+    }
+
+    async function apiGet(path, options = {}) {
+        const response = await fetch(API + path, options);
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+        return response.json();
+    }
+
+    function setStatus(message, type = '') {
+        const el = document.getElementById('statusBar');
+        el.textContent = message;
+        el.className = 'status-banner' + (type ? ' ' + type : '');
+    }
+
+    function setIdentityLabel(name, extra = '') {
+        currentUserLabel = name || session?.fullName || 'Utilisateur';
+        document.getElementById('identityChip').textContent = extra ? `${currentUserLabel} • ${extra}` : currentUserLabel;
+        document.getElementById('heroTitle').textContent = `Bonjour ${currentUserLabel.split(' ')[0] || ''} 👋`;
+    }
+
+    async function prepareViewedUser() {
+        requireSession();
+
+        if (session.role !== 'ADMIN' && session.id) {
+            viewedUserId = session.id;
+            setIdentityLabel(session.fullName, session.role);
+            document.getElementById('headerSubtitle').textContent = 'Dashboard personnel';
+            document.getElementById('coachIntro').textContent = 'Pose une question sur ta trésorerie, ton badge, tes dépenses ou tes prochains objectifs.';
+            return;
+        }
+
+        document.getElementById('adminConsoleBtn').style.display = 'inline-flex';
+        document.getElementById('headerSubtitle').textContent = 'Mode admin · aperçu dashboard';
+        document.getElementById('coachIntro').textContent = 'En mode admin, tu peux visualiser le dashboard d’un utilisateur et discuter avec FinCoach sur ce profil.';
+
+        const select = document.getElementById('adminUserSelect');
+        select.style.display = 'inline-flex';
+
+        const users = await apiGet('/users');
+        adminUsers = users.filter(u => u.role !== 'ADMIN');
+
+        if (!adminUsers.length) {
+            setStatus('Aucun utilisateur non-admin disponible pour la vue dashboard.', 'err');
+            return;
+        }
+
+        select.innerHTML = adminUsers.map(u => `<option value="${u.id}">${escapeHtml(u.fullName)} · ${escapeHtml(u.email)}</option>`).join('');
+
+        const savedPreview = localStorage.getItem(PREVIEW_KEY);
+        if (savedPreview && adminUsers.some(u => String(u.id) === savedPreview)) {
+            select.value = savedPreview;
+        }
+
+        viewedUserId = Number(select.value);
+        const current = adminUsers.find(u => u.id === viewedUserId);
+        setIdentityLabel(current?.fullName || 'Utilisateur', 'vue admin');
+    }
+
+    function onAdminPreviewChange() {
+        const select = document.getElementById('adminUserSelect');
+        viewedUserId = Number(select.value || 0) || null;
+        localStorage.setItem(PREVIEW_KEY, String(viewedUserId || ''));
+        const current = adminUsers.find(u => u.id === viewedUserId);
+        setIdentityLabel(current?.fullName || 'Utilisateur', 'vue admin');
+        reloadAll();
+    }
+
+    function renderHero(dashboard) {
+        const badge = dashboard?.trustBadge || {};
+        const burn = dashboard?.burnRate || {};
+        const health = dashboard?.healthScore || {};
+        const cash = dashboard?.currentCashFlow || {};
+        const forecast = dashboard?.forecast || {};
+
+        document.getElementById('heroDescription').textContent = dashboard?.mainPositive || dashboard?.mainAlert || 'Voici ta vue consolidée HELMA.';
+        document.getElementById('badgeValue').textContent = badge.level || '—';
+        document.getElementById('badgeSub').textContent = badge.creditCapacity != null ? `Capacité crédit: ${fmtMoney(badge.creditCapacity)}` : 'Pas de capacité calculée';
+
+        const runwayEl = document.getElementById('runwayValue');
+        runwayEl.textContent = burn.runwayMonths != null ? fmtNumber(burn.runwayMonths, 1) + ' mois' : '—';
+        runwayEl.className = 'metric-value ' + ((burn.status || '').toUpperCase() === 'CRITICAL' ? 'accent-danger' : (burn.status || '').toUpperCase() === 'WARNING' ? 'accent-warning' : 'accent-success');
+        document.getElementById('runwaySub').textContent = burn.status || 'Runway non disponible';
+
+        const netEl = document.getElementById('netFlowValue');
+        const netFlow = cash.netFlow;
+        netEl.textContent = netFlow != null ? (Number(netFlow) >= 0 ? '+' : '') + fmtMoney(netFlow) : '—';
+        netEl.className = 'metric-value ' + (Number(netFlow || 0) >= 0 ? 'accent-success' : 'accent-danger');
+        document.getElementById('netFlowSub').textContent = cash.monthStart ? fmtMonth(cash.monthStart) : 'Mois courant';
+
+        const healthEl = document.getElementById('healthValue');
+        healthEl.textContent = health.score ?? '—';
+        healthEl.className = 'metric-value ' + ((health.score ?? 0) >= 70 ? 'accent-success' : (health.score ?? 0) >= 40 ? 'accent-warning' : 'accent-danger');
+        document.getElementById('healthSub').textContent = health.label || 'Score indisponible';
+
+        const [forecastClass, forecastText] = getPill(forecast.trend || forecast.confidenceLevel || 'Prévision');
+        const badgeEl = document.getElementById('forecastBadge');
+        badgeEl.className = 'pill ' + forecastClass;
+        badgeEl.textContent = forecastText;
+    }
+
+    function renderCashFlows(history) {
+        const tbody = document.getElementById('cashFlowTable');
+        if (!history?.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty">Aucun historique disponible</td></tr>';
+            return;
+        }
+        tbody.innerHTML = [...history].reverse().slice(0, 6).map(row => {
+            const net = Number(row.netFlow || 0);
+            return `<tr>
+                <td>${fmtMonth(row.monthStart)}</td>
+                <td class="accent-success">${fmtMoney(row.totalIncome)}</td>
+                <td class="accent-danger">${fmtMoney(row.totalExpense)}</td>
+                <td class="${net >= 0 ? 'accent-success' : 'accent-danger'}">${net >= 0 ? '+' : ''}${fmtMoney(row.netFlow)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderForecastRows(months) {
+        const tbody = document.getElementById('forecastTable');
+        if (!months?.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty">Prévisions insuffisantes</td></tr>';
+            return;
+        }
+        tbody.innerHTML = months.map(row => {
+            const net = Number(row.predictedNetFlow || 0);
+            return `<tr>
+                <td>${fmtMonth(row.monthStart)}</td>
+                <td class="accent-success">${fmtMoney(row.predictedIncome)}</td>
+                <td class="accent-danger">${fmtMoney(row.predictedExpense)}</td>
+                <td class="${net >= 0 ? 'accent-success' : 'accent-danger'}">${net >= 0 ? '+' : ''}${fmtMoney(row.predictedNetFlow)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderBudgets(rows) {
+        const tbody = document.getElementById('budgetTable');
+        if (!rows?.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="empty">Aucun budget actif</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(row => `<tr>
+            <td>${escapeHtml(row.category || 'GLOBAL')}</td>
+            <td>${fmtMoney(row.limitAmount)}</td>
+            <td class="muted">${fmtMonth(row.monthStart)}</td>
+        </tr>`).join('');
+    }
+
+    function renderRisks(rows) {
+        const tbody = document.getElementById('riskTable');
+        if (!rows?.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="empty">Aucun risk case ouvert</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(row => {
+            const [pillClass] = getPill(row.status);
+            return `<tr>
+                <td class="${row.riskLevel >= 75 ? 'accent-danger' : row.riskLevel >= 50 ? 'accent-warning' : 'accent-success'}">${escapeHtml(row.riskLevel)}/100</td>
+                <td><span class="pill ${pillClass}">${escapeHtml(row.status || 'N/A')}</span></td>
+                <td class="muted">${fmtDate(row.detectedAt)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderTransactions(rows) {
+        const tbody = document.getElementById('transactionsTable');
+        if (!rows?.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty">Aucune transaction récente</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = [...rows]
+            .sort((a, b) => new Date(b.txnDate) - new Date(a.txnDate))
+            .slice(0, 8)
+            .map(row => {
+                const income = row.type === 'INCOME';
+                return `<tr>
+                    <td class="muted">${fmtDate(row.txnDate)}</td>
+                    <td>${escapeHtml(row.category || '—')}</td>
+                    <td><span class="pill ${income ? 'success' : 'danger'}">${escapeHtml(row.type || '—')}</span></td>
+                    <td class="${income ? 'accent-success' : 'accent-danger'}">${income ? '+' : '-'}${fmtMoney(row.amount)}</td>
+                </tr>`;
+            }).join('');
+    }
+
+    function renderInsights(dashboard) {
+        const el = document.getElementById('insightsList');
+        const burn = dashboard?.burnRate || {};
+        const forecast = dashboard?.forecast || {};
+        const health = dashboard?.healthScore || {};
+
+        const list = [];
+        if (dashboard?.mainAlert) list.push({ title: 'Alerte principale', text: dashboard.mainAlert, cls: 'alert' });
+        if (dashboard?.mainPositive) list.push({ title: 'Point positif', text: dashboard.mainPositive, cls: 'positive' });
+        if (dashboard?.nextBestAction) list.push({ title: 'Action recommandée', text: dashboard.nextBestAction, cls: '' });
+        (burn.finCoachTips || []).forEach(item => list.push({ title: 'Conseil FinCoach', text: item, cls: '' }));
+        (forecast.alerts || []).forEach(item => list.push({ title: 'Prévision', text: item, cls: 'alert' }));
+        (health.highlights || []).forEach(item => list.push({ title: 'Santé financière', text: item, cls: '' }));
+
+        const unique = [];
+        const seen = new Set();
+        for (const item of list) {
+            if (!item.text || seen.has(item.text)) continue;
+            seen.add(item.text);
+            unique.push(item);
+        }
+
+        if (!unique.length) {
+            el.innerHTML = '<div class="empty">Aucun insight calculé pour le moment</div>';
+            return;
+        }
+
+        el.innerHTML = unique.slice(0, 7).map(item => `
+            <div class="insight ${item.cls}">
+                <strong>${escapeHtml(item.title)}</strong>
+                <span>${escapeHtml(item.text)}</span>
+            </div>
+        `).join('');
+    }
+
+    function renderGoals(goals) {
+        const el = document.getElementById('goalsList');
+        if (!goals?.length) {
+            el.innerHTML = '<div class="empty">Aucun objectif d’épargne</div>';
+            return;
+        }
+
+        el.innerHTML = goals.map(goal => {
+            const target = Number(goal.targetAmount || 0);
+            const current = Number(goal.currentAmount || 0);
+            const progress = target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 0;
+            return `
+                <div class="goal">
+                    <strong>${escapeHtml(goal.name || 'Objectif')}</strong>
+                    <span>${fmtMoney(goal.currentAmount)} / ${fmtMoney(goal.targetAmount)} · cible hebdo ${fmtMoney(goal.weeklyTarget)}</span>
+                    <div class="progress"><i style="width:${progress}%"></i></div>
+                    <div class="muted">Progression: ${progress}% ${goal.completed ? '• objectif atteint' : ''}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderCoach(history) {
+        const el = document.getElementById('chatHistory');
+        if (!history?.length) {
+            el.innerHTML = '<div class="bubble system">Commence la conversation avec ton coach HELMA.</div>';
+            return;
+        }
+
+        el.innerHTML = history.map(msg => {
+            const role = (msg.role || '').toLowerCase();
+            const cls = role === 'assistant' ? 'assistant' : role === 'user' ? 'user' : 'system';
+            return `<div class="bubble ${cls}">${escapeHtml(msg.content || '')}</div>`;
+        }).join('');
+        el.scrollTop = el.scrollHeight;
+    }
+
+    function handleChatKey(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMsg();
+        }
+    }
+
+    function sendQuickPrompt(text) {
+        document.getElementById('chatInput').value = text;
+        sendMsg();
+    }
+
+    async function sendMsg() {
+        if (!viewedUserId) return;
+
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const history = document.getElementById('chatHistory');
+        history.innerHTML += `<div class="bubble user">${escapeHtml(text)}</div>`;
+        history.innerHTML += '<div class="bubble system" id="typingBubble">FinCoach réfléchit…</div>';
+        history.scrollTop = history.scrollHeight;
+        input.value = '';
+
+        const sendBtn = document.getElementById('sendBtn');
+        sendBtn.disabled = true;
+
+        try {
+            const response = await fetch(API + '/coach/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: viewedUserId, message: text })
+            });
+
+            let data = null;
+            try { data = await response.json(); } catch (_) {}
+            if (!response.ok) {
+                throw new Error(data?.message || 'Envoi impossible');
+            }
+
+            document.getElementById('typingBubble')?.remove();
+            history.innerHTML += `<div class="bubble assistant">${escapeHtml(data?.content || 'Réponse indisponible')}</div>`;
+            history.scrollTop = history.scrollHeight;
+        } catch (error) {
+            const typing = document.getElementById('typingBubble');
+            if (typing) typing.textContent = 'Erreur: ' + (error.message || 'message non envoyé');
+        } finally {
+            sendBtn.disabled = false;
+        }
+    }
+
+    async function downloadPdf() {
+        if (!viewedUserId) return;
+        try {
+            const response = await fetch(API + '/reports/cash-flow/' + viewedUserId, {
+                headers: { Accept: 'application/pdf' }
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `helma-report-${viewedUserId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            setStatus('Export PDF prêt pour ' + currentUserLabel + '.', 'ok');
+        } catch (error) {
+            setStatus('Export PDF impossible: ' + error.message, 'err');
+        }
+    }
+
+    async function reloadAll() {
+        if (!viewedUserId) {
+            setStatus('Aucun utilisateur sélectionné.', 'err');
+            return;
+        }
+
+        setStatus('Chargement du dashboard…');
+
+        try {
+            const [dashboard, history, transactions, coachHistory] = await Promise.all([
+                apiGet('/dashboard/' + viewedUserId).catch(() => null),
+                apiGet('/cashflow/' + viewedUserId + '/history').catch(() => []),
+                apiGet('/transactions?userId=' + viewedUserId).catch(() => []),
+                apiGet('/coach/history/' + viewedUserId).catch(() => [])
+            ]);
+
+            if (!dashboard) {
+                throw new Error('Les données dashboard sont indisponibles');
+            }
+
+            renderHero(dashboard);
+            renderCashFlows(history || []);
+            renderForecastRows(dashboard?.forecast?.months || []);
+            renderBudgets(dashboard?.currentBudgets || []);
+            renderRisks(dashboard?.openRiskCases || []);
+            renderTransactions(transactions || []);
+            renderInsights(dashboard);
+            renderGoals(dashboard?.savingsGoals || []);
+            renderCoach(coachHistory || []);
+
+            setStatus('Dashboard chargé · ' + new Date().toLocaleTimeString('fr-FR'), 'ok');
+        } catch (error) {
+            setStatus('Erreur de chargement: ' + error.message, 'err');
+            document.getElementById('cashFlowTable').innerHTML = '<tr><td colspan="4" class="empty">Erreur</td></tr>';
+            document.getElementById('forecastTable').innerHTML = '<tr><td colspan="4" class="empty">Erreur</td></tr>';
+            document.getElementById('budgetTable').innerHTML = '<tr><td colspan="3" class="empty">Erreur</td></tr>';
+            document.getElementById('riskTable').innerHTML = '<tr><td colspan="3" class="empty">Erreur</td></tr>';
+            document.getElementById('transactionsTable').innerHTML = '<tr><td colspan="4" class="empty">Erreur</td></tr>';
+            document.getElementById('insightsList').innerHTML = '<div class="empty">Erreur</div>';
+            document.getElementById('goalsList').innerHTML = '<div class="empty">Erreur</div>';
+        }
+    }
+
+    window.addEventListener('load', async () => {
+        try {
+            await prepareViewedUser();
+            await reloadAll();
+        } catch (error) {
+            if (error.message !== 'No session') {
+                setStatus('Erreur: ' + error.message, 'err');
+            }
+        }
+    });
+</script>
+</body>
+</html>

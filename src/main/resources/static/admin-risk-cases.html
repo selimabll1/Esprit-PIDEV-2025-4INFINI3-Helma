@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELMA — Admin Risk Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F7F7F7;
+            --surface: #FFFFFF;
+            --surface-soft: #F0F4F2;
+            --text: #062A2B;
+            --text-soft: #637B7B;
+            --secondary: #0B3B3C;
+            --accent: #E9C460;
+            --mint: #2A9D8F;
+            --danger: #C86B5D;
+            --line: #DCE7E5;
+            --shadow: 0 20px 70px rgba(6, 42, 43, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background:
+                    radial-gradient(circle at top left, rgba(233, 196, 96, 0.18), transparent 22%),
+                    radial-gradient(circle at bottom right, rgba(42, 157, 143, 0.10), transparent 24%),
+                    var(--bg);
+            color: var(--text);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            padding: 18px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            background: rgba(247, 247, 247, 0.86);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(11, 59, 60, 0.08);
+        }
+
+        .brand h1 {
+            color: var(--secondary);
+            font-size: 24px;
+            letter-spacing: -0.05em;
+        }
+
+        .brand p {
+            margin-top: 4px;
+            color: var(--text-soft);
+            font-size: 13px;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .btn,
+        .select,
+        .search {
+            height: 46px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--secondary);
+            padding: 0 16px;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .btn { cursor: pointer; }
+        .btn-primary {
+            color: white;
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--secondary), var(--mint));
+            box-shadow: 0 14px 28px rgba(11, 59, 60, 0.14);
+        }
+        .btn-accent {
+            background: rgba(233, 196, 96, 0.16);
+            border-color: rgba(233, 196, 96, 0.40);
+        }
+
+        .page {
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel,
+        .table-card {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(11, 59, 60, 0.08);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .hero {
+            padding: 26px;
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .hero h2 {
+            color: var(--secondary);
+            font-size: clamp(28px, 3vw, 40px);
+            letter-spacing: -0.05em;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            color: var(--text-soft);
+            font-size: 14px;
+            line-height: 1.75;
+            max-width: 760px;
+        }
+
+        .status {
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: var(--surface-soft);
+            border: 1px solid var(--line);
+            color: var(--secondary);
+            font-size: 13px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .stat {
+            padding: 18px;
+            border-radius: 22px;
+            background: var(--surface-soft);
+            border: 1px solid var(--line);
+        }
+
+        .stat-label {
+            color: var(--text-soft);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            color: var(--secondary);
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.05em;
+        }
+
+        .stat-sub {
+            margin-top: 8px;
+            color: var(--text-soft);
+            font-size: 12px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 0 4px;
+        }
+
+        .select,
+        .search {
+            min-width: 200px;
+            outline: none;
+        }
+
+        .search {
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .table-card {
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            padding: 16px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--text-soft);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 700;
+            background: rgba(240, 244, 242, 0.66);
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .user-stack strong {
+            display: block;
+            color: var(--secondary);
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .user-stack span {
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .pill.critical,
+        .pill.high,
+        .pill.open { background: rgba(200, 107, 93, 0.12); color: var(--danger); }
+        .pill.medium { background: rgba(233, 196, 96, 0.18); color: #9a7412; }
+        .pill.low,
+        .pill.resolved { background: rgba(42, 157, 143, 0.10); color: var(--mint); }
+        .pill.neutral { background: rgba(11, 59, 60, 0.06); color: var(--secondary); }
+
+        .action-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 14px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: rgba(200, 107, 93, 0.10);
+            border-color: rgba(200, 107, 93, 0.22);
+            color: var(--danger);
+        }
+
+        .btn-success {
+            background: rgba(42, 157, 143, 0.10);
+            border-color: rgba(42, 157, 143, 0.22);
+            color: var(--mint);
+        }
+
+        .muted { color: var(--text-soft); font-size: 12px; line-height: 1.6; }
+
+        .empty {
+            padding: 34px;
+            text-align: center;
+            color: var(--text-soft);
+            font-size: 13px;
+        }
+
+        .count-label {
+            margin-left: auto;
+            color: var(--text-soft);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 1200px) {
+            .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 760px) {
+            .topbar,
+            .page { padding: 16px; }
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .actions, .toolbar { justify-content: flex-start; }
+            .select, .search { width: 100%; min-width: 100%; }
+            table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+        <h1>HELMA Admin</h1>
+        <p>Risk center modernisé avec la nouvelle palette</p>
+    </div>
+    <div class="actions">
+        <button class="btn btn-accent" onclick="goToPreviewDashboard()">Vue dashboard</button>
+        <button class="btn" onclick="loadAll()">Rafraîchir</button>
+        <button class="btn btn-primary" onclick="logout()">Déconnexion</button>
+    </div>
+</header>
+
+<main class="page">
+    <section class="panel hero">
+        <div class="hero-top">
+            <div>
+                <h2>Centre de supervision des risques</h2>
+                <p>
+                    Le login admin reste hardcodé, mais la console affiche maintenant une interface plus propre,
+                    filtrable, et connectée au vrai endpoint admin. Tu peux aussi ouvrir le dashboard d’un user
+                    directement depuis ici.
+                </p>
+            </div>
+            <div class="status" id="statusBar">Initialisation admin…</div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Open</div>
+                <div class="stat-value" id="statOpen">—</div>
+                <div class="stat-sub">Cases à traiter</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Resolved</div>
+                <div class="stat-value" id="statResolved">—</div>
+                <div class="stat-sub">Déjà fermés</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">High risk</div>
+                <div class="stat-value" id="statHigh">—</div>
+                <div class="stat-sub">Open ≥ 75</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Medium</div>
+                <div class="stat-value" id="statMedium">—</div>
+                <div class="stat-sub">Open 50-74</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Low</div>
+                <div class="stat-value" id="statLow">—</div>
+                <div class="stat-sub">Open &lt; 50</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Unassigned</div>
+                <div class="stat-value" id="statUnassigned">—</div>
+                <div class="stat-sub">Sans admin</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="toolbar">
+        <select class="select" id="filterStatus" onchange="applyFilter()">
+            <option value="ALL">Tous les statuts</option>
+            <option value="OPEN">OPEN</option>
+            <option value="RESOLVED">RESOLVED</option>
+        </select>
+        <input class="search" type="text" id="searchInput" placeholder="Rechercher par nom, email ou raison…" oninput="applyFilter()">
+        <span class="count-label" id="countLabel">—</span>
+    </div>
+
+    <section class="table-card">
+        <table>
+            <thead>
+            <tr>
+                <th>Case</th>
+                <th>Utilisateur</th>
+                <th>Risque</th>
+                <th>Statut</th>
+                <th>Assignation</th>
+                <th>Détecté le</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="tableBody">
+            <tr><td colspan="7" class="empty">Chargement…</td></tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+
+<script>
+    const API = '/f/api';
+    const STORAGE_KEY = 'helma_session';
+    const PREVIEW_KEY = 'helma_preview_user_id';
+    let allCases = [];
+    let filteredCases = [];
+
+    function getSession() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function saveSession(session) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    }
+
+    function coerceLegacyAdmin() {
+        if (localStorage.getItem('helma_admin') === 'true') {
+            const admin = {
+                id: null,
+                role: 'ADMIN',
+                fullName: 'Helma Admin',
+                email: localStorage.getItem('helma_admin_email') || 'admin@helma.tn',
+                hardcoded: true
+            };
+            saveSession(admin);
+            localStorage.removeItem('helma_admin');
+            localStorage.removeItem('helma_admin_email');
+            return admin;
+        }
+        return null;
+    }
+
+    function requireAdmin() {
+        const session = getSession() || coerceLegacyAdmin();
+        if (!session || session.role !== 'ADMIN') {
+            location.href = '/f/admin-login.html';
+            throw new Error('Admin session required');
+        }
+        return session;
+    }
+
+    function logout() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(PREVIEW_KEY);
+        localStorage.removeItem('helma_admin');
+        localStorage.removeItem('helma_admin_email');
+        location.href = '/f/admin-login.html';
+    }
+
+    function setStatus(message) {
+        document.getElementById('statusBar').textContent = message;
+    }
+
+    function fmtDate(value) {
+        if (!value) return '—';
+        return new Date(value).toLocaleString('fr-FR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    async function apiGet(path) {
+        const response = await fetch(API + path);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.json();
+    }
+
+    async function apiPatch(path, payload = null) {
+        const response = await fetch(API + path, {
+            method: 'PATCH',
+            headers: payload ? { 'Content-Type': 'application/json' } : {},
+            body: payload ? JSON.stringify(payload) : null
+        });
+        let data = null;
+        try { data = await response.json(); } catch (_) {}
+        if (!response.ok) throw new Error(data?.message || ('HTTP ' + response.status));
+        return data;
+    }
+
+    function severityClass(value) {
+        const s = String(value || '').toLowerCase();
+        if (['critical', 'high', 'open'].includes(s)) return s;
+        if (s === 'medium') return 'medium';
+        if (['low', 'resolved'].includes(s)) return s;
+        return 'neutral';
+    }
+
+    function renderStats(stats) {
+        document.getElementById('statOpen').textContent = stats?.totalOpen ?? 0;
+        document.getElementById('statResolved').textContent = stats?.totalResolved ?? 0;
+        document.getElementById('statHigh').textContent = stats?.highRisk ?? 0;
+        document.getElementById('statMedium').textContent = stats?.mediumRisk ?? 0;
+        document.getElementById('statLow').textContent = stats?.lowRisk ?? 0;
+        document.getElementById('statUnassigned').textContent = stats?.unassigned ?? 0;
+    }
+
+    function renderTable(rows) {
+        const tbody = document.getElementById('tableBody');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty">Aucune case trouvée avec ce filtre.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rows.map(row => `
+            <tr>
+                <td>
+                    <div class="user-stack">
+                        <strong>#${row.id}</strong>
+                        <span>${row.riskReasons ? row.riskReasons : 'Aucune raison détaillée'}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="user-stack">
+                        <strong>${row.userFullName || 'Utilisateur'}</strong>
+                        <span>${row.userEmail || '—'}<br>${row.userIsEntrepreneur ? 'Entrepreneur' : 'Particulier'}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="pill ${severityClass(row.severity)}">${row.severity || 'N/A'}</span>
+                    <div class="muted" style="margin-top:8px">Score ${row.riskLevel ?? '—'}/100</div>
+                </td>
+                <td><span class="pill ${severityClass(row.status)}">${row.status || 'N/A'}</span></td>
+                <td class="muted">${row.assignedAdminName || 'Non assigné'}</td>
+                <td class="muted">${fmtDate(row.detectedAt)}</td>
+                <td>
+                    <div class="action-group">
+                        <button class="btn btn-sm btn-accent" onclick="openUserDashboard(${row.userId})">Dashboard</button>
+                        ${row.status === 'OPEN'
+            ? `<button class="btn btn-sm btn-danger" onclick="resolveCase(${row.id})">Résoudre</button>`
+            : `<button class="btn btn-sm btn-success" onclick="reopenCase(${row.id})">Réouvrir</button>`}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function applyFilter() {
+        const search = document.getElementById('searchInput').value.trim().toLowerCase();
+        const selectedStatus = document.getElementById('filterStatus').value;
+
+        filteredCases = allCases.filter(row => {
+            const matchesStatus = selectedStatus === 'ALL' || row.status === selectedStatus;
+            const haystack = [
+                row.userFullName,
+                row.userEmail,
+                row.riskReasons,
+                row.assignedAdminName,
+                row.severity,
+                row.status,
+                row.id
+            ].join(' ').toLowerCase();
+            return matchesStatus && (!search || haystack.includes(search));
+        });
+
+        renderTable(filteredCases);
+        document.getElementById('countLabel').textContent = `${filteredCases.length} case(s) affichée(s)`;
+    }
+
+    async function loadAll() {
+        requireAdmin();
+        setStatus('Chargement des risk cases…');
+        try {
+            const selectedStatus = document.getElementById('filterStatus').value;
+            const dashboard = await apiGet('/admin/risk-cases?status=' + encodeURIComponent(selectedStatus));
+            renderStats(dashboard?.stats || {});
+            allCases = dashboard?.cases || [];
+            applyFilter();
+            setStatus(`Console chargée · ${allCases.length} case(s)`);
+        } catch (error) {
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="empty">Erreur de chargement.</td></tr>';
+            setStatus('Erreur: ' + error.message);
+        }
+    }
+
+    async function resolveCase(id) {
+        try {
+            await apiPatch('/admin/risk-cases/' + id + '/resolve', { resolutionNote: 'Resolved from refreshed admin console' });
+            setStatus(`Case #${id} résolue.`);
+            await loadAll();
+        } catch (error) {
+            setStatus('Résolution impossible: ' + error.message);
+        }
+    }
+
+    async function reopenCase(id) {
+        try {
+            await apiPatch('/admin/risk-cases/' + id + '/reopen');
+            setStatus(`Case #${id} réouverte.`);
+            await loadAll();
+        } catch (error) {
+            setStatus('Réouverture impossible: ' + error.message);
+        }
+    }
+
+    function openUserDashboard(userId) {
+        localStorage.setItem(PREVIEW_KEY, String(userId));
+        location.href = '/f/dashboard.html';
+    }
+
+    function goToPreviewDashboard() {
+        const savedPreview = localStorage.getItem(PREVIEW_KEY);
+        if (!savedPreview && filteredCases[0]?.userId) {
+            localStorage.setItem(PREVIEW_KEY, String(filteredCases[0].userId));
+        }
+        location.href = '/f/dashboard.html';
+    }
+
+    window.addEventListener('load', () => {
+        try {
+            requireAdmin();
+            loadAll();
+        } catch (_) {}
+    });
+</script>
+</body>
+</html>
