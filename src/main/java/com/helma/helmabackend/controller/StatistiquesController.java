@@ -91,6 +91,26 @@ public class StatistiquesController {
     }
 
     /**
+     * GET /api/statistiques/finance/advanced
+     * Récupère les calculs financiers avancés (ROI, Impayés, etc.)
+     */
+    @GetMapping("/finance/advanced")
+    public ResponseEntity<AdvancedFinancialDTO> getAdvancedFinancialMetrics() {
+        AdvancedFinancialDTO metrics = statistiquesService.getAdvancedFinancialMetrics();
+        return ResponseEntity.ok(metrics);
+    }
+
+    /**
+     * GET /api/statistiques/finance/portfolio
+     * Récupère les indicateurs de rendement et risque du portefeuille
+     */
+    @GetMapping("/finance/portfolio")
+    public ResponseEntity<PortfolioMetricsDTO> getPortfolioMetrics() {
+        PortfolioMetricsDTO metrics = statistiquesService.getPortfolioMetrics();
+        return ResponseEntity.ok(metrics);
+    }
+
+    /**
      * GET /api/statistiques/dashboard
      * Récupère toutes les statistiques principales pour le tableau de bord
      */

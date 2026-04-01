@@ -1,5 +1,6 @@
 package com.helma.helmabackend.controller;
 
+import com.helma.helmabackend.dto.DemandeLeasingCreateRequest;
 import com.helma.helmabackend.entity.DemandeLeasing;
 import com.helma.helmabackend.entity.StatutDemande;
 import com.helma.helmabackend.service.DemandeLeasingService;
@@ -20,8 +21,8 @@ public class DemandeLeasingController {
     private final DemandeLeasingService demandeLeasingService;
 
     @PostMapping
-    public ResponseEntity<DemandeLeasing> create(@Valid @RequestBody DemandeLeasing demande) {
-        DemandeLeasing created = demandeLeasingService.create(demande);
+    public ResponseEntity<DemandeLeasing> create(@Valid @RequestBody DemandeLeasingCreateRequest request) {
+        DemandeLeasing created = demandeLeasingService.create(request);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -69,4 +70,3 @@ public class DemandeLeasingController {
 
 
 }
-

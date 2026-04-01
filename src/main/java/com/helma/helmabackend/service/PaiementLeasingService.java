@@ -17,14 +17,27 @@ import java.util.List;
 public class PaiementLeasingService {
 
     private final PaiementLeasingRepository paiementLeasingRepository;
+    private final com.helma.helmabackend.repository.ContratLeasingRepository contratLeasingRepository;
 
     public PaiementLeasing create(PaiementLeasing paiement) {
+        if (paiement.getContrat() == null || paiement.getContrat().getId() == null) {
+            throw new IllegalArgumentException("Le paiement doit être rattaché à un contrat valide.");
+        }
+        com.helma.helmabackend.entity.ContratLeasing contrat = contratLeasingRepository.findById(paiement.getContrat().getId())
+                .orElseThrow(() -> new RuntimeException("Contrat non trouvé avec l'id: " + paiement.getContrat().getId()));
+        paiement.setContrat(contrat);
         return paiementLeasingRepository.save(paiement);
     }
 
     public PaiementLeasing update(Long id, PaiementLeasing paiement) {
         PaiementLeasing existing = findById(id);
-        existing.setContrat(paiement.getContrat());
+
+        if (paiement.getContrat() != null && paiement.getContrat().getId() != null) {
+            com.helma.helmabackend.entity.ContratLeasing contrat = contratLeasingRepository.findById(paiement.getContrat().getId())
+                    .orElseThrow(() -> new RuntimeException("Contrat non trouvé avec l'id: " + paiement.getContrat().getId()));
+            existing.setContrat(contrat);
+        }
+
         existing.setMois(paiement.getMois());
         existing.setMontant(paiement.getMontant());
         existing.setStatutPaiement(paiement.getStatutPaiement());
@@ -33,6 +46,9 @@ public class PaiementLeasingService {
     }
 
     public void delete(Long id) {
+        if (!paiementLeasingRepository.existsById(id)) {
+            throw new RuntimeException("Paiement non trouvé avec l'id: " + id);
+        }
         paiementLeasingRepository.deleteById(id);
     }
 

@@ -15,13 +15,31 @@ import java.util.List;
 public class EquipementService {
 
     private final EquipementRepository equipementRepository;
+    private final com.helma.helmabackend.repository.PartenaireRepository partenaireRepository;
+    private final com.helma.helmabackend.repository.DemandeLeasingRepository demandeLeasingRepository;
+    private final com.helma.helmabackend.repository.ContratLeasingRepository contratLeasingRepository;
+    private final com.helma.helmabackend.repository.PaiementLeasingRepository paiementLeasingRepository;
 
     public Equipement create(Equipement equipement) {
+        if (equipement.getPartenaire() != null && equipement.getPartenaire().getId() != null) {
+            com.helma.helmabackend.entity.Partenaire partenaire = partenaireRepository.findById(equipement.getPartenaire().getId())
+                    .orElseThrow(() -> new RuntimeException("Partenaire non trouvé avec l'id: " + equipement.getPartenaire().getId()));
+            equipement.setPartenaire(partenaire);
+        }
         return equipementRepository.save(equipement);
     }
 
     public Equipement update(Long id, Equipement equipement) {
         Equipement existing = findById(id);
+
+        if (equipement.getPartenaire() != null && equipement.getPartenaire().getId() != null) {
+            com.helma.helmabackend.entity.Partenaire partenaire = partenaireRepository.findById(equipement.getPartenaire().getId())
+                    .orElseThrow(() -> new RuntimeException("Partenaire non trouvé avec l'id: " + equipement.getPartenaire().getId()));
+            existing.setPartenaire(partenaire);
+        } else {
+            existing.setPartenaire(equipement.getPartenaire());
+        }
+
         existing.setNom(equipement.getNom());
         existing.setCategorie(equipement.getCategorie());
         existing.setValeur(equipement.getValeur());
@@ -31,6 +49,21 @@ public class EquipementService {
     }
 
     public void delete(Long id) {
+        if (!equipementRepository.existsById(id)) {
+            throw new RuntimeException("Equipement non trouvé avec l'id: " + id);
+        }
+
+        // Supprimer toutes les demandes associées, leurs contrats, et paiements (sans toucher au partenaire)
+        List<com.helma.helmabackend.entity.DemandeLeasing> demandes = demandeLeasingRepository.findByEquipementId(id);
+        for (com.helma.helmabackend.entity.DemandeLeasing demande : demandes) {
+            contratLeasingRepository.findByDemandeId(demande.getId()).ifPresent(contrat -> {
+                List<com.helma.helmabackend.entity.PaiementLeasing> paiements = paiementLeasingRepository.findByContratId(contrat.getId());
+                paiementLeasingRepository.deleteAll(paiements);
+                contratLeasingRepository.delete(contrat);
+            });
+        }
+        demandeLeasingRepository.deleteAll(demandes);
+
         equipementRepository.deleteById(id);
     }
 

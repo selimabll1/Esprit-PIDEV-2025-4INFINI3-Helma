@@ -16,35 +16,70 @@ import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.io.font.constants.StandardFonts;
+import com.helma.helmabackend.entity.PaiementLeasing;
+import com.helma.helmabackend.entity.StatutPaiement;
 import org.springframework.beans.factory.annotation.Value;
 import java.io.File;
-import java.io.FileOutputStream;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
-
 public class ContratLeasingService {
 
     private final ContratLeasingRepository contratLeasingRepository;
+    private final com.helma.helmabackend.repository.DemandeLeasingRepository demandeLeasingRepository;
     private final MailService mailService;
 
     @Value("${app.pdf.directory}")
     private String pdfDirectory;
 
     public ContratLeasing create(ContratLeasing contrat) {
+        if (contrat.getDemande() != null && contrat.getDemande().getId() != null) {
+            com.helma.helmabackend.entity.DemandeLeasing demande = demandeLeasingRepository.findById(contrat.getDemande().getId())
+                    .orElseThrow(() -> new RuntimeException("Demande non trouvée avec l'id: " + contrat.getDemande().getId()));
+            contrat.setDemande(demande);
 
+            // Génération automatique des paiements mensuels basés sur la durée (en mois) de la demande
+            if (contrat.getPaiements() == null) {
+                contrat.setPaiements(new ArrayList<>());
+            }
 
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+            LocalDate dateEcheance = contrat.getDateDebut();
+
+            for (int i = 0; i < demande.getDureeMois(); i++) {
+                PaiementLeasing paiement = PaiementLeasing.builder()
+                        .contrat(contrat)
+                        .mois(dateEcheance.format(formatter))
+                        .montant(contrat.getLoyerMensuel())
+                        .statutPaiement(StatutPaiement.EN_ATTENTE)
+                        .build();
+
+                contrat.getPaiements().add(paiement);
+                dateEcheance = dateEcheance.plusMonths(1);
+            }
+        }
         return contratLeasingRepository.save(contrat);
     }
 
     public ContratLeasing update(Long id, ContratLeasing contrat) {
         ContratLeasing existing = findById(id);
-        existing.setDemande(contrat.getDemande());
+
+        if (contrat.getDemande() != null && contrat.getDemande().getId() != null) {
+            com.helma.helmabackend.entity.DemandeLeasing demande = demandeLeasingRepository.findById(contrat.getDemande().getId())
+                    .orElseThrow(() -> new RuntimeException("Demande non trouvée avec l'id: " + contrat.getDemande().getId()));
+            existing.setDemande(demande);
+        } else {
+            existing.setDemande(contrat.getDemande());
+        }
+
         existing.setLoyerMensuel(contrat.getLoyerMensuel());
         existing.setDateDebut(contrat.getDateDebut());
         existing.setDateFin(contrat.getDateFin());
@@ -53,6 +88,9 @@ public class ContratLeasingService {
     }
 
     public void delete(Long id) {
+        if (!contratLeasingRepository.existsById(id)) {
+            throw new RuntimeException("Contrat non trouvé avec l'id: " + id);
+        }
         contratLeasingRepository.deleteById(id);
     }
 
