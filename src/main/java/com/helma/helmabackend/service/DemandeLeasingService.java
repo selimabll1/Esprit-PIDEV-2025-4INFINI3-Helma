@@ -108,9 +108,7 @@ public class DemandeLeasingService {
         return demandeLeasingRepository.save(demande);
     }
 
-    /**
-     * Calcule le taux d'acceptation global des demandes
-     */
+
     @Transactional(readOnly = true)
     public Double calculateTauxAcceptation() {
         Long total = demandeLeasingRepository.count();
@@ -120,9 +118,7 @@ public class DemandeLeasingService {
         return (approuvees.doubleValue() / total.doubleValue()) * 100;
     }
 
-    /**
-     * Récupère les demandes nécessitant une action (en attente)
-     */
+
     @Transactional(readOnly = true)
     public List<DemandeLeasing> getDemandesEnAttente() {
         return demandeLeasingRepository.findByStatut(StatutDemande.EN_ATTENTE);

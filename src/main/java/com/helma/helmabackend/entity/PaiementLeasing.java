@@ -30,7 +30,7 @@ public class PaiementLeasing {
     @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     private ContratLeasing contrat;
 
-    // Mois concerné : ex. 2025-03
+
     @Column(nullable = false)
     private String mois;
 

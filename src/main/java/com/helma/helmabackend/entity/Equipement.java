@@ -31,7 +31,7 @@ public class Equipement {
 
     @NotBlank
     @Column(nullable = false)
-    private String categorie;  // ex: INFORMATIQUE, MEDICAL, AUDIOVISUEL
+    private String categorie;
 
     @NotNull
     @DecimalMin("0.0")

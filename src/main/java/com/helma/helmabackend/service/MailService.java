@@ -18,25 +18,19 @@ public class MailService {
 
     private final JavaMailSender mailSender;
 
-    /**
-     * Envoie un mail avec le contrat PDF en pièce jointe
-     *
-     * @param destinataire  adresse email du client
-     * @param nomClient     nom du client pour personnaliser le mail
-     * @param pdfPath       chemin vers le fichier PDF généré
-     */
+
     public void envoyerContratParMail(String destinataire, String nomClient, String pdfPath) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
 
-            // true = multipart (pour les pièces jointes)
+
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom("rihemzoghlami21@gmail.com");
             helper.setTo(destinataire);
             helper.setSubject("Votre contrat de leasing — Helma");
 
-            // Corps du mail
+
             String corps = "<html><body>"
                     + "<h2>Bonjour " + nomClient + ",</h2>"
                     + "<p>Veuillez trouver ci-joint votre contrat de leasing.</p>"
@@ -48,7 +42,7 @@ public class MailService {
 
             helper.setText(corps, true); // true = HTML
 
-            // Pièce jointe PDF
+
             FileSystemResource pdf = new FileSystemResource(new File(pdfPath));
             helper.addAttachment("contrat_leasing.pdf", pdf);
 

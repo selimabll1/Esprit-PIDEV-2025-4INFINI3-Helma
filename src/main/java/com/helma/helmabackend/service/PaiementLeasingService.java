@@ -94,9 +94,7 @@ public class PaiementLeasingService {
         return paiementLeasingRepository.save(paiement);
     }
 
-    /**
-     * Calcule le taux de paiement (pourcentage de paiements effectués)
-     */
+
     @Transactional(readOnly = true)
     public Double calculateTauxPaiement() {
         Long total = paiementLeasingRepository.count();
@@ -106,26 +104,20 @@ public class PaiementLeasingService {
         return (payes.doubleValue() / total.doubleValue()) * 100;
     }
 
-    /**
-     * Récupère tous les paiements en retard
-     */
+
     @Transactional(readOnly = true)
     public List<PaiementLeasing> getPaiementsEnRetard() {
         return paiementLeasingRepository.findByStatutPaiement(StatutPaiement.EN_RETARD);
     }
 
-    /**
-     * Calcule le montant total des paiements en attente
-     */
+
     @Transactional(readOnly = true)
     public BigDecimal calculateMontantEnAttente() {
         BigDecimal montant = paiementLeasingRepository.calculateMontantTotalByStatut(StatutPaiement.EN_ATTENTE);
         return montant != null ? montant : BigDecimal.ZERO;
     }
 
-    /**
-     * Calcule le montant total payé
-     */
+    
     @Transactional(readOnly = true)
     public BigDecimal calculateMontantTotalPaye() {
         BigDecimal montant = paiementLeasingRepository.calculateMontantTotalByStatut(StatutPaiement.PAYE);

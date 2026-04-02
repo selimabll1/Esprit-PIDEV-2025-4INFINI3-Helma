@@ -14,7 +14,7 @@ public interface EquipementRepository extends JpaRepository<Equipement, Long> {
     List<Equipement> findByCategorie(String categorie);
     List<Equipement> findByPartenaireId(Long partenaireId);
 
-    // Méthodes statistiques
+
     Long countByDisponible(Boolean disponible);
 
     @Query("SELECT SUM(e.valeur) FROM Equipement e")

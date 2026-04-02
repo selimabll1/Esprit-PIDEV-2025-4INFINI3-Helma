@@ -29,7 +29,7 @@ public class Partenaire {
 
     @NotBlank
     @Column(nullable = false)
-    private String type;  // ex: FOURNISSEUR_IT, REVENDEUR, CONSTRUCTEUR
+    private String type;
 
     @Column
     private String contact;

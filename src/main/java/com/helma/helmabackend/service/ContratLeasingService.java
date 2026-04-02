@@ -46,7 +46,7 @@ public class ContratLeasingService {
                     .orElseThrow(() -> new RuntimeException("Demande non trouvée avec l'id: " + contrat.getDemande().getId()));
             contrat.setDemande(demande);
 
-            // Génération automatique des paiements mensuels basés sur la durée (en mois) de la demande
+
             if (contrat.getPaiements() == null) {
                 contrat.setPaiements(new ArrayList<>());
             }
@@ -122,27 +122,21 @@ public class ContratLeasingService {
         return contratLeasingRepository.save(contrat);
     }
 
-    /**
-     * Calcule le revenu mensuel total de tous les contrats actifs
-     */
+
     @Transactional(readOnly = true)
     public BigDecimal calculateRevenuMensuelTotal() {
         BigDecimal revenu = contratLeasingRepository.calculateRevenuMensuelTotal();
         return revenu != null ? revenu : BigDecimal.ZERO;
     }
 
-    /**
-     * Calcule le revenu annuel estimé basé sur les contrats actifs
-     */
+
     @Transactional(readOnly = true)
     public BigDecimal calculateRevenuAnnuelEstime() {
         BigDecimal revenuMensuel = calculateRevenuMensuelTotal();
         return revenuMensuel.multiply(BigDecimal.valueOf(12));
     }
 
-    /**
-     * Génère le PDF du contrat et envoie le mail
-     */
+
     public void genererEtEnvoyerContrat(Long contratId, String emailClient, String nomClient) {
         ContratLeasing contrat = findById(contratId);
         String pdfPath = genererPDF(contrat, nomClient);
@@ -150,9 +144,7 @@ public class ContratLeasingService {
         log.info("Contrat {} généré et envoyé à {}", contratId, emailClient);
     }
 
-    /**
-     * Génère le PDF dans resources/contrats/
-     */
+
     private String genererPDF(ContratLeasing contrat, String nomClient) {
         File dossier = new File(pdfDirectory);
         if (!dossier.exists()) {
@@ -163,7 +155,7 @@ public class ContratLeasingService {
         String cheminComplet = pdfDirectory + nomFichier;
 
         try {
-            // iText7 — correct
+
             PdfWriter writer = new PdfWriter(cheminComplet);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);

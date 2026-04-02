@@ -14,7 +14,7 @@ public interface DemandeLeasingRepository extends JpaRepository<DemandeLeasing, 
     List<DemandeLeasing> findByStatut(StatutDemande statut);
     List<DemandeLeasing> findByEquipementId(Long equipementId);
 
-    // Méthodes statistiques
+
     Long countByStatut(StatutDemande statut);
 
     @Query("SELECT AVG(d.ageDemandeur) FROM DemandeLeasing d")

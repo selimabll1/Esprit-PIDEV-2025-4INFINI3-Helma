@@ -24,9 +24,7 @@ public class StatistiquesService {
     private final PaiementLeasingRepository paiementLeasingRepository;
     private final EquipementRepository equipementRepository;
 
-    /**
-     * Statistiques globales sur les demandes de leasing
-     */
+
     public StatistiquesDemandesDTO getStatistiquesDemandes() {
         Long total = demandeLeasingRepository.count();
         Long enAttente = demandeLeasingRepository.countByStatut(StatutDemande.EN_ATTENTE);
@@ -51,9 +49,7 @@ public class StatistiquesService {
                 .build();
     }
 
-    /**
-     * Statistiques sur les contrats de leasing
-     */
+
     public StatistiquesContratsDTO getStatistiquesContrats() {
         Long total = contratLeasingRepository.count();
         Long actifs = contratLeasingRepository.countByStatut(StatutContrat.ACTIF);
@@ -79,9 +75,7 @@ public class StatistiquesService {
                 .build();
     }
 
-    /**
-     * Statistiques sur les paiements
-     */
+
     public StatistiquesPaiementsDTO getStatistiquesPaiements() {
         Long total = paiementLeasingRepository.count();
         Long payes = paiementLeasingRepository.countByStatutPaiement(StatutPaiement.PAYE);
@@ -109,9 +103,7 @@ public class StatistiquesService {
                 .build();
     }
 
-    /**
-     * Statistiques sur les équipements
-     */
+
     public StatistiquesEquipementsDTO getStatistiquesEquipements() {
         Long total = equipementRepository.count();
         Long disponibles = equipementRepository.countByDisponible(true);
@@ -137,9 +129,7 @@ public class StatistiquesService {
                 .build();
     }
 
-    /**
-     * Équipements les plus demandés
-     */
+
     public List<EquipementPopulaireDTO> getEquipementsLesPlusDemandes(int limit) {
         List<Object[]> results = demandeLeasingRepository.findEquipementsLesPlusDemandesRaw();
         List<EquipementPopulaireDTO> equipements = new ArrayList<>();
@@ -160,9 +150,7 @@ public class StatistiquesService {
         return equipements;
     }
 
-    /**
-     * Revenus détaillés par mois
-     */
+
     public List<RevenuMensuelDTO> getRevenusParMois() {
         List<Object[]> results = paiementLeasingRepository.findRevenusDetaillesParMoisRaw();
         List<RevenuMensuelDTO> revenus = new ArrayList<>();
@@ -185,9 +173,7 @@ public class StatistiquesService {
         return revenus;
     }
 
-    /**
-     * Calcul de prévision de revenus pour les N prochains mois
-     */
+
     public BigDecimal calculatePrevisionRevenus(int nombreMois) {
         BigDecimal revenuMensuelActuel = contratLeasingRepository.calculateRevenuMensuelTotal();
         if (revenuMensuelActuel == null) revenuMensuelActuel = BigDecimal.ZERO;
@@ -197,22 +183,20 @@ public class StatistiquesService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * Calcul de rentabilité financière avancée (KPI business clés)
-     */
+
     public AdvancedFinancialDTO getAdvancedFinancialMetrics() {
-        // 1. Chiffre d'Affaires Actuel
+
         BigDecimal chiffreAffaires = paiementLeasingRepository.calculateMontantTotalByStatut(StatutPaiement.PAYE);
         if (chiffreAffaires == null) chiffreAffaires = BigDecimal.ZERO;
 
-        // 2. Impayés (NPL - Non-Performing Leases)
+
         BigDecimal impayes = paiementLeasingRepository.calculateMontantTotalByStatut(StatutPaiement.EN_RETARD);
         if (impayes == null) impayes = BigDecimal.ZERO;
 
         BigDecimal enAttente = paiementLeasingRepository.calculateMontantTotalByStatut(StatutPaiement.EN_ATTENTE);
         if (enAttente == null) enAttente = BigDecimal.ZERO;
 
-        // 3. Taux de Défaut (%)
+
         BigDecimal totalAttendu = chiffreAffaires.add(impayes).add(enAttente);
         Double tauxDefaut = 0.0;
         if (totalAttendu.compareTo(BigDecimal.ZERO) > 0) {
@@ -220,7 +204,7 @@ public class StatistiquesService {
                                .multiply(BigDecimal.valueOf(100)).doubleValue();
         }
 
-        // 4. ROI de la Flotte (Return On Investment global des équipements)
+
         BigDecimal valeurFlotte = equipementRepository.calculateValeurTotale();
         if (valeurFlotte == null) valeurFlotte = BigDecimal.ZERO;
 
@@ -238,15 +222,13 @@ public class StatistiquesService {
                 .build();
     }
 
-    /**
-     * Calcul des indicateurs de Risque et de Rendement du Portefeuille (Portfolio Metrics)
-     */
+
     public PortfolioMetricsDTO getPortfolioMetrics() {
-        // 1. Encours Total (Exposure at Default/Pending Cash Flow)
+
         BigDecimal encoursTotal = paiementLeasingRepository.calculateMontantTotalByStatut(StatutPaiement.EN_ATTENTE);
         if (encoursTotal == null) encoursTotal = BigDecimal.ZERO;
 
-        // 2. Taux de Recouvrement (Collection Rate = Collected / (Collected + Overdue))
+
         BigDecimal paye = paiementLeasingRepository.calculateMontantTotalByStatut(StatutPaiement.PAYE);
         if (paye == null) paye = BigDecimal.ZERO;
 
@@ -256,12 +238,12 @@ public class StatistiquesService {
         BigDecimal totalDu = paye.add(enRetard);
         Double tauxRecouvrement = 0.0;
         if (totalDu.compareTo(BigDecimal.ZERO) > 0) {
-            // How much of what we *should* have by now is actually collected?
+
             tauxRecouvrement = paye.divide(totalDu, 4, RoundingMode.HALF_UP)
                                   .multiply(BigDecimal.valueOf(100)).doubleValue();
         }
 
-        // 3. Rendement Annuel Brut (Gross Annual Yield)
+
         BigDecimal revenuMensuel = contratLeasingRepository.calculateRevenuMensuelTotal();
         if (revenuMensuel == null) revenuMensuel = BigDecimal.ZERO;
         BigDecimal revenuAnnuel = revenuMensuel.multiply(BigDecimal.valueOf(12));
@@ -275,7 +257,7 @@ public class StatistiquesService {
                                           .multiply(BigDecimal.valueOf(100)).doubleValue();
         }
 
-        // 4. ARPC (Average Revenue Per Contract per Year)
+
         Long totalContrats = contratLeasingRepository.countByStatut(StatutContrat.ACTIF);
         BigDecimal arpc = BigDecimal.ZERO;
         if (totalContrats > 0) {

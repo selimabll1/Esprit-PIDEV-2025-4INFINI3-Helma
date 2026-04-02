@@ -24,7 +24,7 @@ public class DemandeLeasing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Référence vers l'utilisateur (module User externe)
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
@@ -46,7 +46,7 @@ public class DemandeLeasing {
     //@Builder.Default
     private StatutDemande statut = StatutDemande.EN_ATTENTE;
 
-    // Age du demandeur au moment de la demande (doit être < 25)
+
     @Min(18)
     @Max(24)
     @Column(name = "age_demandeur", nullable = false)

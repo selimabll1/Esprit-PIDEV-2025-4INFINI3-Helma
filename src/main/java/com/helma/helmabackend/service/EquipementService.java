@@ -99,9 +99,7 @@ public class EquipementService {
         return equipementRepository.save(equipement);
     }
 
-    /**
-     * Calcule le taux d'utilisation des équipements
-     */
+
     @Transactional(readOnly = true)
     public Double calculateTauxUtilisation() {
         Long total = equipementRepository.count();
@@ -111,18 +109,14 @@ public class EquipementService {
         return (enLocation.doubleValue() / total.doubleValue()) * 100;
     }
 
-    /**
-     * Calcule la valeur totale du parc d'équipements
-     */
+
     @Transactional(readOnly = true)
     public BigDecimal calculateValeurTotale() {
         BigDecimal valeur = equipementRepository.calculateValeurTotale();
         return valeur != null ? valeur : BigDecimal.ZERO;
     }
 
-    /**
-     * Récupère uniquement les équipements disponibles
-     */
+
     @Transactional(readOnly = true)
     public List<Equipement> getEquipementsDisponibles() {
         return equipementRepository.findByDisponible(true);

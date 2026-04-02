@@ -15,7 +15,7 @@ public interface PaiementLeasingRepository extends JpaRepository<PaiementLeasing
     List<PaiementLeasing> findByStatutPaiement(StatutPaiement statutPaiement);
     List<PaiementLeasing> findByMois(String mois);
 
-    // Méthodes statistiques
+
     Long countByStatutPaiement(StatutPaiement statutPaiement);
 
     @Query("SELECT SUM(p.montant) FROM PaiementLeasing p WHERE p.statutPaiement = :statut")

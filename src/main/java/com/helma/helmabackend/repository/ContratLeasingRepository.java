@@ -15,7 +15,7 @@ public interface ContratLeasingRepository extends JpaRepository<ContratLeasing, 
     Optional<ContratLeasing> findByDemandeId(Long demandeId);
     List<ContratLeasing> findByStatut(StatutContrat statut);
 
-    // Méthodes statistiques
+
     Long countByStatut(StatutContrat statut);
 
     @Query("SELECT SUM(c.loyerMensuel) FROM ContratLeasing c WHERE c.statut = 'ACTIF'")
