@@ -1,0 +1,38 @@
+<header class="top-navbar">
+  <div class="container navbar-inner">
+    <a class="brand" routerLink="/">
+      <img src="logo/helma-logo.png" alt="Helma logo" class="brand-logo" />
+      <div class="brand-text">
+        <span class="brand-name">Helma</span>
+        <span class="brand-tagline">Empower. Innovate. Growth.</span>
+      </div>
+    </a>
+
+    <nav class="nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/discover" routerLinkActive="active">Discover</a>
+      <a routerLink="/youth-tools" routerLinkActive="active">Youth Tools</a>
+      <a routerLink="/financing" routerLinkActive="active">Financing</a>
+
+      <div class="nav-dropdown">
+        <button type="button" class="nav-dropdown-trigger">
+          Crowdfunding
+        </button>
+
+        <div class="nav-dropdown-menu">
+          <a routerLink="/crowdfunding/donation" routerLinkActive="active">Donation</a>
+          <a routerLink="/crowdfunding/equity" routerLinkActive="active">Equity</a>
+        </div>
+      </div>
+
+      <a routerLink="/sponsors" routerLinkActive="active">Sponsors</a>
+      <a routerLink="/learning" routerLinkActive="active">Learning</a>
+      <a routerLink="/resources" routerLinkActive="active">Resources</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a class="login-link" routerLink="/auth/login">Sign in</a>
+      <a class="btn btn-primary" routerLink="/auth/login">Get Started</a>
+    </div>
+  </div>
+</header>
