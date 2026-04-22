@@ -143,16 +143,16 @@ CONTEXTE FINANCIER EN TEMPS RÉEL
                 .orElseGet(() -> coachSessionRepo.save(
                         CoachSession.builder().user(user).build()));
 
-        // Fresh context on every message — always up to date
+
         String contextSnapshot = contextSnapshotBuilder.build(userId);
 
-        // Last 10 messages for conversation memory
+
         List<CoachMessage> fullHistory = coachMessageRepo.findBySessionOrderByCreatedAtAsc(session);
         List<CoachMessage> history = fullHistory.size() <= 10
                 ? fullHistory
                 : fullHistory.subList(fullHistory.size() - 10, fullHistory.size());
 
-        // Build Groq messages array
+
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of(
                 "role",    "system",
@@ -165,7 +165,7 @@ CONTEXTE FINANCIER EN TEMPS RÉEL
 
         String aiResponse = groqApiClient.chat(messages);
 
-        // Persist both sides
+
         coachMessageRepo.save(CoachMessage.builder()
                 .session(session).role(MessageRole.USER).content(userMessage).build());
         CoachMessage saved = coachMessageRepo.save(CoachMessage.builder()

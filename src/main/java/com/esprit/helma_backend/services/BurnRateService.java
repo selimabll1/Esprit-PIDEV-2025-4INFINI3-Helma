@@ -92,23 +92,26 @@ public class BurnRateService {
             runwayMonths = currentBalance.divide(burnRate, 2, RoundingMode.HALF_UP);
         }
 
-        RunwayStatus status = determineStatus(runwayMonths);
+        // Important fix:
+        // no expense history => burn rate not interpretable => no status, no risk case
+        boolean hasUsableExpenseHistory = monthsUsed > 0;
+        RunwayStatus status = hasUsableExpenseHistory ? determineStatus(runwayMonths) : null;
 
         boolean riskTriggered = false;
-        if (status == RunwayStatus.CRITICAL) {
+        if (hasUsableExpenseHistory && status == RunwayStatus.CRITICAL) {
             riskCaseService.upsertOpenCase(
                     userId,
                     RISK_LEVEL_LOW_RUNWAY,
                     List.of(
                             "LOW_RUNWAY",
                             "BURN_RATE_METHOD_" + burnRateMethod,
-                            "RUNWAY_MONTHS_" + (runwayMonths != null ? runwayMonths.toPlainString() : "NEG")
+                            "RUNWAY_MONTHS_" + (runwayMonths != null ? runwayMonths.toPlainString() : "NEG_OR_ZERO_BALANCE")
                     )
             );
             riskTriggered = true;
         }
 
-        List<String> tips = generateFinCoachTips(status, runwayMonths, burnRate, currentBalance);
+        List<String> tips = generateFinCoachTips(status, runwayMonths, burnRate, currentBalance, monthsUsed);
 
         LocalDate projectedZeroDate = null;
         if (runwayMonths != null) {
@@ -173,8 +176,16 @@ public class BurnRateService {
     private List<String> generateFinCoachTips(RunwayStatus status,
                                               BigDecimal runwayMonths,
                                               BigDecimal burnRate,
-                                              BigDecimal balance) {
+                                              BigDecimal balance,
+                                              int monthsUsed) {
         List<String> tips = new ArrayList<>();
+
+        if (monthsUsed == 0) {
+            tips.add("ℹ️ Pas assez d'historique de dépenses pour calculer un burn rate fiable.");
+            tips.add("Ajoute au moins 1 à 3 mois de transactions pour rendre le runway interprétable.");
+            tips.add("En attendant, évite d'interpréter l'absence de burn rate comme une situation saine ou critique.");
+            return tips;
+        }
 
         switch (status) {
             case CRITICAL -> {
@@ -183,7 +194,7 @@ public class BurnRateService {
                             "🔴 Tu as %.1f mois de runway — agis immédiatement.",
                             runwayMonths.doubleValue()));
                 } else {
-                    tips.add("🔴 Ton solde est négatif ou ton burn rate n'est pas calculable. Revois tes dépenses d'urgence.");
+                    tips.add("🔴 Ton solde est négatif ou nul par rapport au rythme de dépense actuel.");
                 }
                 tips.add("Identifie tes 3 plus gros postes de dépenses et réduis-les de 20% ce mois.");
                 tips.add("Relance tes clients avec des factures impayées — chaque TND compte.");
@@ -201,9 +212,13 @@ public class BurnRateService {
                 tips.add(String.format(
                         "🟢 Tu as %.1f mois de runway — bonne gestion !",
                         runwayMonths != null ? runwayMonths.doubleValue() : 0));
-                tips.add("Continue à maintenir un burn rate stable. Ne laisse pas tes dépenses fixer grow.");
+                tips.add("Continue à maintenir un burn rate stable.");
                 tips.add("Avec cette trésorerie, c'est le bon moment pour investir dans ta croissance.");
                 tips.add("Objectif : 6 mois de runway pour une sécurité optimale.");
+            }
+            default -> {
+                tips.add("ℹ️ Le runway n'est pas encore interprétable.");
+                tips.add("Ajoute davantage de données pour obtenir une analyse plus fiable.");
             }
         }
 

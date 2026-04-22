@@ -777,7 +777,7 @@
             <div class="hero-top">
                 <div class="hero-text">
                     <div class="identity-chip" id="identityChip">Chargement de l'identité…</div>
-                    <h2 id="heroTitle">Bonjour 👋</h2>
+                    <h2 id="heroTitle">Bienvenue 👋</h2>
                     <p id="heroDescription">Ton dashboard financier personnel est en cours de chargement.</p>
                 </div>
                 <div class="status-banner" id="statusBar">Initialisation…</div>
@@ -1097,6 +1097,25 @@
         }
     }
 
+    function hasUsableHealthScore(health) {
+        return !!(
+            health &&
+            health.score !== null &&
+            health.score !== undefined &&
+            health.label &&
+            health.label !== '-'
+        );
+    }
+
+    function hasUsableRunway(burn) {
+        return !!(
+            burn &&
+            burn.runwayMonths !== null &&
+            burn.runwayMonths !== undefined &&
+            burn.status
+        );
+    }
+
     async function apiGet(path, options = {}) {
         const response = await fetch(API + path, options);
         if (!response.ok) {
@@ -1174,8 +1193,22 @@
         const cash = dashboard?.currentCashFlow || {};
         const forecast = dashboard?.forecast || {};
 
+        const healthAvailable = hasUsableHealthScore(health);
+        const runwayAvailable = hasUsableRunway(burn);
+
+        const hasAnyFinancialData =
+            Number(cash.totalIncome || 0) > 0 ||
+            Number(cash.totalExpense || 0) > 0 ||
+            Number(cash.netFlow || 0) !== 0 ||
+            Number(cash.cumulativeBalance || 0) !== 0 ||
+            (dashboard?.currentBudgets?.length || 0) > 0 ||
+            (dashboard?.savingsGoals?.length || 0) > 0 ||
+            (dashboard?.openRiskCases?.length || 0) > 0;
+
         document.getElementById('heroDescription').textContent =
-            dashboard?.mainPositive || dashboard?.mainAlert || 'Voici ta vue consolidée HELMA.';
+            !hasAnyFinancialData
+                ? "Pas assez de données pour calculer les indicateurs. Ajoute d'abord des transactions pour générer les KPI."
+                : (dashboard?.mainPositive || dashboard?.mainAlert || 'Voici ta vue consolidée HELMA.');
 
         const badgeMeta = getBadgeMeta(badge.level);
         const badgeCard = document.getElementById('badgeCard');
@@ -1189,33 +1222,56 @@
                 : 'Pas de capacité calculée';
 
         const runwayEl = document.getElementById('runwayValue');
-        runwayEl.textContent = burn.runwayMonths != null ? fmtNumber(burn.runwayMonths, 1) + ' mois' : '—';
-        runwayEl.className = 'metric-value ' + (
-            (burn.status || '').toUpperCase() === 'CRITICAL'
-                ? 'accent-danger'
-                : (burn.status || '').toUpperCase() === 'WARNING'
-                    ? 'accent-warning'
-                    : 'accent-success'
-        );
-        document.getElementById('runwaySub').textContent = burn.status || 'Runway non disponible';
+        const runwaySub = document.getElementById('runwaySub');
+
+        if (runwayAvailable) {
+            runwayEl.textContent = fmtNumber(burn.runwayMonths, 1) + ' mois';
+            runwayEl.className = 'metric-value ' + (
+                (burn.status || '').toUpperCase() === 'CRITICAL'
+                    ? 'accent-danger'
+                    : (burn.status || '').toUpperCase() === 'WARNING'
+                        ? 'accent-warning'
+                        : 'accent-success'
+            );
+            runwaySub.textContent = burn.status || 'Runway disponible';
+        } else {
+            runwayEl.textContent = '-';
+            runwayEl.className = 'metric-value';
+            runwaySub.textContent = 'Pas assez de données';
+        }
 
         const netEl = document.getElementById('netFlowValue');
         const netFlow = cash.netFlow;
-        netEl.textContent = netFlow != null ? (Number(netFlow) >= 0 ? '+' : '') + fmtMoney(netFlow) : '—';
-        netEl.className = 'metric-value ' + (Number(netFlow || 0) >= 0 ? 'accent-success' : 'accent-danger');
-        document.getElementById('netFlowSub').textContent =
-            cash.monthStart ? 'Mois de référence · ' + fmtMonth(cash.monthStart) : 'Mois de référence';
+
+        if (netFlow != null && hasAnyFinancialData) {
+            netEl.textContent = (Number(netFlow) >= 0 ? '+' : '') + fmtMoney(netFlow);
+            netEl.className = 'metric-value ' + (Number(netFlow) >= 0 ? 'accent-success' : 'accent-danger');
+            document.getElementById('netFlowSub').textContent =
+                cash.monthStart ? 'Mois de référence · ' + fmtMonth(cash.monthStart) : 'Mois de référence';
+        } else {
+            netEl.textContent = '-';
+            netEl.className = 'metric-value';
+            document.getElementById('netFlowSub').textContent = 'Pas assez de données';
+        }
 
         const healthEl = document.getElementById('healthValue');
-        healthEl.textContent = health.score ?? '—';
-        healthEl.className = 'metric-value ' + (
-            (health.score ?? 0) >= 70
-                ? 'accent-success'
-                : (health.score ?? 0) >= 40
-                    ? 'accent-warning'
-                    : 'accent-danger'
-        );
-        document.getElementById('healthSub').textContent = health.label || 'Score indisponible';
+        const healthSub = document.getElementById('healthSub');
+
+        if (healthAvailable) {
+            healthEl.textContent = fmtNumber(health.score, 2);
+            healthEl.className = 'metric-value ' + (
+                Number(health.score) >= 70
+                    ? 'accent-success'
+                    : Number(health.score) >= 40
+                        ? 'accent-warning'
+                        : 'accent-danger'
+            );
+            healthSub.textContent = health.label || 'Score disponible';
+        } else {
+            healthEl.textContent = '-';
+            healthEl.className = 'metric-value';
+            healthSub.textContent = 'Pas assez de données';
+        }
 
         const [forecastClass, forecastText] = getPill(forecast.trend || forecast.confidenceLevel || 'Prévision');
         const forecastBadge = document.getElementById('forecastBadge');

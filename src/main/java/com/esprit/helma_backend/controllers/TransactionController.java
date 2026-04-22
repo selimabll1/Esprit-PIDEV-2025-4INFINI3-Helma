@@ -29,7 +29,6 @@ public class TransactionController {
         return service.getById(id);
     }
 
-    // GET /api/transactions OR /api/transactions?userId=1
     @GetMapping
     public List<TransactionDto.Response> getAll(@RequestParam(required = false) Long userId) {
         if (userId != null) return service.getByUser(userId);

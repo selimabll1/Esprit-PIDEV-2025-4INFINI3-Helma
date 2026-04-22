@@ -40,6 +40,10 @@ public class Transaction {
     @Column(name = "txn_date", nullable = false)
     private Instant txnDate;
 
+    // Transaction.java
+@Column(name = "receipt_url", columnDefinition = "LONGTEXT")
+private String receiptUrl;
+
     @PrePersist
     public void prePersist() {
         if (txnDate == null) txnDate = Instant.now();

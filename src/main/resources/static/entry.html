@@ -563,7 +563,7 @@
                     <div class="form-grid">
                         <div class="field">
                             <label for="txAmount">Montant</label>
-                            <input id="txAmount" type="number" min="0.01" step="0.01" required>
+                            <input id="txAmount" type="number" min="0.01" max="100000000" step="0.01" required>
                         </div>
 
                         <div class="field">
@@ -740,6 +740,8 @@
     const API = '/f/api';
     const STORAGE_KEY = 'helma_session';
     const PREVIEW_KEY = 'helma_preview_user_id';
+    const TX_MIN_AMOUNT = 0.01;
+    const TX_MAX_AMOUNT = 100000000;
 
     const TRANSACTION_CATEGORY_MAP = {
         INCOME: [
@@ -890,6 +892,46 @@
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         return `${year}-${month}-01`;
+    }
+
+    function validateTransactionAmount(amount) {
+        if (amount == null || Number.isNaN(amount)) {
+            setStatus('Le montant est invalide.', 'err');
+            return false;
+        }
+
+        if (amount < TX_MIN_AMOUNT) {
+            setStatus('Le montant doit être strictement supérieur à 0.', 'err');
+            return false;
+        }
+
+        if (amount > TX_MAX_AMOUNT) {
+            setStatus('Le montant doit être inférieur ou égal à 100000000.', 'err');
+            return false;
+        }
+
+        return true;
+    }
+
+    function dayKeyFromTxnDate(txnDate) {
+        if (!txnDate) return '';
+        return toDateInputValue(txnDate);
+    }
+
+    function isDuplicateTransactionPayload(payload) {
+        const payloadDay = dayKeyFromTxnDate(payload.txnDate);
+
+        return transactions.some(t => {
+            if (editingTransactionId && t.id === editingTransactionId) {
+                return false;
+            }
+
+            return Number(t.userId) === Number(payload.userId)
+                && Number(t.amount) === Number(payload.amount)
+                && String(t.category || '').trim().toUpperCase() === String(payload.category || '').trim().toUpperCase()
+                && String(t.type || '').toUpperCase() === String(payload.type || '').toUpperCase()
+                && dayKeyFromTxnDate(t.txnDate) === payloadDay;
+        });
     }
 
     function currentUserId() {
@@ -1204,13 +1246,41 @@
             return;
         }
 
+        const amount = Number(document.getElementById('txAmount').value);
+        const category = document.getElementById('txCategory').value;
+        const type = document.getElementById('txType').value;
+        const inputDate = document.getElementById('txDate').value;
+        const txnDate = toTransactionInstant(inputDate);
+
+        if (!validateTransactionAmount(amount)) {
+            return;
+        }
+
+        if (!inputDate || !txnDate) {
+            setStatus('La date de transaction est invalide.', 'err');
+            return;
+        }
+
         const payload = {
             userId,
-            amount: Number(document.getElementById('txAmount').value),
-            category: document.getElementById('txCategory').value,
-            type: document.getElementById('txType').value,
-            txnDate: toTransactionInstant(document.getElementById('txDate').value)
+            amount,
+            category,
+            type,
+            txnDate
         };
+
+        const duplicateDetected = isDuplicateTransactionPayload(payload);
+
+        if (duplicateDetected) {
+            const confirmed = confirm(
+                "Vous avez déjà ajouté cette transaction à la même date. Voulez-vous l'ajouter une autre fois ?"
+            );
+
+            if (!confirmed) {
+                setStatus('Ajout annulé : transaction potentiellement en doublon.', 'warn');
+                return;
+            }
+        }
 
         try {
             if (editingTransactionId) {

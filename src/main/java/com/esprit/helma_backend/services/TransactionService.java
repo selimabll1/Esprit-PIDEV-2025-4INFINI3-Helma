@@ -14,9 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @Transactional
@@ -56,64 +54,27 @@ public class TransactionService {
                 t.getAmount(),
                 t.getCategory(),
                 t.getType(),
-                t.getTxnDate()
+                t.getTxnDate(),
+                t.getReceiptUrl()
         );
-    }
-
-    private LocalDate monthStart(Instant instant) {
-        return instant.atZone(ZoneId.systemDefault()).toLocalDate().withDayOfMonth(1);
-    }
-
-    private void recomputeAllForUser(Long userId, Instant... instants) {
-        Set<LocalDate> months = new LinkedHashSet<>();
-        for (Instant instant : instants) {
-            if (instant != null) {
-                months.add(monthStart(instant));
-            }
-        }
-
-        if (months.isEmpty()) {
-            months.add(LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1));
-        }
-
-        LocalDate firstAffectedMonth = months.stream()
-                .min(LocalDate::compareTo)
-                .orElse(LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1));
-
-        LocalDate latestAffectedMonth = months.stream()
-                .max(LocalDate::compareTo)
-                .orElse(firstAffectedMonth);
-
-        Instant latestTxnInstant = txRepo.findMaxTxnDateByUserId(userId);
-        LocalDate latestExistingTxnMonth = latestTxnInstant != null
-                ? monthStart(latestTxnInstant)
-                : latestAffectedMonth;
-
-        LocalDate finalMonth = latestExistingTxnMonth.isAfter(latestAffectedMonth)
-                ? latestExistingTxnMonth
-                : latestAffectedMonth;
-
-        cashFlowService.recalculateRangeForUser(userId, firstAffectedMonth, finalMonth);
-        burnRateService.compute(userId);
-        trustBadgeService.compute(userId);
     }
 
     public TransactionDto.Response create(TransactionDto.Create req) {
         User user = userRepo.findById(req.userId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Instant txnInstant = req.txnDate() != null ? req.txnDate() : Instant.now();
-
         Transaction t = Transaction.builder()
                 .user(user)
                 .amount(req.amount())
                 .category(req.category())
                 .type(req.type())
-                .txnDate(txnInstant)
+                .txnDate(Instant.now())
+                .receiptUrl(req.receiptUrl())
                 .build();
 
         Transaction saved = txRepo.save(t);
 
+        // Step 1 — Risk Engine (EXPENSE only)
         if (saved.getType() == TransactionType.EXPENSE) {
             RiskDecision decision = riskEngine.evaluate(saved);
             if (decision.triggered()) {
@@ -121,7 +82,15 @@ public class TransactionService {
             }
         }
 
-        recomputeAllForUser(user.getId(), saved.getTxnDate());
+        // Step 2 — Recalculate CashFlow for current month
+        LocalDate month = LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1);
+        cashFlowService.recalculateForUser(user.getId(), month);
+
+        // Step 3 — Recompute Burn Rate + Runway
+        burnRateService.compute(user.getId());
+
+        // Step 4 — Recompute Trust Badge
+        trustBadgeService.compute(user.getId());
 
         return toResponse(saved);
     }
@@ -148,31 +117,17 @@ public class TransactionService {
     public TransactionDto.Response update(Long id, TransactionDto.Update req) {
         Transaction t = txRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
-
-        Instant oldTxnDate = t.getTxnDate();
-        Instant newTxnDate = req.txnDate() != null ? req.txnDate() : oldTxnDate;
-
         t.setAmount(req.amount());
         t.setCategory(req.category());
         t.setType(req.type());
-        t.setTxnDate(newTxnDate);
-
-        Transaction saved = txRepo.save(t);
-
-        recomputeAllForUser(saved.getUser().getId(), oldTxnDate, newTxnDate);
-
-        return toResponse(saved);
+        t.setReceiptUrl(req.receiptUrl());
+        return toResponse(txRepo.save(t));
     }
 
     public void delete(Long id) {
-        Transaction t = txRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
-
-        Long userId = t.getUser().getId();
-        Instant txnDate = t.getTxnDate();
-
-        txRepo.delete(t);
-
-        recomputeAllForUser(userId, txnDate);
+        if (!txRepo.existsById(id)) {
+            throw new IllegalArgumentException("Transaction not found");
+        }
+        txRepo.deleteById(id);
     }
 }

@@ -1,4 +1,3 @@
-// src/main/java/com/esprit/helma_backend/dto/TransactionDto.java
 package com.esprit.helma_backend.dto;
 
 import com.esprit.helma_backend.entities.Transaction.TransactionType;
@@ -19,14 +18,14 @@ public sealed interface TransactionDto permits
             @NotNull @DecimalMin("0.01") BigDecimal amount,
             @NotBlank String category,
             @NotNull TransactionType type,
-            Instant txnDate
+            String receiptUrl          // optional — can be null
     ) implements TransactionDto {}
 
     record Update(
             @NotNull @DecimalMin("0.01") BigDecimal amount,
             @NotBlank String category,
             @NotNull TransactionType type,
-            Instant txnDate
+            String receiptUrl          // optional — can be null
     ) implements TransactionDto {}
 
     record Response(
@@ -35,6 +34,7 @@ public sealed interface TransactionDto permits
             BigDecimal amount,
             String category,
             TransactionType type,
-            Instant txnDate
+            Instant txnDate,
+            String receiptUrl          // null when no receipt
     ) implements TransactionDto {}
 }

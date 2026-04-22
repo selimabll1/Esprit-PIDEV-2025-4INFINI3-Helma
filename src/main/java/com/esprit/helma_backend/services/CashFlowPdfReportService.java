@@ -2,7 +2,6 @@ package com.esprit.helma_backend.services;
 
 import com.esprit.helma_backend.dto.*;
 import com.lowagie.text.*;
-import com.lowagie.text.List;
 import com.lowagie.text.pdf.*;
 import org.springframework.stereotype.Service;
 
@@ -12,81 +11,51 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CashFlowPdfReportService {
 
-    private static final Color BRAND_DARK = new Color(8, 43, 44);
-    private static final Color BRAND_MINT = new Color(42, 157, 143);
-    private static final Color BRAND_GOLD = new Color(233, 196, 96);
-    private static final Color BRAND_SOFT = new Color(240, 244, 242);
-    private static final Color POSITIVE = new Color(25, 130, 106);
-    private static final Color NEGATIVE = new Color(200, 107, 93);
-    private static final Color MUTED = new Color(100, 120, 120);
-    private static final Color BORDER = new Color(220, 231, 229);
-    private static final Color HEADER_BG = new Color(9, 55, 56);
+    private static final Color BRAND_DARK = new Color(15, 15, 20);
+    private static final Color BRAND_PURPLE = new Color(83, 74, 183);
+    private static final Color BRAND_SOFT = new Color(230, 230, 245);
+    private static final Color BRAND_TEAL = new Color(15, 107, 104);
+    private static final Color BRAND_GOLD = new Color(212, 166, 42);
+    private static final Color POSITIVE = new Color(15, 110, 86);
+    private static final Color NEGATIVE = new Color(163, 45, 45);
+    private static final Color HEADER_BG = new Color(34, 34, 40);
+    private static final Color LIGHT_BG = new Color(248, 250, 252);
+    private static final Color WARNING_BG = new Color(255, 247, 224);
+    private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH);
 
-    private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.FRANCE);
-    private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRANCE);
+    /* ══════════════════════════════════════════════════════════════════
+       ORIGINAL — full history + forecast report (unchanged)
+       ══════════════════════════════════════════════════════════════════ */
 
     public byte[] generate(String userName,
-                           LocalDate referenceMonth,
-                           java.util.List<CashFlowDto.Response> history,
-                           ForecastDto.Response forecast,
-                           BurnRateDto.Response burnRate,
-                           HealthScoreDto.Response health,
-                           TrustBadgeDto.Response badge,
-                           java.util.List<BudgetDto.Response> monthBudgets,
-                           java.util.List<SavingsGoalDto.Response> goals,
-                           java.util.List<RiskCaseDto.Response> openRisks) {
+                           List<CashFlowDto.Response> history,
+                           ForecastDto.Response forecast) {
         try {
-            java.util.List<CashFlowDto.Response> orderedHistory = history == null
-                    ? java.util.List.of()
-                    : history.stream()
-                    .sorted(Comparator.comparing(CashFlowDto.Response::monthStart))
-                    .toList();
-
-            CashFlowDto.Response currentMonth = orderedHistory.isEmpty()
-                    ? null
-                    : orderedHistory.get(orderedHistory.size() - 1);
-
-            CashFlowDto.Response previousMonth = orderedHistory.size() >= 2
-                    ? orderedHistory.get(orderedHistory.size() - 2)
-                    : null;
-
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            Document document = new Document(PageSize.A4, 34, 34, 46, 42);
+            Document document = new Document(PageSize.A4, 36, 36, 54, 46);
             PdfWriter writer = PdfWriter.getInstance(document, out);
-            writer.setPageEvent(new HeaderFooterEvent(userName, referenceMonth));
-
+            writer.setPageEvent(new HeaderFooterEvent(userName, "Cash Flow Analysis"));
             document.open();
 
-            addCover(document, userName, referenceMonth, currentMonth, forecast, badge, health);
-            addSectionTitle(document, "1. Résumé du mois");
-            addExecutiveSummary(document, referenceMonth, currentMonth, previousMonth, burnRate, health, badge);
-
-            addSectionTitle(document, "2. Lecture simple de ta situation");
-            addSimpleReading(document, currentMonth, previousMonth, burnRate, health, badge, openRisks);
-
-            addSectionTitle(document, "3. Historique & comparaison");
-            addHistoryTable(document, orderedHistory, currentMonth, previousMonth);
-
-            addSectionTitle(document, "4. Budget, épargne et discipline financière");
-            addBudgetAndSavingsSection(document, monthBudgets, currentMonth, goals);
-
-            addSectionTitle(document, "5. Prévision sur les 3 prochains mois");
-            addForecastSection(document, forecast, burnRate);
-
-            addSectionTitle(document, "6. Packs recommandés HELMA");
-            addProductRecommendations(document, monthBudgets, burnRate, health, badge, openRisks);
-
-            addSectionTitle(document, "7. Plan d'action concret pour le mois prochain");
-            addActionPlan(document, currentMonth, burnRate, health, monthBudgets, goals, openRisks);
-
-            addSectionTitle(document, "8. Méthodologie");
+            addCover(document, userName, history, forecast);
+            document.newPage();
+            addSectionTitle(document, "1. Executive Summary");
+            addExecutiveSummary(document, history, forecast);
+            addSectionTitle(document, "2. Historical Cash Flow Analysis");
+            addHistoryTable(document, history);
+            addSectionTitle(document, "3. Forecast for the Next 3 Months");
+            addForecastTable(document, forecast);
+            addSectionTitle(document, "4. Entrepreneur Recommendations");
+            addRecommendations(document, history, forecast);
+            addSectionTitle(document, "5. Methodology");
             addMethodology(document, forecast);
 
             document.close();
@@ -96,630 +65,632 @@ public class CashFlowPdfReportService {
         }
     }
 
-    private void addCover(Document document,
-                          String userName,
-                          LocalDate referenceMonth,
-                          CashFlowDto.Response currentMonth,
-                          ForecastDto.Response forecast,
-                          TrustBadgeDto.Response badge,
-                          HealthScoreDto.Response health) throws DocumentException {
+    /* ══════════════════════════════════════════════════════════════════
+       MONTHLY — detailed single-month analysis
+       ══════════════════════════════════════════════════════════════════ */
 
-        PdfPTable hero = new PdfPTable(1);
-        hero.setWidthPercentage(100);
+    public byte[] generateMonthly(String userName,
+                                  LocalDate monthStart,
+                                  List<CashFlowDto.Response> fullHistory,
+                                  List<BudgetDto.Response> budgets,
+                                  List<SavingsGoalDto.Response> goals,
+                                  HealthScoreDto.Response healthScore,
+                                  BurnRateDto.Response burnRate) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document doc = new Document(PageSize.A4, 36, 36, 54, 46);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            String reportTitle = "Monthly Analysis — " + monthStart.format(MONTH_FMT);
+            writer.setPageEvent(new HeaderFooterEvent(userName, reportTitle));
+            doc.open();
 
+            // ── Cover ────────────────────────────────────────────────
+            addBrandBanner(doc, "HELMA\nMonthly Financial Analysis", reportTitle);
+            doc.add(Chunk.NEWLINE);
+            doc.add(line("Prepared for", userName));
+            doc.add(line("Analysis period", monthStart.format(MONTH_FMT)));
+            doc.add(line("Generated on", LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH))));
+            doc.add(Chunk.NEWLINE);
+
+            // ── Find this month's cash flow ──────────────────────────
+            CashFlowDto.Response monthCf = fullHistory.stream()
+                    .filter(cf -> cf.monthStart() != null && cf.monthStart().equals(monthStart))
+                    .findFirst().orElse(null);
+
+            // ── 1. Cash Flow Summary ─────────────────────────────────
+            doc.newPage();
+            addSectionTitle(doc, "1. Cash Flow Summary — " + monthStart.format(MONTH_FMT));
+            if (monthCf != null) {
+                PdfPTable kpi = new PdfPTable(4);
+                kpi.setWidthPercentage(100);
+                kpi.setSpacingAfter(14f);
+                kpi.setWidths(new float[]{1f, 1f, 1f, 1f});
+                kpi.addCell(kpiCell("Total Income", money(monthCf.totalIncome()), POSITIVE));
+                kpi.addCell(kpiCell("Total Expense", money(monthCf.totalExpense()), NEGATIVE));
+                kpi.addCell(kpiCell("Net Flow", money(monthCf.netFlow()), nz(monthCf.netFlow()).signum() >= 0 ? POSITIVE : NEGATIVE));
+                kpi.addCell(kpiCell("Cumulative Balance", money(monthCf.cumulativeBalance()), nz(monthCf.cumulativeBalance()).signum() >= 0 ? POSITIVE : NEGATIVE));
+                doc.add(kpi);
+
+                // Comparison with previous month
+                CashFlowDto.Response prevCf = fullHistory.stream()
+                        .filter(cf -> cf.monthStart() != null && cf.monthStart().isBefore(monthStart))
+                        .reduce((a, b) -> b).orElse(null);
+
+                if (prevCf != null) {
+                    BigDecimal incomeChange = pctChange(prevCf.totalIncome(), monthCf.totalIncome());
+                    BigDecimal expenseChange = pctChange(prevCf.totalExpense(), monthCf.totalExpense());
+                    Paragraph comparison = new Paragraph();
+                    comparison.setLeading(18f);
+                    comparison.add(new Chunk("Month-over-month: ", font(11, Font.BOLD, BRAND_DARK)));
+                    comparison.add(new Chunk("Income " + formatChange(incomeChange) + " | Expense " + formatChange(expenseChange),
+                            font(11, Font.NORMAL, BRAND_DARK)));
+                    doc.add(comparison);
+                    doc.add(Chunk.NEWLINE);
+                }
+            } else {
+                doc.add(new Paragraph("No cash flow data available for " + monthStart.format(MONTH_FMT) + ".",
+                        font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+            }
+
+            // ── 2. Budget vs Actual ──────────────────────────────────
+            addSectionTitle(doc, "2. Budget vs Actual");
+            if (budgets != null && !budgets.isEmpty()) {
+                PdfPTable budgetTable = new PdfPTable(3);
+                budgetTable.setWidthPercentage(100);
+                budgetTable.setSpacingAfter(12f);
+                budgetTable.setWidths(new float[]{1.5f, 1f, 1f});
+                addHeader(budgetTable, "Category");
+                addHeader(budgetTable, "Budget Limit");
+                addHeader(budgetTable, "Status");
+
+                BigDecimal totalLimit = BigDecimal.ZERO;
+                for (BudgetDto.Response b : budgets) {
+                    addCell(budgetTable, b.category() != null ? b.category() : "General");
+                    addCell(budgetTable, money(b.limitAmount()));
+                    addCell(budgetTable, "Active");
+                    totalLimit = totalLimit.add(nz(b.limitAmount()));
+                }
+                doc.add(budgetTable);
+
+                BigDecimal totalSpent = monthCf != null ? nz(monthCf.totalExpense()) : BigDecimal.ZERO;
+                BigDecimal usagePct = totalLimit.compareTo(BigDecimal.ZERO) > 0
+                        ? totalSpent.divide(totalLimit, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
+                        : BigDecimal.ZERO;
+
+                PdfPTable usageKpi = new PdfPTable(3);
+                usageKpi.setWidthPercentage(100);
+                usageKpi.setSpacingAfter(14f);
+                usageKpi.setWidths(new float[]{1f, 1f, 1f});
+                usageKpi.addCell(kpiCell("Total Budget", money(totalLimit), BRAND_TEAL));
+                usageKpi.addCell(kpiCell("Total Spent", money(totalSpent), totalSpent.compareTo(totalLimit) > 0 ? NEGATIVE : BRAND_DARK));
+                Color usageColor = usagePct.compareTo(new BigDecimal("100")) > 0 ? NEGATIVE
+                        : usagePct.compareTo(new BigDecimal("80")) >= 0 ? BRAND_GOLD : POSITIVE;
+                usageKpi.addCell(kpiCell("Usage", usagePct.setScale(1, RoundingMode.HALF_UP) + "%", usageColor));
+                doc.add(usageKpi);
+            } else {
+                doc.add(new Paragraph("No budgets were configured for this month.", font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+            }
+
+            // ── 3. Financial Health Score ─────────────────────────────
+            addSectionTitle(doc, "3. Financial Health Score");
+            if (healthScore != null) {
+                PdfPTable hsTable = new PdfPTable(2);
+                hsTable.setWidthPercentage(100);
+                hsTable.setSpacingAfter(12f);
+                hsTable.setWidths(new float[]{1f, 1f});
+                Color scoreColor = nz(healthScore.score()).compareTo(new BigDecimal("70")) >= 0 ? POSITIVE
+                        : nz(healthScore.score()).compareTo(new BigDecimal("50")) >= 0 ? BRAND_GOLD : NEGATIVE;
+                hsTable.addCell(kpiCell("Overall Score", healthScore.score().setScale(0, RoundingMode.HALF_UP) + " / 100", scoreColor));
+                hsTable.addCell(kpiCell("Status", healthScore.label() != null ? healthScore.label() : "—", scoreColor));
+                doc.add(hsTable);
+
+                PdfPTable breakdown = new PdfPTable(5);
+                breakdown.setWidthPercentage(100);
+                breakdown.setSpacingAfter(14f);
+                breakdown.setWidths(new float[]{1f, 1f, 1f, 1f, 1f});
+                breakdown.addCell(kpiCell("Runway", score(healthScore.runwayScore()), BRAND_DARK));
+                breakdown.addCell(kpiCell("Budget", score(healthScore.budgetScore()), BRAND_DARK));
+                breakdown.addCell(kpiCell("Savings", score(healthScore.savingsScore()), BRAND_DARK));
+                breakdown.addCell(kpiCell("Stability", score(healthScore.stabilityScore()), BRAND_DARK));
+                breakdown.addCell(kpiCell("Risk", score(healthScore.riskScore()), BRAND_DARK));
+                doc.add(breakdown);
+            } else {
+                doc.add(new Paragraph("Health score not yet available — not enough history.", font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+            }
+
+            // ── 4. Burn Rate & Runway ────────────────────────────────
+            addSectionTitle(doc, "4. Burn Rate & Runway");
+            if (burnRate != null) {
+                PdfPTable brTable = new PdfPTable(4);
+                brTable.setWidthPercentage(100);
+                brTable.setSpacingAfter(14f);
+                brTable.setWidths(new float[]{1f, 1f, 1f, 1f});
+                brTable.addCell(kpiCell("Burn Rate", money(burnRate.burnRate()) + "/mo", BRAND_DARK));
+                brTable.addCell(kpiCell("Balance", money(burnRate.currentBalance()), nz(burnRate.currentBalance()).signum() >= 0 ? POSITIVE : NEGATIVE));
+                Color statusColor = "CRITICAL".equals(burnRate.status().name()) ? NEGATIVE
+                        : "WARNING".equals(burnRate.status().name()) ? BRAND_GOLD : POSITIVE;
+                brTable.addCell(kpiCell("Status", burnRate.status().name(), statusColor));
+                brTable.addCell(kpiCell("Runway", burnRate.runwayMonths() != null ? burnRate.runwayMonths().setScale(1, RoundingMode.HALF_UP) + " months" : "N/A", statusColor));
+                doc.add(brTable);
+
+                if (burnRate.projectedZeroDate() != null) {
+                    addWarningBox(doc, "Projected cash-out date: " + burnRate.projectedZeroDate().format(DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)));
+                }
+
+                if (burnRate.finCoachTips() != null && !burnRate.finCoachTips().isEmpty()) {
+                    Paragraph tipsTitle = new Paragraph("AI Coach Tips:", font(11, Font.BOLD, BRAND_PURPLE));
+                    tipsTitle.setSpacingBefore(8f);
+                    doc.add(tipsTitle);
+                    com.lowagie.text.List tips = new com.lowagie.text.List(com.lowagie.text.List.UNORDERED);
+                    tips.setIndentationLeft(14f);
+                    for (String tip : burnRate.finCoachTips()) {
+                        tips.add(new ListItem(tip, font(10, Font.NORMAL, BRAND_DARK)));
+                    }
+                    doc.add(tips);
+                    doc.add(Chunk.NEWLINE);
+                }
+            } else {
+                doc.add(new Paragraph("Burn rate not yet available.", font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+            }
+
+            // ── 5. Savings Goals Progress ────────────────────────────
+            addSectionTitle(doc, "5. Savings Goals Progress");
+            if (goals != null && !goals.isEmpty()) {
+                PdfPTable goalTable = new PdfPTable(5);
+                goalTable.setWidthPercentage(100);
+                goalTable.setSpacingAfter(12f);
+                goalTable.setWidths(new float[]{1.5f, 1f, 1f, 0.8f, 0.8f});
+                addHeader(goalTable, "Goal");
+                addHeader(goalTable, "Progress");
+                addHeader(goalTable, "Target");
+                addHeader(goalTable, "Deadline");
+                addHeader(goalTable, "Status");
+
+                for (SavingsGoalDto.Response g : goals) {
+                    addCell(goalTable, g.name() != null ? g.name() : "—");
+                    addCell(goalTable, money(g.currentAmount()));
+                    addCell(goalTable, money(g.targetAmount()));
+                    addCell(goalTable, g.deadline() != null ? g.deadline().toString() : "—");
+                    addCell(goalTable, Boolean.TRUE.equals(g.completed()) ? "Completed" : "In progress",
+                            Boolean.TRUE.equals(g.completed()) ? POSITIVE : BRAND_DARK);
+                }
+                doc.add(goalTable);
+            } else {
+                doc.add(new Paragraph("No savings goals configured.", font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+            }
+
+            doc.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to generate monthly PDF", e);
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       YEARLY — full year summary
+       ══════════════════════════════════════════════════════════════════ */
+
+    public byte[] generateYearly(String userName,
+                                 int year,
+                                 List<CashFlowDto.Response> fullHistory,
+                                 List<BudgetDto.Response> allBudgets,
+                                 List<SavingsGoalDto.Response> goals,
+                                 HealthScoreDto.Response healthScore,
+                                 ForecastDto.Response forecast) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document doc = new Document(PageSize.A4, 36, 36, 54, 46);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            String reportTitle = "Annual Report — " + year;
+            writer.setPageEvent(new HeaderFooterEvent(userName, reportTitle));
+            doc.open();
+
+            // Filter history to this year
+            List<CashFlowDto.Response> yearHistory = fullHistory.stream()
+                    .filter(cf -> cf.monthStart() != null && cf.monthStart().getYear() == year)
+                    .toList();
+
+            List<BudgetDto.Response> yearBudgets = allBudgets.stream()
+                    .filter(b -> b.monthStart() != null && LocalDate.parse(b.monthStart().toString()).getYear() == year)
+                    .toList();
+
+            // ── Cover ────────────────────────────────────────────────
+            addBrandBanner(doc, "HELMA\nAnnual Financial Report", "Fiscal Year " + year);
+            doc.add(Chunk.NEWLINE);
+            doc.add(line("Prepared for", userName));
+            doc.add(line("Fiscal year", String.valueOf(year)));
+            doc.add(line("Months with data", String.valueOf(yearHistory.size())));
+            doc.add(line("Generated on", LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH))));
+            doc.add(Chunk.NEWLINE);
+
+            // ── 1. Executive Summary ─────────────────────────────────
+            doc.newPage();
+            addSectionTitle(doc, "1. Annual Executive Summary");
+
+            BigDecimal totalIncome = yearHistory.stream().map(CashFlowDto.Response::totalIncome).map(this::nz).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalExpense = yearHistory.stream().map(CashFlowDto.Response::totalExpense).map(this::nz).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalNet = totalIncome.subtract(totalExpense);
+            BigDecimal avgMonthlyIncome = yearHistory.isEmpty() ? BigDecimal.ZERO : totalIncome.divide(BigDecimal.valueOf(yearHistory.size()), 2, RoundingMode.HALF_UP);
+            BigDecimal avgMonthlyExpense = yearHistory.isEmpty() ? BigDecimal.ZERO : totalExpense.divide(BigDecimal.valueOf(yearHistory.size()), 2, RoundingMode.HALF_UP);
+            BigDecimal marginRate = totalIncome.compareTo(BigDecimal.ZERO) > 0
+                    ? totalNet.divide(totalIncome, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).setScale(1, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+
+            PdfPTable annualKpi = new PdfPTable(3);
+            annualKpi.setWidthPercentage(100);
+            annualKpi.setSpacingAfter(10f);
+            annualKpi.setWidths(new float[]{1f, 1f, 1f});
+            annualKpi.addCell(kpiCell("Total Annual Income", money(totalIncome), POSITIVE));
+            annualKpi.addCell(kpiCell("Total Annual Expense", money(totalExpense), NEGATIVE));
+            annualKpi.addCell(kpiCell("Annual Net Result", money(totalNet), totalNet.signum() >= 0 ? POSITIVE : NEGATIVE));
+            doc.add(annualKpi);
+
+            PdfPTable avgKpi = new PdfPTable(3);
+            avgKpi.setWidthPercentage(100);
+            avgKpi.setSpacingAfter(14f);
+            avgKpi.setWidths(new float[]{1f, 1f, 1f});
+            avgKpi.addCell(kpiCell("Avg Monthly Income", money(avgMonthlyIncome), BRAND_DARK));
+            avgKpi.addCell(kpiCell("Avg Monthly Expense", money(avgMonthlyExpense), BRAND_DARK));
+            avgKpi.addCell(kpiCell("Annual Margin Rate", marginRate + "%", totalNet.signum() >= 0 ? POSITIVE : NEGATIVE));
+            doc.add(avgKpi);
+
+            // ── 2. Month-by-Month Breakdown ──────────────────────────
+            addSectionTitle(doc, "2. Month-by-Month Breakdown");
+
+            PdfPTable monthTable = new PdfPTable(5);
+            monthTable.setWidthPercentage(100);
+            monthTable.setSpacingAfter(12f);
+            monthTable.setWidths(new float[]{1.3f, 1.1f, 1.1f, 1.1f, 1.2f});
+            addHeader(monthTable, "Month");
+            addHeader(monthTable, "Income");
+            addHeader(monthTable, "Expense");
+            addHeader(monthTable, "Net Flow");
+            addHeader(monthTable, "Balance");
+
+            for (CashFlowDto.Response row : yearHistory) {
+                addCell(monthTable, row.monthStart() != null ? row.monthStart().format(MONTH_FMT) : "—");
+                addCell(monthTable, money(row.totalIncome()));
+                addCell(monthTable, money(row.totalExpense()));
+                addCell(monthTable, money(row.netFlow()), nz(row.netFlow()).signum() >= 0 ? POSITIVE : NEGATIVE);
+                addCell(monthTable, money(row.cumulativeBalance()), nz(row.cumulativeBalance()).signum() >= 0 ? POSITIVE : NEGATIVE);
+            }
+
+            // Totals row
+            PdfPCell totalLabel = new PdfPCell(new Phrase("ANNUAL TOTAL", font(9, Font.BOLD, Color.WHITE)));
+            totalLabel.setBackgroundColor(BRAND_PURPLE);
+            totalLabel.setPadding(8f);
+            totalLabel.setBorderColor(BRAND_PURPLE);
+            monthTable.addCell(totalLabel);
+            addTotalCell(monthTable, money(totalIncome), POSITIVE);
+            addTotalCell(monthTable, money(totalExpense), NEGATIVE);
+            addTotalCell(monthTable, money(totalNet), totalNet.signum() >= 0 ? POSITIVE : NEGATIVE);
+            addTotalCell(monthTable, "—", BRAND_DARK);
+            doc.add(monthTable);
+
+            // Best / worst months
+            if (!yearHistory.isEmpty()) {
+                CashFlowDto.Response bestMonth = yearHistory.stream()
+                        .max((a, b) -> nz(a.netFlow()).compareTo(nz(b.netFlow()))).orElse(null);
+                CashFlowDto.Response worstMonth = yearHistory.stream()
+                        .min((a, b) -> nz(a.netFlow()).compareTo(nz(b.netFlow()))).orElse(null);
+
+                if (bestMonth != null && worstMonth != null) {
+                    Paragraph p = new Paragraph();
+                    p.setLeading(18f);
+                    p.add(new Chunk("Best month: ", font(11, Font.BOLD, POSITIVE)));
+                    p.add(new Chunk(bestMonth.monthStart().format(MONTH_FMT) + " (net +" + money(bestMonth.netFlow()) + ")", font(11, Font.NORMAL, BRAND_DARK)));
+                    p.add(new Chunk("    |    Worst month: ", font(11, Font.BOLD, NEGATIVE)));
+                    p.add(new Chunk(worstMonth.monthStart().format(MONTH_FMT) + " (net " + money(worstMonth.netFlow()) + ")", font(11, Font.NORMAL, BRAND_DARK)));
+                    doc.add(p);
+                    doc.add(Chunk.NEWLINE);
+                }
+            }
+
+            // ── 3. Budget Discipline ─────────────────────────────────
+            addSectionTitle(doc, "3. Annual Budget Discipline");
+            if (!yearBudgets.isEmpty()) {
+                BigDecimal totalBudgetLimit = yearBudgets.stream()
+                        .map(BudgetDto.Response::limitAmount).map(this::nz)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Map<String, BigDecimal> budgetByCategory = yearBudgets.stream()
+                        .collect(Collectors.groupingBy(
+                                b -> b.category() != null ? b.category() : "General",
+                                Collectors.reducing(BigDecimal.ZERO, b -> nz(b.limitAmount()), BigDecimal::add)));
+
+                PdfPTable catTable = new PdfPTable(2);
+                catTable.setWidthPercentage(100);
+                catTable.setSpacingAfter(12f);
+                catTable.setWidths(new float[]{1.5f, 1f});
+                addHeader(catTable, "Category");
+                addHeader(catTable, "Total Budgeted");
+                budgetByCategory.forEach((cat, amount) -> {
+                    addCell(catTable, cat);
+                    addCell(catTable, money(amount));
+                });
+                doc.add(catTable);
+
+                doc.add(new Paragraph("Total annual budget: " + money(totalBudgetLimit) + " | Total spent: " + money(totalExpense),
+                        font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+            } else {
+                doc.add(new Paragraph("No budgets were configured during " + year + ".", font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+            }
+
+            // ── 4. Health Score (current snapshot) ───────────────────
+            addSectionTitle(doc, "4. Current Financial Health");
+            if (healthScore != null) {
+                PdfPTable hsKpi = new PdfPTable(6);
+                hsKpi.setWidthPercentage(100);
+                hsKpi.setSpacingAfter(14f);
+                hsKpi.setWidths(new float[]{1f, 1f, 1f, 1f, 1f, 1f});
+                Color sc = nz(healthScore.score()).compareTo(new BigDecimal("70")) >= 0 ? POSITIVE
+                        : nz(healthScore.score()).compareTo(new BigDecimal("50")) >= 0 ? BRAND_GOLD : NEGATIVE;
+                hsKpi.addCell(kpiCell("Overall", score(healthScore.score()), sc));
+                hsKpi.addCell(kpiCell("Runway", score(healthScore.runwayScore()), BRAND_DARK));
+                hsKpi.addCell(kpiCell("Budget", score(healthScore.budgetScore()), BRAND_DARK));
+                hsKpi.addCell(kpiCell("Savings", score(healthScore.savingsScore()), BRAND_DARK));
+                hsKpi.addCell(kpiCell("Stability", score(healthScore.stabilityScore()), BRAND_DARK));
+                hsKpi.addCell(kpiCell("Risk", score(healthScore.riskScore()), BRAND_DARK));
+                doc.add(hsKpi);
+            }
+
+            // ── 5. Savings Goals ─────────────────────────────────────
+            addSectionTitle(doc, "5. Savings Goals Summary");
+            if (goals != null && !goals.isEmpty()) {
+                long completed = goals.stream().filter(g -> Boolean.TRUE.equals(g.completed())).count();
+                doc.add(new Paragraph(goals.size() + " goals total — " + completed + " completed, " + (goals.size() - completed) + " in progress.",
+                        font(11, Font.NORMAL, BRAND_DARK)));
+                doc.add(Chunk.NEWLINE);
+
+                PdfPTable goalTable = new PdfPTable(4);
+                goalTable.setWidthPercentage(100);
+                goalTable.setSpacingAfter(12f);
+                goalTable.setWidths(new float[]{1.5f, 1f, 1f, 0.8f});
+                addHeader(goalTable, "Goal");
+                addHeader(goalTable, "Progress");
+                addHeader(goalTable, "Target");
+                addHeader(goalTable, "Status");
+                for (SavingsGoalDto.Response g : goals) {
+                    addCell(goalTable, g.name() != null ? g.name() : "—");
+                    addCell(goalTable, money(g.currentAmount()));
+                    addCell(goalTable, money(g.targetAmount()));
+                    addCell(goalTable, Boolean.TRUE.equals(g.completed()) ? "Done" : "Active",
+                            Boolean.TRUE.equals(g.completed()) ? POSITIVE : BRAND_DARK);
+                }
+                doc.add(goalTable);
+            } else {
+                doc.add(new Paragraph("No savings goals configured.", font(11, Font.NORMAL, BRAND_DARK)));
+            }
+
+            // ── 6. Outlook / Forecast ────────────────────────────────
+            if (forecast != null && forecast.months() != null && !forecast.months().isEmpty()) {
+                doc.newPage();
+                addSectionTitle(doc, "6. Forward-Looking Forecast");
+                addForecastTable(doc, forecast);
+            }
+
+            doc.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to generate yearly PDF", e);
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SHARED HELPER METHODS
+       ══════════════════════════════════════════════════════════════════ */
+
+    private void addBrandBanner(Document doc, String mainTitle, String subtitle) throws DocumentException {
+        PdfPTable banner = new PdfPTable(1);
+        banner.setWidthPercentage(100);
         PdfPCell cell = new PdfPCell();
-        cell.setBorder(Rectangle.NO_BORDER);
         cell.setBackgroundColor(BRAND_DARK);
+        cell.setBorder(Rectangle.NO_BORDER);
         cell.setPadding(28f);
 
-        Paragraph k = new Paragraph("HELMA", font(12, Font.BOLD, Color.WHITE));
-        k.setSpacingAfter(8f);
-        cell.addElement(k);
-
-        Paragraph title = new Paragraph("Monthly Entrepreneur Brief", font(24, Font.BOLD, Color.WHITE));
+        Paragraph title = new Paragraph(mainTitle, font(24, Font.BOLD, Color.WHITE));
         title.setLeading(30f);
         cell.addElement(title);
 
-        Paragraph subtitle = new Paragraph(
-                "Analyse mensuelle claire, utile et orientée décision pour jeunes entrepreneurs.",
-                font(11, Font.NORMAL, new Color(228, 238, 236))
-        );
-        subtitle.setSpacingBefore(10f);
-        subtitle.setLeading(17f);
-        cell.addElement(subtitle);
+        Paragraph sub = new Paragraph(subtitle, font(11, Font.NORMAL, BRAND_SOFT));
+        sub.setSpacingBefore(10f);
+        cell.addElement(sub);
 
-        Paragraph meta = new Paragraph(
-                "Profil : " + safe(userName, "Utilisateur")
-                        + "   •   Mois analysé : " + (referenceMonth != null ? referenceMonth.format(MONTH_FMT) : "—")
-                        + "   •   Généré le : " + LocalDate.now().format(DAY_FMT),
-                font(10, Font.NORMAL, new Color(224, 234, 233))
-        );
-        meta.setSpacingBefore(14f);
-        cell.addElement(meta);
+        banner.addCell(cell);
+        doc.add(banner);
+    }
 
-        hero.addCell(cell);
-        document.add(hero);
+    private void addWarningBox(Document doc, String text) throws DocumentException {
+        PdfPTable box = new PdfPTable(1);
+        box.setWidthPercentage(100);
+        box.setSpacingAfter(12f);
+        PdfPCell cell = new PdfPCell(new Phrase("⚠ " + text, font(10, Font.BOLD, new Color(120, 80, 0))));
+        cell.setBackgroundColor(WARNING_BG);
+        cell.setBorderColor(BRAND_GOLD);
+        cell.setPadding(10f);
+        box.addCell(cell);
+        doc.add(box);
+    }
+
+    private void addTotalCell(PdfPTable table, String text, Color color) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, font(9, Font.BOLD, color)));
+        cell.setPadding(8f);
+        cell.setBackgroundColor(LIGHT_BG);
+        cell.setBorderColor(new Color(200, 200, 215));
+        table.addCell(cell);
+    }
+
+    private BigDecimal pctChange(BigDecimal prev, BigDecimal curr) {
+        BigDecimal p = nz(prev);
+        BigDecimal c = nz(curr);
+        if (p.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+        return c.subtract(p).divide(p, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).setScale(1, RoundingMode.HALF_UP);
+    }
+
+    private String formatChange(BigDecimal pct) {
+        if (pct.signum() > 0) return "+" + pct + "%";
+        return pct + "%";
+    }
+
+    private String score(BigDecimal value) {
+        return nz(value).setScale(0, RoundingMode.HALF_UP) + "/100";
+    }
+
+    /* ── Original methods (kept intact) ─────────────────────────────── */
+
+    private void addCover(Document document, String userName,
+                          List<CashFlowDto.Response> history, ForecastDto.Response forecast) throws DocumentException {
+        addBrandBanner(document, "HELMA\nMonthly Cash Flow Analysis",
+                "Professional financial snapshot and forecast for entrepreneurs");
+        document.add(Chunk.NEWLINE);
+        document.add(Chunk.NEWLINE);
+        document.add(line("Prepared for", userName));
+        document.add(line("Generated on", LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH))));
+        document.add(line("History months available", String.valueOf(history.size())));
+        document.add(line("Forecast method", safe(forecast != null ? forecast.forecastMethod() : null, "NO_DATA")));
+        document.add(line("Confidence", safe(forecast != null ? forecast.confidenceLevel() : null, "LOW")));
         document.add(Chunk.NEWLINE);
 
-        PdfPTable chips = new PdfPTable(3);
-        chips.setWidthPercentage(100);
-        chips.setSpacingAfter(12f);
-        chips.setWidths(new float[]{1f, 1f, 1f});
-
-        chips.addCell(chipCell(
-                "Trust badge",
-                badge != null && badge.level() != null ? badge.level().name() : "N/A",
-                BRAND_GOLD
-        ));
-        chips.addCell(chipCell(
-                "Health score",
-                health != null && health.score() != null ? health.score().setScale(0, RoundingMode.HALF_UP).toPlainString() + "/100" : "N/A",
-                BRAND_MINT
-        ));
-        chips.addCell(chipCell(
-                "Net du mois",
-                currentMonth != null ? signedMoney(currentMonth.netFlow()) : "N/A",
-                nz(currentMonth != null ? currentMonth.netFlow() : null).signum() >= 0 ? BRAND_MINT : NEGATIVE
-        ));
-
-        document.add(chips);
+        Paragraph intro = new Paragraph(
+                "This document gives the entrepreneur a readable monthly analysis of historical cash flow, "
+                        + "key current liquidity indicators, and a forward-looking forecast for the next 2–3 months. "
+                        + "It is intended to support planning, decision-making, and communication with partners or financiers.",
+                font(11, Font.NORMAL, BRAND_DARK));
+        intro.setLeading(18f);
+        document.add(intro);
     }
 
-    private void addExecutiveSummary(Document document,
-                                     LocalDate referenceMonth,
-                                     CashFlowDto.Response currentMonth,
-                                     CashFlowDto.Response previousMonth,
-                                     BurnRateDto.Response burnRate,
-                                     HealthScoreDto.Response health,
-                                     TrustBadgeDto.Response badge) throws DocumentException {
+    private void addExecutiveSummary(Document document, List<CashFlowDto.Response> history, ForecastDto.Response forecast) throws DocumentException {
+        BigDecimal latestBalance = history.isEmpty() ? BigDecimal.ZERO : nz(history.get(history.size() - 1).cumulativeBalance());
+        BigDecimal avgIncome = history.isEmpty() ? BigDecimal.ZERO : history.stream().map(CashFlowDto.Response::totalIncome).map(this::nz).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(history.size()), 2, RoundingMode.HALF_UP);
+        BigDecimal avgExpense = history.isEmpty() ? BigDecimal.ZERO : history.stream().map(CashFlowDto.Response::totalExpense).map(this::nz).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(history.size()), 2, RoundingMode.HALF_UP);
+        BigDecimal avgNet = history.isEmpty() ? BigDecimal.ZERO : history.stream().map(CashFlowDto.Response::netFlow).map(this::nz).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(history.size()), 2, RoundingMode.HALF_UP);
 
-        PdfPTable grid = new PdfPTable(4);
-        grid.setWidthPercentage(100);
-        grid.setSpacingAfter(14f);
-        grid.setWidths(new float[]{1f, 1f, 1f, 1f});
+        PdfPTable kpi = new PdfPTable(4);
+        kpi.setWidthPercentage(100);
+        kpi.setSpacingAfter(14f);
+        kpi.setWidths(new float[]{1f, 1f, 1f, 1f});
+        kpi.addCell(kpiCell("Latest Balance", money(latestBalance), latestBalance.signum() >= 0 ? POSITIVE : NEGATIVE));
+        kpi.addCell(kpiCell("Avg Monthly Income", money(avgIncome), POSITIVE));
+        kpi.addCell(kpiCell("Avg Monthly Expense", money(avgExpense), NEGATIVE));
+        kpi.addCell(kpiCell("Avg Net Flow", money(avgNet), avgNet.signum() >= 0 ? POSITIVE : NEGATIVE));
+        document.add(kpi);
 
-        grid.addCell(kpiCell("Revenus du mois", money(currentMonth != null ? currentMonth.totalIncome() : null), POSITIVE));
-        grid.addCell(kpiCell("Dépenses du mois", money(currentMonth != null ? currentMonth.totalExpense() : null), NEGATIVE));
-        grid.addCell(kpiCell("Flux net", signedMoney(currentMonth != null ? currentMonth.netFlow() : null),
-                nz(currentMonth != null ? currentMonth.netFlow() : null).signum() >= 0 ? POSITIVE : NEGATIVE));
-        grid.addCell(kpiCell("Solde cumulé", money(currentMonth != null ? currentMonth.cumulativeBalance() : null),
-                nz(currentMonth != null ? currentMonth.cumulativeBalance() : null).signum() >= 0 ? POSITIVE : NEGATIVE));
-        document.add(grid);
-
-        java.util.List<String> bullets = new ArrayList<>();
-
-        if (currentMonth == null) {
-            bullets.add("Aucune donnée mensuelle disponible pour construire un vrai résumé.");
-        } else {
-            BigDecimal net = nz(currentMonth.netFlow());
-            if (net.signum() >= 0) {
-                bullets.add("Sur " + referenceMonth.format(MONTH_FMT) + ", ton activité a généré plus d'argent qu'elle n'en a dépensé.");
-            } else {
-                bullets.add("Sur " + referenceMonth.format(MONTH_FMT) + ", les dépenses ont dépassé les revenus.");
-            }
-
-            if (previousMonth != null) {
-                BigDecimal deltaNet = nz(currentMonth.netFlow()).subtract(nz(previousMonth.netFlow()));
-                if (deltaNet.signum() > 0) {
-                    bullets.add("Le résultat mensuel s'améliore par rapport au mois précédent de " + money(deltaNet.abs()) + ".");
-                } else if (deltaNet.signum() < 0) {
-                    bullets.add("Le résultat mensuel recule par rapport au mois précédent de " + money(deltaNet.abs()) + ".");
-                } else {
-                    bullets.add("Le résultat mensuel reste proche du mois précédent.");
-                }
-            }
-        }
-
-        if (burnRate != null && burnRate.runwayMonths() != null) {
-            bullets.add("Ton runway est estimé à " + burnRate.runwayMonths().setScale(1, RoundingMode.HALF_UP).toPlainString()
-                    + " mois, ce qui correspond à un niveau " + safeEnum(burnRate.status()) + ".");
-        }
-
-        if (health != null && health.score() != null) {
-            bullets.add("Ton health score est de " + health.score().setScale(0, RoundingMode.HALF_UP).toPlainString()
-                    + "/100, avec une lecture globale " + safe(health.label(), "N/A") + ".");
-        }
-
-        if (badge != null && badge.level() != null) {
-            bullets.add("Ton niveau de confiance actuel est " + badge.level().name() + ".");
-        }
-
-        addBulletParagraphs(document, bullets);
+        Paragraph p = new Paragraph();
+        p.setLeading(16f);
+        p.add(new Chunk("Forecast outlook: ", font(11, Font.BOLD, BRAND_DARK)));
+        p.add(new Chunk(buildOutlookText(history, forecast), font(11, Font.NORMAL, BRAND_DARK)));
+        document.add(p);
+        document.add(Chunk.NEWLINE);
     }
 
-    private void addSimpleReading(Document document,
-                                  CashFlowDto.Response currentMonth,
-                                  CashFlowDto.Response previousMonth,
-                                  BurnRateDto.Response burnRate,
-                                  HealthScoreDto.Response health,
-                                  TrustBadgeDto.Response badge,
-                                  java.util.List<RiskCaseDto.Response> openRisks) throws DocumentException {
-
-        java.util.List<String> points = new ArrayList<>();
-
-        if (currentMonth != null) {
-            BigDecimal income = nz(currentMonth.totalIncome());
-            BigDecimal expense = nz(currentMonth.totalExpense());
-
-            if (income.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal expenseRatio = expense.divide(income, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"));
-                points.add("Sur 100 TND encaissés ce mois-ci, environ "
-                        + expenseRatio.setScale(0, RoundingMode.HALF_UP).toPlainString()
-                        + " TND sont repartis en dépenses.");
-            }
-
-            if (nz(currentMonth.cumulativeBalance()).compareTo(BigDecimal.ZERO) > 0) {
-                points.add("Tu termines le mois avec un coussin de trésorerie positif, ce qui te donne une marge de sécurité.");
-            } else {
-                points.add("Tu termines le mois avec une trésorerie fragile ou négative : c'est la priorité à corriger.");
-            }
-        }
-
-        if (burnRate != null) {
-            if (burnRate.runwayMonths() == null) {
-                points.add("Le runway reste difficile à lire faute d'historique complet.");
-            } else if (burnRate.runwayMonths().compareTo(new BigDecimal("4")) >= 0) {
-                points.add("Le runway est confortable : en gardant ce rythme, ton activité peut absorber plusieurs mois de dépenses.");
-            } else if (burnRate.runwayMonths().compareTo(new BigDecimal("2")) >= 0) {
-                points.add("Le runway est moyen : la situation n'est pas critique, mais elle doit être surveillée.");
-            } else {
-                points.add("Le runway est court : une baisse de revenus ou une dépense forte peut vite créer une tension.");
-            }
-        }
-
-        if (health != null && health.highlights() != null) {
-            for (String h : health.highlights()) {
-                if (h != null && !h.isBlank()) {
-                    points.add("Indicateur clé : " + h);
-                }
-            }
-        }
-
-        if (openRisks != null && !openRisks.isEmpty()) {
-            points.add("Tu as " + openRisks.size() + " risk case(s) ouvert(s), ce qui pèse sur la confiance et les recommandations de financement.");
-        } else {
-            points.add("Aucun risk case ouvert : c'est un très bon signal pour la stabilité du profil.");
-        }
-
-        if (badge != null && badge.level() != null) {
-            switch (badge.level()) {
-                case ELITE -> points.add("Ton badge ELITE signifie que ton profil est très rassurant pour des partenaires ou financeurs.");
-                case TRUSTED -> points.add("Ton badge TRUSTED signifie que ton activité montre déjà des signaux solides de discipline financière.");
-                case BUILDING -> points.add("Ton badge BUILDING signifie que ta base est correcte mais qu'il faut encore renforcer la régularité.");
-                case UNVERIFIED -> points.add("Ton badge UNVERIFIED signifie que l'historique ou les signaux de confiance restent encore trop limités.");
-            }
-        }
-
-        addBulletParagraphs(document, points);
-    }
-
-    private void addHistoryTable(Document document,
-                                 java.util.List<CashFlowDto.Response> history,
-                                 CashFlowDto.Response currentMonth,
-                                 CashFlowDto.Response previousMonth) throws DocumentException {
-
+    private void addHistoryTable(Document document, List<CashFlowDto.Response> history) throws DocumentException {
         if (history == null || history.isEmpty()) {
-            document.add(new Paragraph("Pas d'historique disponible.", font(11, Font.NORMAL, BRAND_DARK)));
+            document.add(new Paragraph("No cash flow history available.", font(11, Font.NORMAL, BRAND_DARK)));
             document.add(Chunk.NEWLINE);
             return;
         }
-
-        if (previousMonth != null && currentMonth != null) {
-            Paragraph comparison = new Paragraph(
-                    "Comparaison simple : revenus "
-                            + signedMoney(nz(currentMonth.totalIncome()).subtract(nz(previousMonth.totalIncome())))
-                            + " vs mois précédent, dépenses "
-                            + signedMoney(nz(currentMonth.totalExpense()).subtract(nz(previousMonth.totalExpense())))
-                            + ", net "
-                            + signedMoney(nz(currentMonth.netFlow()).subtract(nz(previousMonth.netFlow()))) + ".",
-                    font(10, Font.NORMAL, BRAND_DARK)
-            );
-            comparison.setSpacingAfter(10f);
-            comparison.setLeading(16f);
-            document.add(comparison);
-        }
-
         PdfPTable table = new PdfPTable(5);
         table.setWidthPercentage(100);
         table.setSpacingAfter(12f);
-        table.setWidths(new float[]{1.25f, 1.05f, 1.05f, 1.05f, 1.15f});
-
-        addHeader(table, "Mois");
-        addHeader(table, "Revenus");
-        addHeader(table, "Dépenses");
+        table.setWidths(new float[]{1.3f, 1.1f, 1.1f, 1.1f, 1.2f});
+        addHeader(table, "Month");
+        addHeader(table, "Income");
+        addHeader(table, "Expense");
         addHeader(table, "Net");
-        addHeader(table, "Solde");
-
+        addHeader(table, "Balance");
         for (CashFlowDto.Response row : history) {
             addCell(table, row.monthStart() != null ? row.monthStart().format(MONTH_FMT) : "—");
-            addCell(table, money(row.totalIncome()), POSITIVE);
-            addCell(table, money(row.totalExpense()), NEGATIVE);
-            addCell(table, signedMoney(row.netFlow()), nz(row.netFlow()).signum() >= 0 ? POSITIVE : NEGATIVE);
+            addCell(table, money(row.totalIncome()));
+            addCell(table, money(row.totalExpense()));
+            addCell(table, money(row.netFlow()), nz(row.netFlow()).signum() >= 0 ? POSITIVE : NEGATIVE);
             addCell(table, money(row.cumulativeBalance()), nz(row.cumulativeBalance()).signum() >= 0 ? POSITIVE : NEGATIVE);
         }
-
         document.add(table);
     }
 
-    private void addBudgetAndSavingsSection(Document document,
-                                            java.util.List<BudgetDto.Response> monthBudgets,
-                                            CashFlowDto.Response currentMonth,
-                                            java.util.List<SavingsGoalDto.Response> goals) throws DocumentException {
-
-        java.util.List<String> bullets = new ArrayList<>();
-
-        BigDecimal totalBudget = monthBudgets == null ? BigDecimal.ZERO : monthBudgets.stream()
-                .map(BudgetDto.Response::limitAmount)
-                .map(this::nz)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalSpent = nz(currentMonth != null ? currentMonth.totalExpense() : null);
-
-        if (monthBudgets == null || monthBudgets.isEmpty()) {
-            bullets.add("Aucun budget n'a été défini pour le mois de référence. Sans plafond, il est plus difficile de piloter les dépenses.");
-        } else {
-            bullets.add("Le budget total du mois est de " + money(totalBudget) + ".");
-            bullets.add("Les dépenses du mois sont de " + money(totalSpent) + ".");
-
-            if (totalBudget.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal usage = totalSpent.divide(totalBudget, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"));
-                bullets.add("Tu as utilisé environ " + usage.setScale(0, RoundingMode.HALF_UP).toPlainString() + "% du budget déclaré.");
-            }
-        }
-
-        if (goals == null || goals.isEmpty()) {
-            bullets.add("Aucun objectif d'épargne n'est enregistré. Pour un jeune entrepreneur, même un petit coussin d'épargne est utile.");
-        } else {
-            long completed = goals.stream().filter(g -> Boolean.TRUE.equals(g.completed())).count();
-            bullets.add("Tu as " + goals.size() + " objectif(s) d'épargne, dont " + completed + " déjà atteint(s).");
-        }
-
-        addBulletParagraphs(document, bullets);
-
-        if (monthBudgets != null && !monthBudgets.isEmpty()) {
-            PdfPTable budgetTable = new PdfPTable(3);
-            budgetTable.setWidthPercentage(100);
-            budgetTable.setSpacingBefore(8f);
-            budgetTable.setSpacingAfter(12f);
-            budgetTable.setWidths(new float[]{1.4f, 1f, 1f});
-
-            addHeader(budgetTable, "Catégorie");
-            addHeader(budgetTable, "Plafond");
-            addHeader(budgetTable, "Mois");
-
-            for (BudgetDto.Response budget : monthBudgets) {
-                addCell(budgetTable, safe(budget.category(), "GLOBAL"));
-                addCell(budgetTable, money(budget.limitAmount()));
-                addCell(budgetTable, budget.monthStart() != null ? budget.monthStart().format(MONTH_FMT) : "—");
-            }
-
-            document.add(budgetTable);
-        }
-
-        if (goals != null && !goals.isEmpty()) {
-            PdfPTable goalTable = new PdfPTable(4);
-            goalTable.setWidthPercentage(100);
-            goalTable.setSpacingBefore(6f);
-            goalTable.setSpacingAfter(6f);
-            goalTable.setWidths(new float[]{1.5f, 1.1f, 1.1f, 1.1f});
-
-            addHeader(goalTable, "Objectif");
-            addHeader(goalTable, "Progression");
-            addHeader(goalTable, "Hebdo");
-            addHeader(goalTable, "Statut");
-
-            for (SavingsGoalDto.Response goal : goals.stream().limit(4).toList()) {
-                addCell(goalTable, safe(goal.name(), "Objectif"));
-                addCell(goalTable, money(goal.currentAmount()) + " / " + money(goal.targetAmount()));
-                addCell(goalTable, money(goal.weeklyTarget()));
-                addCell(goalTable, Boolean.TRUE.equals(goal.completed()) ? "Atteint" : "En cours",
-                        Boolean.TRUE.equals(goal.completed()) ? POSITIVE : BRAND_DARK);
-            }
-
-            document.add(goalTable);
-        }
-    }
-
-    private void addForecastSection(Document document,
-                                    ForecastDto.Response forecast,
-                                    BurnRateDto.Response burnRate) throws DocumentException {
-
+    private void addForecastTable(Document document, ForecastDto.Response forecast) throws DocumentException {
         if (forecast == null || forecast.months() == null || forecast.months().isEmpty()) {
-            document.add(new Paragraph("Prévision indisponible.", font(11, Font.NORMAL, BRAND_DARK)));
+            document.add(new Paragraph("No forecast available.", font(11, Font.NORMAL, BRAND_DARK)));
             document.add(Chunk.NEWLINE);
             return;
         }
-
-        java.util.List<String> bullets = new ArrayList<>();
-        bullets.add("Méthode utilisée : " + safe(forecast.forecastMethod(), "NO_DATA") + ".");
-        bullets.add("Niveau de confiance : " + safe(forecast.confidenceLevel(), "LOW") + ".");
-        bullets.add("Qualité de l'historique : " + safe(forecast.historyQuality(), "LIMITED") + ".");
-        bullets.add("Tendance revenus : " + safe(forecast.incomeTrend(), "UNKNOWN") + ".");
-        bullets.add("Tendance dépenses : " + safe(forecast.expenseTrend(), "UNKNOWN") + ".");
-
-        if (forecast.avgPredictedNetFlow() != null) {
-            if (forecast.avgPredictedNetFlow().signum() >= 0) {
-                bullets.add("La prévision moyenne reste positive sur les 3 prochains mois.");
-            } else {
-                bullets.add("La prévision moyenne est négative : il faut resserrer la gestion à court terme.");
-            }
-        }
-
-        if (forecast.projectedCashoutDate() != null) {
-            bullets.add("Attention : rupture de trésorerie projetée autour du " + forecast.projectedCashoutDate().format(DAY_FMT) + ".");
-        }
-
-        if (burnRate != null && burnRate.finCoachTips() != null) {
-            for (String tip : burnRate.finCoachTips().stream().limit(2).toList()) {
-                bullets.add("Conseil FinCoach : " + tip);
-            }
-        }
-
-        addBulletParagraphs(document, bullets);
+        Paragraph meta = new Paragraph(
+                "Method: " + safe(forecast.forecastMethod(), "NO_DATA") + "   |   Confidence: " + safe(forecast.confidenceLevel(), "LOW") + "   |   History quality: " + safe(forecast.historyQuality(), "LOW"),
+                font(10, Font.NORMAL, BRAND_DARK));
+        meta.setSpacingAfter(10f);
+        document.add(meta);
 
         PdfPTable table = new PdfPTable(5);
         table.setWidthPercentage(100);
-        table.setSpacingBefore(8f);
         table.setSpacingAfter(12f);
-        table.setWidths(new float[]{1.15f, 1.05f, 1.05f, 1.05f, 1.15f});
-
-        addHeader(table, "Mois");
-        addHeader(table, "Revenus");
-        addHeader(table, "Dépenses");
-        addHeader(table, "Net");
-        addHeader(table, "Solde prévu");
-
+        table.setWidths(new float[]{1.2f, 1.1f, 1.1f, 1.1f, 1.2f});
+        addHeader(table, "Forecast Month");
+        addHeader(table, "Pred. Income");
+        addHeader(table, "Pred. Expense");
+        addHeader(table, "Pred. Net");
+        addHeader(table, "Pred. Balance");
         for (ForecastDto.ForecastMonth m : forecast.months()) {
             addCell(table, m.monthStart() != null ? m.monthStart().format(MONTH_FMT) : "—");
-            addCell(table, money(m.predictedIncome()), POSITIVE);
-            addCell(table, money(m.predictedExpense()), NEGATIVE);
-            addCell(table, signedMoney(m.predictedNetFlow()),
-                    nz(m.predictedNetFlow()).signum() >= 0 ? POSITIVE : NEGATIVE);
-            addCell(table, money(m.predictedBalance()),
-                    nz(m.predictedBalance()).signum() >= 0 ? POSITIVE : NEGATIVE);
+            addCell(table, money(m.predictedIncome()));
+            addCell(table, money(m.predictedExpense()));
+            addCell(table, money(m.predictedNetFlow()), nz(m.predictedNetFlow()).signum() >= 0 ? POSITIVE : NEGATIVE);
+            addCell(table, money(m.predictedBalance()), nz(m.predictedBalance()).signum() >= 0 ? POSITIVE : NEGATIVE);
         }
-
         document.add(table);
+        if (forecast.projectedCashoutDate() != null) {
+            addWarningBox(document, "Projected cash-out date: " + forecast.projectedCashoutDate());
+        }
+        document.add(Chunk.NEWLINE);
     }
 
-    private void addProductRecommendations(Document document,
-                                           java.util.List<BudgetDto.Response> monthBudgets,
-                                           BurnRateDto.Response burnRate,
-                                           HealthScoreDto.Response health,
-                                           TrustBadgeDto.Response badge,
-                                           java.util.List<RiskCaseDto.Response> openRisks) throws DocumentException {
-
-        java.util.List<ProductPack> packs = buildProductPacks(monthBudgets, burnRate, health, badge, openRisks);
-
-        Paragraph intro = new Paragraph(
-                "Ces packs sont des propositions de démonstration HELMA. Ils aident à illustrer quel type de produit pourrait convenir selon le profil du mois.",
-                font(10, Font.NORMAL, BRAND_DARK)
-        );
-        intro.setLeading(16f);
-        intro.setSpacingAfter(10f);
-        document.add(intro);
-
-        for (ProductPack pack : packs) {
-            PdfPTable box = new PdfPTable(1);
-            box.setWidthPercentage(100);
-            box.setSpacingAfter(10f);
-
-            PdfPCell cell = new PdfPCell();
-            cell.setPadding(14f);
-            cell.setBackgroundColor(BRAND_SOFT);
-            cell.setBorderColor(BORDER);
-
-            Paragraph p1 = new Paragraph(pack.type + " · " + pack.name, font(13, Font.BOLD, BRAND_DARK));
-            p1.setSpacingAfter(6f);
-            cell.addElement(p1);
-
-            Paragraph p2 = new Paragraph(pack.description, font(10, Font.NORMAL, BRAND_DARK));
-            p2.setLeading(16f);
-            p2.setSpacingAfter(6f);
-            cell.addElement(p2);
-
-            Paragraph p3 = new Paragraph("Pourquoi ce pack : " + pack.why, font(10, Font.NORMAL, MUTED));
-            p3.setLeading(15f);
-            p3.setSpacingAfter(6f);
-            cell.addElement(p3);
-
-            Paragraph p4 = new Paragraph("Lien démo : " + pack.fakeLink, font(9, Font.UNDERLINE, BRAND_MINT));
-            cell.addElement(p4);
-
-            box.addCell(cell);
-            document.add(box);
-        }
-    }
-
-    private void addActionPlan(Document document,
-                               CashFlowDto.Response currentMonth,
-                               BurnRateDto.Response burnRate,
-                               HealthScoreDto.Response health,
-                               java.util.List<BudgetDto.Response> monthBudgets,
-                               java.util.List<SavingsGoalDto.Response> goals,
-                               java.util.List<RiskCaseDto.Response> openRisks) throws DocumentException {
-
-        List bullets = new List(List.UNORDERED);
-        bullets.setIndentationLeft(16f);
-
-        if (currentMonth != null && nz(currentMonth.netFlow()).signum() < 0) {
-            bullets.add(new ListItem("Réduis immédiatement 1 à 2 dépenses non essentielles le mois prochain.", font(10, Font.NORMAL, BRAND_DARK)));
-        } else {
-            bullets.add(new ListItem("Protège le flux net positif en gardant la discipline sur les dépenses.", font(10, Font.NORMAL, BRAND_DARK)));
-        }
-
-        if (monthBudgets == null || monthBudgets.isEmpty()) {
-            bullets.add(new ListItem("Définis au moins 2 budgets simples : fonctionnement et développement.", font(10, Font.NORMAL, BRAND_DARK)));
-        } else {
-            bullets.add(new ListItem("Revois les catégories budget les plus sensibles avant le début du prochain mois.", font(10, Font.NORMAL, BRAND_DARK)));
-        }
-
-        if (goals == null || goals.isEmpty()) {
-            bullets.add(new ListItem("Crée un objectif d'épargne de sécurité, même petit, pour bâtir un coussin de trésorerie.", font(10, Font.NORMAL, BRAND_DARK)));
-        } else {
-            bullets.add(new ListItem("Continue les versements réguliers sur tes objectifs d'épargne actifs.", font(10, Font.NORMAL, BRAND_DARK)));
-        }
-
-        if (burnRate != null && burnRate.runwayMonths() != null && burnRate.runwayMonths().compareTo(new BigDecimal("3")) < 0) {
-            bullets.add(new ListItem("Priorité : allonger le runway à plus de 3 mois avant toute dépense ambitieuse.", font(10, Font.NORMAL, BRAND_DARK)));
-        }
-
-        if (openRisks != null && !openRisks.isEmpty()) {
-            bullets.add(new ListItem("Ferme ou traite les risk cases ouverts pour améliorer la confiance du profil.", font(10, Font.NORMAL, BRAND_DARK)));
-        }
-
-        if (health != null && health.score() != null && health.score().compareTo(new BigDecimal("70")) < 0) {
-            bullets.add(new ListItem("Objectif du prochain cycle : pousser le health score au-dessus de 70 grâce à un meilleur budget, plus de stabilité et moins de risques.", font(10, Font.NORMAL, BRAND_DARK)));
-        }
-
+    private void addRecommendations(Document document, List<CashFlowDto.Response> history, ForecastDto.Response forecast) throws DocumentException {
+        com.lowagie.text.List bullets = new com.lowagie.text.List(com.lowagie.text.List.UNORDERED);
+        bullets.setIndentationLeft(14f);
+        if (forecast != null && forecast.alerts() != null) { for (String alert : forecast.alerts()) { bullets.add(new ListItem(alert, font(10, Font.NORMAL, BRAND_DARK))); } }
+        if (forecast != null && forecast.explanations() != null) { for (String exp : forecast.explanations()) { bullets.add(new ListItem(exp, font(10, Font.NORMAL, BRAND_DARK))); } }
+        BigDecimal latestBalance = history.isEmpty() ? BigDecimal.ZERO : nz(history.get(history.size() - 1).cumulativeBalance());
+        if (latestBalance.signum() < 0) { bullets.add(new ListItem("Immediate action recommended: current cumulative balance is negative.", font(10, Font.NORMAL, BRAND_DARK))); }
+        if (forecast != null && forecast.avgPredictedNetFlow() != null && forecast.avgPredictedNetFlow().signum() < 0) { bullets.add(new ListItem("The average predicted net flow is negative. Review expenses.", font(10, Font.NORMAL, BRAND_DARK))); }
+        else { bullets.add(new ListItem("Use the positive forecast window to build a treasury buffer.", font(10, Font.NORMAL, BRAND_DARK))); }
         document.add(bullets);
+        document.add(Chunk.NEWLINE);
     }
 
     private void addMethodology(Document document, ForecastDto.Response forecast) throws DocumentException {
         Paragraph p = new Paragraph(
-                "Ce document est construit automatiquement à partir des cash flows mensuels, prévisions, budgets, objectifs d'épargne, risk cases et scores HELMA. "
-                        + "Les chiffres de prévision restent indicatifs et servent d'aide à la décision. "
-                        + "Méthode de forecast : " + safe(forecast != null ? forecast.forecastMethod() : null, "NO_DATA") + ".",
-                font(10, Font.NORMAL, BRAND_DARK)
-        );
+                "This report is automatically generated from historical cash flow summaries and forecast outputs available in HELMA. "
+                        + "Forecast values are indicative and depend on the quality of historical data (" + safe(forecast != null ? forecast.forecastMethod() : null, "NO_DATA") + "). "
+                        + "It should be used as a decision-support document, not as a guaranteed financial outcome.",
+                font(10, Font.NORMAL, BRAND_DARK));
         p.setLeading(16f);
         document.add(p);
     }
 
-    private java.util.List<ProductPack> buildProductPacks(java.util.List<BudgetDto.Response> monthBudgets,
-                                                          BurnRateDto.Response burnRate,
-                                                          HealthScoreDto.Response health,
-                                                          TrustBadgeDto.Response badge,
-                                                          java.util.List<RiskCaseDto.Response> openRisks) {
-        java.util.List<ProductPack> packs = new ArrayList<>();
-
-        boolean riskLight = openRisks == null || openRisks.isEmpty();
-        BigDecimal runway = burnRate != null ? burnRate.runwayMonths() : null;
-        BigDecimal healthScore = health != null ? health.score() : null;
-        String badgeLevel = badge != null && badge.level() != null ? badge.level().name() : "UNVERIFIED";
-
-        java.util.List<String> categories = monthBudgets == null
-                ? java.util.List.of()
-                : monthBudgets.stream()
-                .map(BudgetDto.Response::category)
-                .filter(c -> c != null && !c.isBlank())
-                .map(String::toUpperCase)
-                .toList();
-
-        boolean leaseFit = containsAny(categories, "SOFTWARE", "EQUIPMENT", "LAPTOP", "COMPUTER", "TOOLS", "MACHINE", "LOCAL", "RENT");
-        boolean loanFit = containsAny(categories, "MARKETING", "STOCK", "INVENTORY", "TRANSPORT", "PAYROLL", "CAMPAIGN", "RAW", "FOOD", "PROJECT X");
-
-        if (leaseFit) {
-            packs.add(new ProductPack(
-                    "MICRO-LEASE",
-                    "Smart Equip Flex",
-                    "Pack conçu pour financer un équipement, un outil digital, un laptop ou un besoin matériel léger avec paiement progressif.",
-                    "Tes budgets montrent un besoin orienté matériel / outil / exploitation. C'est typiquement un bon cas d'usage micro-lease.",
-                    "https://helma-demo.local/packs/smart-equip-flex"
-            ));
-        }
-
-        if (loanFit) {
-            packs.add(new ProductPack(
-                    "MICRO-LOAN",
-                    "Boost Cash Starter",
-                    "Pack court terme pensé pour stock, marketing, roulement ou lancement d'une petite opération commerciale.",
-                    "Tes catégories budgétaires montrent un besoin de cash opérationnel plus qu'un besoin d'actif à louer.",
-                    "https://helma-demo.local/packs/boost-cash-starter"
-            ));
-        }
-
-        if ((runway != null && runway.compareTo(new BigDecimal("3")) < 0) || !riskLight || (healthScore != null && healthScore.compareTo(new BigDecimal("70")) < 0)) {
-            packs.add(new ProductPack(
-                    "ÉPARGNE",
-                    "Safe Buffer Mini",
-                    "Pack d'épargne progressif pour construire un mini coussin de sécurité avant d'augmenter l'endettement ou les charges fixes.",
-                    "Le profil du mois montre qu'il faut d'abord consolider la sécurité financière avant de pousser plus loin le financement.",
-                    "https://helma-demo.local/packs/safe-buffer-mini"
-            ));
-        }
-
-        if ("TRUSTED".equals(badgeLevel) || "ELITE".equals(badgeLevel)) {
-            packs.add(new ProductPack(
-                    "MICRO-LOAN",
-                    "Growth Sprint 3M",
-                    "Pack de démonstration pour soutenir une montée en charge sur 3 mois quand le profil est déjà assez rassurant.",
-                    "Le badge et les indicateurs du profil montrent une capacité à envisager un financement de croissance plus sereinement.",
-                    "https://helma-demo.local/packs/growth-sprint-3m"
-            ));
-        }
-
-        if (packs.isEmpty()) {
-            packs.add(new ProductPack(
-                    "ÉPARGNE",
-                    "Starter Discipline Pack",
-                    "Pack d'épargne de départ pour structurer le comportement financier avant d'ouvrir l'accès à d'autres produits.",
-                    "Aucun besoin produit très net ne ressort encore des catégories ou du profil du mois.",
-                    "https://helma-demo.local/packs/starter-discipline-pack"
-            ));
-        }
-
-        return packs.stream().limit(4).toList();
-    }
-
-    private boolean containsAny(java.util.List<String> categories, String... patterns) {
-        for (String category : categories) {
-            for (String pattern : patterns) {
-                if (category.contains(pattern)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+    /* ── Shared formatting ──────────────────────────────────────────── */
 
     private void addSectionTitle(Document document, String title) throws DocumentException {
-        Paragraph p = new Paragraph(title, font(15, Font.BOLD, BRAND_DARK));
+        Paragraph p = new Paragraph(title, font(15, Font.BOLD, BRAND_PURPLE));
         p.setSpacingBefore(10f);
         p.setSpacingAfter(10f);
         document.add(p);
     }
 
-    private void addBulletParagraphs(Document document, java.util.List<String> bullets) throws DocumentException {
-        List list = new List(List.UNORDERED);
-        list.setIndentationLeft(16f);
-
-        for (String bullet : bullets) {
-            if (bullet != null && !bullet.isBlank()) {
-                list.add(new ListItem(bullet, font(10, Font.NORMAL, BRAND_DARK)));
-            }
-        }
-
-        document.add(list);
-        document.add(Chunk.NEWLINE);
-    }
-
-    private PdfPCell chipCell(String label, String value, Color accent) {
-        PdfPCell cell = new PdfPCell();
-        cell.setPadding(12f);
-        cell.setBackgroundColor(Color.WHITE);
-        cell.setBorderColor(BORDER);
-
-        Paragraph l = new Paragraph(label, font(9, Font.NORMAL, MUTED));
-        Paragraph v = new Paragraph(value, font(13, Font.BOLD, accent));
-        v.setSpacingBefore(6f);
-
-        cell.addElement(l);
-        cell.addElement(v);
-        return cell;
-    }
-
     private PdfPCell kpiCell(String label, String value, Color valueColor) {
         PdfPCell cell = new PdfPCell();
         cell.setPadding(12f);
+        cell.setBorderColor(new Color(220, 220, 230));
         cell.setBackgroundColor(Color.WHITE);
-        cell.setBorderColor(BORDER);
-
-        Paragraph l = new Paragraph(label, font(9, Font.NORMAL, MUTED));
+        cell.addElement(new Paragraph(label, font(9, Font.NORMAL, new Color(100, 100, 120))));
         Paragraph v = new Paragraph(value, font(13, Font.BOLD, valueColor));
         v.setSpacingBefore(6f);
-
-        cell.addElement(l);
         cell.addElement(v);
         return cell;
     }
@@ -732,15 +703,21 @@ public class CashFlowPdfReportService {
         table.addCell(cell);
     }
 
-    private void addCell(PdfPTable table, String text) {
-        addCell(table, text, BRAND_DARK);
-    }
+    private void addCell(PdfPTable table, String text) { addCell(table, text, BRAND_DARK); }
 
     private void addCell(PdfPTable table, String text, Color color) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font(9, Font.NORMAL, color)));
         cell.setPadding(7f);
-        cell.setBorderColor(BORDER);
+        cell.setBorderColor(new Color(225, 225, 235));
         table.addCell(cell);
+    }
+
+    private Paragraph line(String label, String value) {
+        Paragraph p = new Paragraph();
+        p.setLeading(18f);
+        p.add(new Chunk(label + ": ", font(11, Font.BOLD, BRAND_PURPLE)));
+        p.add(new Chunk(value, font(11, Font.NORMAL, BRAND_DARK)));
+        return p;
     }
 
     private Font font(float size, int style, Color color) {
@@ -748,77 +725,50 @@ public class CashFlowPdfReportService {
     }
 
     private String money(BigDecimal value) {
-        return nz(value).setScale(0, RoundingMode.HALF_UP).toPlainString() + " TND";
+        return nz(value).setScale(0, RoundingMode.HALF_UP) + " TND";
     }
 
-    private String signedMoney(BigDecimal value) {
-        BigDecimal v = nz(value).setScale(0, RoundingMode.HALF_UP);
-        return (v.signum() >= 0 ? "+" : "") + v.toPlainString() + " TND";
-    }
-
-    private BigDecimal nz(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
-    }
+    private BigDecimal nz(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
 
     private String safe(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    private String safeEnum(Enum<?> value) {
-        return value == null ? "N/A" : value.name();
+    private String buildOutlookText(List<CashFlowDto.Response> history, ForecastDto.Response forecast) {
+        BigDecimal latestBalance = history.isEmpty() ? BigDecimal.ZERO : nz(history.get(history.size() - 1).cumulativeBalance());
+        if (latestBalance.signum() < 0) return "Current liquidity is under pressure — latest cumulative balance is negative.";
+        if (forecast != null && forecast.projectedCashoutDate() != null) return "Forecast indicates a cash-out risk around " + forecast.projectedCashoutDate() + ".";
+        if (forecast != null && nz(forecast.avgPredictedNetFlow()).signum() >= 0) return "Forecast suggests a stable or positive short-term cash position.";
+        return "Forecast shows pressure on operating cash — tighten expense control.";
     }
 
-    private record ProductPack(
-            String type,
-            String name,
-            String description,
-            String why,
-            String fakeLink
-    ) {}
+    /* ── Header/Footer ──────────────────────────────────────────────── */
 
     private static class HeaderFooterEvent extends PdfPageEventHelper {
         private final String userName;
-        private final LocalDate referenceMonth;
+        private final String reportType;
 
-        private HeaderFooterEvent(String userName, LocalDate referenceMonth) {
+        private HeaderFooterEvent(String userName, String reportType) {
             this.userName = userName;
-            this.referenceMonth = referenceMonth;
+            this.reportType = reportType;
         }
 
         @Override
         public void onEndPage(PdfWriter writer, Document document) {
             PdfContentByte cb = writer.getDirectContent();
             cb.saveState();
-
-            cb.setColorStroke(new Color(220, 231, 229));
+            cb.setColorStroke(new Color(220, 220, 230));
             cb.moveTo(document.left(), document.top() + 12);
             cb.lineTo(document.right(), document.top() + 12);
             cb.stroke();
-
-            ColumnText.showTextAligned(
-                    cb,
-                    Element.ALIGN_LEFT,
-                    new Phrase(
-                            "HELMA · Brief mensuel · " + userName + " · " + (referenceMonth != null ? referenceMonth.format(MONTH_FMT) : "—"),
-                            FontFactory.getFont(FontFactory.HELVETICA, 8, Font.NORMAL, new Color(100, 120, 120))
-                    ),
-                    document.left(),
-                    document.top() + 18,
-                    0
-            );
-
-            ColumnText.showTextAligned(
-                    cb,
-                    Element.ALIGN_RIGHT,
-                    new Phrase(
-                            "Page " + writer.getPageNumber(),
-                            FontFactory.getFont(FontFactory.HELVETICA, 8, Font.NORMAL, new Color(100, 120, 120))
-                    ),
-                    document.right(),
-                    document.bottom() - 18,
-                    0
-            );
-
+            ColumnText.showTextAligned(cb, Element.ALIGN_LEFT,
+                    new Phrase("HELMA · " + reportType + " · " + userName,
+                            FontFactory.getFont(FontFactory.HELVETICA, 8, Font.NORMAL, new Color(110, 110, 130))),
+                    document.left(), document.top() + 18, 0);
+            ColumnText.showTextAligned(cb, Element.ALIGN_RIGHT,
+                    new Phrase("Page " + writer.getPageNumber(),
+                            FontFactory.getFont(FontFactory.HELVETICA, 8, Font.NORMAL, new Color(110, 110, 130))),
+                    document.right(), document.bottom() - 18, 0);
             cb.restoreState();
         }
     }

@@ -118,7 +118,7 @@ public class RiskEngineService {
         if (base.compareTo(ZERO) > 0) {
             BigDecimal spikeRatio = spendCurrentMonth.divide(base, 6, RoundingMode.HALF_UP);
             BigDecimal capped = min(spikeRatio, TWO);
-            spikeScore = capped.divide(TWO, 6, RoundingMode.HALF_UP).multiply(HUNDRED);
+            spikeScore = capped.divide(TWO, 6, RoundingMode.HALF_UP).multiply(HUNDRED); //Même si l’utilisateur n’a pas dépassé officiellement son budget, une hausse brutale par rapport à son comportement normal peut être un signal faible.
 
             if (spikeRatio.compareTo(new BigDecimal("1.20")) >= 0) {
                 reasons.add("SPENDING_SPIKE_VS_BASELINE");
@@ -129,9 +129,10 @@ public class RiskEngineService {
 
         Instant now = Instant.now();
         Instant last7d = now.minus(Duration.ofDays(7));
-        BigDecimal max7d = nz(txRepo.maxExpenseForUserBetween(userId, last7d, now));
-
-        BigDecimal highAmountScore = mapLinearTo100(max7d, BIGTX_MIN, BIGTX_MAX);
+        BigDecimal max7d = nz(txRepo.maxExpenseForUserBetween(userId, last7d, now));//e moteur regarde la plus grande dépense sur les 7 derniers jours ://
+//transformation linéaire entre 200 et 2000 vers un score 0..100
+//si max7d >= 1000, raison LARGE_TXN_LAST_7D
+        BigDecimal highAmountScore = mapLinearTo100(max7d, BIGTX_MIN, BIGTX_MAX);//transforme cette valeur en score entre 0 et 100 via mapLinearTo100(max7d, 200, 2000).
         if (max7d.compareTo(new BigDecimal("1000")) >= 0) {
             reasons.add("LARGE_TXN_LAST_7D");
         }
