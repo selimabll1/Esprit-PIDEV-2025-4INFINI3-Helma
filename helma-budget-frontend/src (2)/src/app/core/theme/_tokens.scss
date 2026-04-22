@@ -1,0 +1,64 @@
+:root {
+  /* Brand */
+  --helma-gold: #D4A62A;
+  --helma-gold-dark: #B88C1F;
+  --helma-gold-soft: #F3E2A9;
+
+  --helma-teal: #0F6B68;
+  --helma-teal-dark: #0C5754;
+  --helma-teal-soft: #D9EFEE;
+
+  --helma-ivory: #FCFAF5;
+  --helma-mint: #DDF4EC;
+
+  /* Neutrals */
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #FCFAF5;
+  --color-text: #1F2937;
+  --color-text-muted: #6B7280;
+  --color-border: #E5E7EB;
+
+  /* Semantic */
+  --color-success: #22A06B;
+  --color-warning: #E6A700;
+  --color-danger: #D64545;
+  --color-info: #5BA8F5;
+
+  /* Typography */
+  --font-family-base: "Manrope", sans-serif;
+
+  --fs-h1: 40px;
+  --fs-h2: 32px;
+  --fs-h3: 24px;
+  --fs-h4: 20px;
+  --fs-body-lg: 16px;
+  --fs-body: 14px;
+  --fs-caption: 12px;
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 18px 40px rgba(15, 23, 42, 0.10);
+
+  /* Layout */
+  --navbar-height: 76px;
+  --container-width: 1200px;
+}

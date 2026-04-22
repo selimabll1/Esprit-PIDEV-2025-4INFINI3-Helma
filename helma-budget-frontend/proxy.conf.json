@@ -1,0 +1,14 @@
+{
+  "/api": {
+    "target": "http://localhost:8082/f",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/auth": {
+    "target": "http://localhost:8082/f",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
