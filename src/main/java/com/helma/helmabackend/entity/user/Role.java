@@ -1,7 +1,7 @@
 package com.helma.helmabackend.entity.user;
 
 public enum Role {
-    FOUNDER,
+    YOUTH_BENEFICIARY,
     INVESTOR,
     ADMIN,
     COMPLIANCE

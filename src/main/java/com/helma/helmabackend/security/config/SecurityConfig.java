@@ -38,6 +38,9 @@ public class SecurityConfig {
                         "/api/crowdfunding/campaigns/*"
                 ).permitAll()
 
+                .requestMatchers(HttpMethod.GET, "/api/users/me/profile").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/me/profile").authenticated()
+
                 .requestMatchers(
                         "/api/crowdfunding/admin/pledges/**",
                         "/api/crowdfunding/admin/payments/**",
@@ -51,7 +54,7 @@ public class SecurityConfig {
                 ).hasRole("INVESTOR")
 
                 .requestMatchers("/api/crowdfunding/**")
-                .hasAnyRole("FOUNDER", "ADMIN", "COMPLIANCE")
+                .hasAnyRole("YOUTH_BENEFICIARY", "ADMIN", "COMPLIANCE")
 
                 .anyRequest().authenticated()
         );

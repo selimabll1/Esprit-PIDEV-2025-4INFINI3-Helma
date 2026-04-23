@@ -42,15 +42,13 @@ public class CrowdfundingController {
         this.paymentService = paymentService;
     }
 
-    // =========================================================
-    // PUBLIC / INVESTOR CAMPAIGNS
-    // =========================================================
-
     @GetMapping("/campaigns")
     public List<CampaignResponse> listApprovedCampaigns(
-            @RequestParam(name = "sort", required = false, defaultValue = "newest") String sort)
+            @RequestParam(name = "sort", required = false, defaultValue = "newest") String sort,
+            @RequestParam(name = "sortDir", required = false) String sortDir,
+            @ModelAttribute ApplicationRaiseSearchCriteria criteria)
     {
-        return pledgeService.listApprovedCampaigns(sort);
+        return pledgeService.listApprovedCampaigns(sort, sortDir, criteria);
     }
 
     @GetMapping("/campaigns/{id}")
@@ -131,10 +129,6 @@ public class CrowdfundingController {
         return paymentService.adminMockPatchPaymentStatus(paymentId, req);
     }
 
-    // =========================================================
-    // CREATE (JSON)
-    // =========================================================
-
     @PostMapping(value = "/donations", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ApplicationRaiseResponse createDonation(
             @Valid @RequestBody ApplicationRaiseCreateRequest application
@@ -148,10 +142,6 @@ public class CrowdfundingController {
     ) {
         return service.createEquityDraftMerged(payload);
     }
-
-    // =========================================================
-    // UPDATE (JSON)
-    // =========================================================
 
     @PutMapping(value = "/donations/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ApplicationRaiseResponse updateDonationDraft(
@@ -169,10 +159,6 @@ public class CrowdfundingController {
         return service.updateEquityDraftMerged(id, payload);
     }
 
-    // =========================================================
-    // DOCUMENTS (multipart, explicit type)
-    // =========================================================
-
     @PostMapping(
             value = "/application-raises/{id}/documents",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -182,7 +168,7 @@ public class CrowdfundingController {
             @RequestParam("type") DocumentType type,
             @RequestPart("file") MultipartFile file
     ) {
-        return documentService.uploadFounderDocument(id, type, file);
+        return documentService.uploadOwnerDocument(id, type, file);
     }
 
     @GetMapping("/application-raises/{id}/documents")
@@ -195,12 +181,8 @@ public class CrowdfundingController {
             @PathVariable Long id,
             @PathVariable DocumentType type
     ) {
-        documentService.deleteFounderDocument(id, type);
+        documentService.deleteOwnerDocument(id, type);
     }
-
-    // =========================================================
-    // DELETE
-    // =========================================================
 
     @DeleteMapping("/donations/{id}")
     public void deleteDonationDraft(@PathVariable Long id) {
@@ -212,13 +194,9 @@ public class CrowdfundingController {
         service.deleteEquityDraft(id);
     }
 
-    // =========================================================
-    // READ
-    // =========================================================
-
     @GetMapping("/application-raises/mine")
-    public List<ApplicationRaiseResponse> myApplications() {
-        return service.listMyApplications();
+    public List<ApplicationRaiseResponse> myApplications(@ModelAttribute ApplicationRaiseSearchCriteria criteria) {
+        return service.listMyApplications(criteria);
     }
 
     @GetMapping("/application-raises/{id}")
@@ -226,16 +204,12 @@ public class CrowdfundingController {
         return service.getById(id);
     }
 
-    // =========================================================
-    // STATUS (PATCH one field)
-    // =========================================================
-
     @PatchMapping("/application-raises/{id}/status")
-    public ApplicationRaiseResponse founderPatchStatus(
+    public ApplicationRaiseResponse youthPatchStatus(
             @PathVariable Long id,
             @Valid @RequestBody ApplicationRaiseStatusPatchRequest req
     ) {
-        return service.founderPatchStatus(id, req);
+        return service.youthPatchStatus(id, req);
     }
 
     @PatchMapping("/application-raises/{id}/admin/status")
@@ -246,13 +220,9 @@ public class CrowdfundingController {
         return service.adminPatchStatus(id, req);
     }
 
-    // =========================================================
-    // ADMIN LIST
-    // =========================================================
-
     @GetMapping("/application-raises/admin")
-    public List<ApplicationRaiseResponse> adminListAll() {
-        return service.adminListAll();
+    public List<ApplicationRaiseResponse> adminListAll(@ModelAttribute ApplicationRaiseSearchCriteria criteria) {
+        return service.adminListAll(criteria);
     }
 
     @GetMapping(

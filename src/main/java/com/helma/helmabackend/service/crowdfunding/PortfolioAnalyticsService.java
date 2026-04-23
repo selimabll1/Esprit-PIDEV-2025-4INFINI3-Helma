@@ -26,7 +26,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -258,155 +267,108 @@ public class PortfolioAnalyticsService {
         Set<SubSector> distinctSubSectors = new LinkedHashSet<>();
         Set<AppTag> distinctTags = new LinkedHashSet<>();
 
-        for (PortfolioPositionResponse position : positions) {
-            if (position.sector != null) distinctSectors.add(position.sector);
-            if (position.subSector != null) distinctSubSectors.add(position.subSector);
-            if (position.tags != null) {
-                for (AppTag tag : position.tags) {
-                    if (tag != null) distinctTags.add(tag);
-                }
-            }
+        for (PortfolioPositionResponse p : positions) {
+            if (p.sector != null) distinctSectors.add(p.sector);
+            if (p.subSector != null) distinctSubSectors.add(p.subSector);
+            if (p.tags != null) distinctTags.addAll(p.tags);
         }
 
         d.distinctSectors = distinctSectors.size();
         d.distinctSubSectors = distinctSubSectors.size();
         d.distinctTags = distinctTags.size();
 
-        d.largestPositionWeightPct = positions.isEmpty()
-                ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
-                : zero(positions.get(0).positionWeightPct).setScale(2, RoundingMode.HALF_UP);
-
         d.top3PositionsWeightPct = positions.stream()
                 .limit(3)
                 .map(p -> zero(p.positionWeightPct))
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .setScale(3, RoundingMode.HALF_UP);
 
-        d.largestSectorWeightPct = sectorAllocation.isEmpty()
-                ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
-                : zero(sectorAllocation.get(0).weightPct).setScale(2, RoundingMode.HALF_UP);
+        d.largestSectorWeightPct = sectorAllocation.stream()
+                .map(a -> zero(a.weightPct))
+                .max(Comparator.naturalOrder())
+                .orElse(BigDecimal.ZERO)
+                .setScale(3, RoundingMode.HALF_UP);
 
-        d.concentrationIndexHhi = calculateHhi(positions);
+        BigDecimal hhi = positions.stream()
+                .map(p -> {
+                    BigDecimal weight = zero(p.positionWeightPct);
+                    return weight.multiply(weight);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(TEN_THOUSAND, 6, RoundingMode.HALF_UP);
+
+        d.concentrationIndexHhi = hhi.setScale(6, RoundingMode.HALF_UP);
 
         int score = 100;
-        int breadthPenalty = 0;
-        int positionPenalty = 0;
-        int sectorPenalty = 0;
+        score -= Math.max(0, positions.size() < 5 ? (5 - positions.size()) * 6 : 0);
+        score -= Math.max(0, distinctSectors.size() < 3 ? (3 - distinctSectors.size()) * 8 : 0);
+        score -= Math.max(0, distinctSubSectors.size() < 4 ? (4 - distinctSubSectors.size()) * 4 : 0);
+        score -= hhi.compareTo(new BigDecimal("0.25")) > 0 ? 20 : 0;
+        score -= d.top3PositionsWeightPct.compareTo(new BigDecimal("70")) > 0 ? 10 : 0;
+        score -= d.largestSectorWeightPct.compareTo(new BigDecimal("50")) > 0 ? 10 : 0;
 
-        if (positions.size() < 3) {
-            breadthPenalty += 20;
-        } else if (positions.size() < 5) {
-            breadthPenalty += 10;
-        }
-
-        if (d.distinctSectors < 2) {
-            breadthPenalty += 10;
-        }
-        if (d.distinctSubSectors < 3) {
-            breadthPenalty += 5;
-        }
-
-        if (d.largestPositionWeightPct.compareTo(new BigDecimal("35.00")) > 0) {
-            positionPenalty += 20;
-        } else if (d.largestPositionWeightPct.compareTo(new BigDecimal("25.00")) > 0) {
-            positionPenalty += 10;
-        }
-
-        if (d.top3PositionsWeightPct.compareTo(new BigDecimal("70.00")) > 0) {
-            positionPenalty += 15;
-        } else if (d.top3PositionsWeightPct.compareTo(new BigDecimal("55.00")) > 0) {
-            positionPenalty += 8;
-        }
-
-        if (d.largestSectorWeightPct.compareTo(new BigDecimal("50.00")) > 0) {
-            sectorPenalty += 20;
-        } else if (d.largestSectorWeightPct.compareTo(new BigDecimal("35.00")) > 0) {
-            sectorPenalty += 10;
-        }
-
-        score = score - breadthPenalty - positionPenalty - sectorPenalty;
-        if (score < 0) score = 0;
-        if (score > 100) score = 100;
-
-        d.breadthPenalty = breadthPenalty;
-        d.positionConcentrationPenalty = positionPenalty;
-        d.sectorConcentrationPenalty = sectorPenalty;
-        d.diversificationScore = score;
+        d.breadthPenalty = Math.max(0, 100 - score);
+        d.diversificationScore = Math.max(0, Math.min(100, score));
 
         return d;
     }
 
-    private BigDecimal calculateHhi(List<PortfolioPositionResponse> positions) {
-        if (positions == null || positions.isEmpty()) {
-            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-        }
-
-        BigDecimal hhi = BigDecimal.ZERO;
-
-        for (PortfolioPositionResponse p : positions) {
-            BigDecimal weightPct = zero(p.positionWeightPct);
-            hhi = hhi.add(weightPct.multiply(weightPct));
-        }
-
-        return hhi.setScale(2, RoundingMode.HALF_UP);
-    }
-
     private <T extends Enum<T>> List<PortfolioAllocationItemResponse> toAllocationItems(
             Map<T, BigDecimal> amounts,
-            BigDecimal totalInvested
+            BigDecimal total
     ) {
         return amounts.entrySet().stream()
+                .sorted(Map.Entry.<T, BigDecimal>comparingByValue().reversed())
                 .map(entry -> {
                     PortfolioAllocationItemResponse item = new PortfolioAllocationItemResponse();
                     item.key = entry.getKey().name();
-                    item.amount = entry.getValue().setScale(3, RoundingMode.HALF_UP);
-                    item.weightPct = percent(entry.getValue(), totalInvested);
+                    item.amount = zero(entry.getValue()).setScale(3, RoundingMode.HALF_UP);
+                    item.weightPct = percent(entry.getValue(), total);
                     return item;
                 })
-                .sorted(Comparator
-                        .comparing((PortfolioAllocationItemResponse item) -> zero(item.amount))
-                        .reversed())
                 .toList();
     }
 
     private BigDecimal calculatePostMoneyValuation(BigDecimal fundingGoal, BigDecimal equityOfferedPercent) {
-        if (fundingGoal == null || equityOfferedPercent == null || equityOfferedPercent.signum() <= 0) {
-            return null;
+        BigDecimal goal = zero(fundingGoal);
+        BigDecimal offered = zero(equityOfferedPercent);
+        if (goal.signum() <= 0 || offered.signum() <= 0) {
+            return BigDecimal.ZERO;
         }
-
-        return fundingGoal.multiply(ONE_HUNDRED)
-                .divide(equityOfferedPercent, 3, RoundingMode.HALF_UP);
+        return goal.divide(offered.divide(ONE_HUNDRED, 8, RoundingMode.HALF_UP), 3, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal calculateOwnershipPercent(
-            BigDecimal investedAmount,
-            BigDecimal fundingGoal,
-            BigDecimal equityOfferedPercent
-    ) {
-        if (investedAmount == null || fundingGoal == null || equityOfferedPercent == null || fundingGoal.signum() <= 0) {
-            return null;
+    private BigDecimal calculateOwnershipPercent(BigDecimal investedAmount, BigDecimal fundingGoal, BigDecimal equityOfferedPercent) {
+        BigDecimal invested = zero(investedAmount);
+        BigDecimal goal = zero(fundingGoal);
+        BigDecimal offered = zero(equityOfferedPercent);
+
+        if (invested.signum() <= 0 || goal.signum() <= 0 || offered.signum() <= 0) {
+            return BigDecimal.ZERO;
         }
 
-        return investedAmount.multiply(equityOfferedPercent)
-                .divide(fundingGoal, 4, RoundingMode.HALF_UP);
+        return invested.divide(goal, 8, RoundingMode.HALF_UP)
+                .multiply(offered)
+                .setScale(6, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal percent(BigDecimal part, BigDecimal total) {
-        if (part == null || total == null || total.signum() <= 0) {
-            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+    private BigDecimal percent(BigDecimal numerator, BigDecimal denominator) {
+        BigDecimal num = zero(numerator);
+        BigDecimal den = zero(denominator);
+        if (den.signum() <= 0) {
+            return BigDecimal.ZERO;
         }
-
-        return part.multiply(ONE_HUNDRED)
-                .divide(total, 2, RoundingMode.HALF_UP);
+        return num.multiply(ONE_HUNDRED)
+                .divide(den, 3, RoundingMode.HALF_UP);
     }
 
     private BigDecimal zero(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
+        return value != null ? value : BigDecimal.ZERO;
     }
 
-    private void requireInvestor(User user) {
-        if (user.getRole() != Role.INVESTOR) {
-            throw new UnauthorizedException("Only INVESTOR can access portfolio analytics.");
+    private void requireInvestor(User u) {
+        if (u.getRole() != Role.INVESTOR) {
+            throw new UnauthorizedException("Only INVESTOR can perform this action.");
         }
     }
 }

@@ -14,10 +14,10 @@ import com.helma.helmabackend.repository.crowdfunding.ApplicationRaiseRepository
 import com.helma.helmabackend.service.user.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -55,15 +55,15 @@ public class ApplicationDocumentService {
     );
 
     @Transactional
-    public ApplicationDocumentResponse uploadFounderDocument(
+    public ApplicationDocumentResponse uploadOwnerDocument(
             Long applicationRaiseId,
             DocumentType docType,
             MultipartFile file
     ) {
         User me = currentUser();
 
-        if (me.getRole() != Role.FOUNDER) {
-            throw new UnauthorizedException("Only FOUNDER can upload documents.");
+        if (me.getRole() != Role.YOUTH_BENEFICIARY) {
+            throw new UnauthorizedException("Only YOUTH_BENEFICIARY can upload documents.");
         }
         if (docType == null) {
             throw new IllegalArgumentException("Document type is required.");
@@ -75,7 +75,7 @@ public class ApplicationDocumentService {
         ApplicationRaise app = appRepo.findById(applicationRaiseId)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
 
-        if (!app.getFounderUserId().equals(me.getId())) {
+        if (!app.getOwnerUserId().equals(me.getId())) {
             throw new UnauthorizedException("You can only upload documents for your own application.");
         }
         if (app.getStatus() != ApplicationRaiseStatus.DRAFT) {
@@ -121,7 +121,7 @@ public class ApplicationDocumentService {
         ApplicationRaise app = appRepo.findById(applicationRaiseId)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
 
-        boolean isOwner = app.getFounderUserId().equals(me.getId());
+        boolean isOwner = app.getOwnerUserId().equals(me.getId());
         boolean isAdminOrCompliance = isAdminOrCompliance(me);
 
         if (!isOwner && !isAdminOrCompliance) {
@@ -132,17 +132,17 @@ public class ApplicationDocumentService {
     }
 
     @Transactional
-    public void deleteFounderDocument(Long applicationRaiseId, DocumentType docType) {
+    public void deleteOwnerDocument(Long applicationRaiseId, DocumentType docType) {
         User me = currentUser();
 
-        if (me.getRole() != Role.FOUNDER) {
-            throw new UnauthorizedException("Only FOUNDER can delete documents.");
+        if (me.getRole() != Role.YOUTH_BENEFICIARY) {
+            throw new UnauthorizedException("Only YOUTH_BENEFICIARY can delete documents.");
         }
 
         ApplicationRaise app = appRepo.findById(applicationRaiseId)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
 
-        if (!app.getFounderUserId().equals(me.getId())) {
+        if (!app.getOwnerUserId().equals(me.getId())) {
             throw new UnauthorizedException("You can only delete documents for your own application.");
         }
         if (app.getStatus() != ApplicationRaiseStatus.DRAFT) {
@@ -296,6 +296,7 @@ public class ApplicationDocumentService {
     private String safeName(String value) {
         return value == null ? "" : value.trim();
     }
+
     @Transactional(readOnly = true)
     public ApplicationDocument getReadableDocument(Long applicationRaiseId, DocumentType docType) {
         User me = currentUser();
@@ -303,7 +304,7 @@ public class ApplicationDocumentService {
         ApplicationRaise app = appRepo.findById(applicationRaiseId)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
 
-        boolean isOwner = app.getFounderUserId().equals(me.getId());
+        boolean isOwner = app.getOwnerUserId().equals(me.getId());
         boolean isAdminOrCompliance = isAdminOrCompliance(me);
 
         if (!isOwner && !isAdminOrCompliance) {
@@ -322,6 +323,7 @@ public class ApplicationDocumentService {
             throw new IllegalStateException("Failed to read document: " + doc.getDocType(), e);
         }
     }
+
     @Transactional(readOnly = true)
     public Path resolveReadableDocumentPath(ApplicationDocument doc) {
         if (doc == null || doc.getStoragePath() == null || doc.getStoragePath().isBlank()) {

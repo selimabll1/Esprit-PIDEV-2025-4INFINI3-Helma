@@ -21,7 +21,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String password; // store BCrypt hash
+    private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -30,10 +30,21 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @Column(updatable = false)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private UserProfile profile;
+
+    @Column(updatable = false, nullable = false)
     private Instant createdAt;
 
+    @Column(nullable = false)
     private Instant updatedAt;
+
+    public void setProfile(UserProfile profile) {
+        this.profile = profile;
+        if (profile != null && profile.getUser() != this) {
+            profile.setUser(this);
+        }
+    }
 
     @PrePersist
     public void prePersist() {

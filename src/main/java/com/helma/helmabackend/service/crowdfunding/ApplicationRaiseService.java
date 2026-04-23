@@ -2,6 +2,7 @@ package com.helma.helmabackend.service.crowdfunding;
 
 import com.helma.helmabackend.dto.crowdfunding.ApplicationRaiseCreateRequest;
 import com.helma.helmabackend.dto.crowdfunding.ApplicationRaiseResponse;
+import com.helma.helmabackend.dto.crowdfunding.ApplicationRaiseSearchCriteria;
 import com.helma.helmabackend.dto.crowdfunding.ApplicationRaiseStatusPatchRequest;
 import com.helma.helmabackend.dto.crowdfunding.EquityApplicationCreateRequest;
 import com.helma.helmabackend.entity.crowdfunding.ApplicationRaise;
@@ -15,9 +16,12 @@ import com.helma.helmabackend.entity.user.User;
 import com.helma.helmabackend.exception.FieldValidationException;
 import com.helma.helmabackend.exception.UnauthorizedException;
 import com.helma.helmabackend.repository.crowdfunding.ApplicationRaiseRepository;
+import com.helma.helmabackend.repository.crowdfunding.ApplicationRaiseSpecifications;
 import com.helma.helmabackend.repository.crowdfunding.EquityDetailRepository;
 import com.helma.helmabackend.service.user.CurrentUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +66,7 @@ public class ApplicationRaiseService {
     @Transactional
     public ApplicationRaiseResponse createEquityDraftMerged(EquityApplicationCreateRequest req) {
         User me = currentUser();
-        requireFounder(me);
+        requireYouthBeneficiary(me);
 
         req.application.type = CrowdfundingType.EQUITY;
 
@@ -89,7 +93,7 @@ public class ApplicationRaiseService {
         );
 
         ApplicationRaise a = new ApplicationRaise();
-        a.setFounderUserId(me.getId());
+        a.setOwnerUserId(me.getId());
         a.setType(CrowdfundingType.EQUITY);
 
         a.setBusinessName(businessName);
@@ -124,7 +128,7 @@ public class ApplicationRaiseService {
     @Transactional
     public ApplicationRaiseResponse updateEquityDraftMerged(Long id, EquityApplicationCreateRequest req) {
         User me = currentUser();
-        requireFounder(me);
+        requireYouthBeneficiary(me);
 
         ApplicationRaise a = requireDraftOwner(id);
         if (a.getType() != CrowdfundingType.EQUITY) {
@@ -184,7 +188,7 @@ public class ApplicationRaiseService {
     @Transactional
     public ApplicationRaiseResponse createDraft(ApplicationRaiseCreateRequest req) {
         User me = currentUser();
-        requireFounder(me);
+        requireYouthBeneficiary(me);
 
         if (req.type == null) {
             throw fieldError("type", "type is required");
@@ -205,7 +209,7 @@ public class ApplicationRaiseService {
         assertUniqueCompanyNumber(companyNumber, "companyNumber", null);
 
         ApplicationRaise a = new ApplicationRaise();
-        a.setFounderUserId(me.getId());
+        a.setOwnerUserId(me.getId());
         a.setType(req.type);
 
         a.setBusinessName(businessName);
@@ -253,7 +257,7 @@ public class ApplicationRaiseService {
             throw fieldError("companyNumber", "companyNumber is required for EQUITY crowdfunding.");
         }
 
-        assertUniqueBusinessName(a.getFounderUserId(), businessName, "businessName", a.getId());
+        assertUniqueBusinessName(a.getOwnerUserId(), businessName, "businessName", a.getId());
         assertUniqueCompanyNumber(companyNumber, "companyNumber", a.getId());
 
         a.setType(req.type);
@@ -311,7 +315,7 @@ public class ApplicationRaiseService {
         ApplicationRaise a = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + id));
 
-        if (!a.getFounderUserId().equals(me.getId()) && !isAdminOrCompliance(me)) {
+        if (!a.getOwnerUserId().equals(me.getId()) && !isAdminOrCompliance(me)) {
             throw new UnauthorizedException("You can only view your own application.");
         }
 
@@ -319,30 +323,40 @@ public class ApplicationRaiseService {
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationRaiseResponse> listMyApplications() {
+    public List<ApplicationRaiseResponse> listMyApplications(ApplicationRaiseSearchCriteria criteria) {
         User me = currentUser();
-        requireFounder(me);
+        requireYouthBeneficiary(me);
 
-        return repo.findByFounderUserId(me.getId()).stream()
+        ApplicationRaiseSearchCriteria effectiveCriteria = criteria != null ? criteria : new ApplicationRaiseSearchCriteria();
+        effectiveCriteria.setOwnerUserId(me.getId());
+
+        Specification<ApplicationRaise> specification = ApplicationRaiseSpecifications.byCriteria(effectiveCriteria);
+        Sort sort = buildSort(effectiveCriteria, "createdAt", Sort.Direction.DESC);
+
+        return repo.findAll(specification, sort).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationRaiseResponse> adminListAll() {
+    public List<ApplicationRaiseResponse> adminListAll(ApplicationRaiseSearchCriteria criteria) {
         User me = currentUser();
         requireAdminOrCompliance(me);
 
-        return repo.findAll().stream()
-                .filter(a -> a.getStatus() != ApplicationRaiseStatus.DRAFT)
+        ApplicationRaiseSearchCriteria effectiveCriteria = criteria != null ? criteria : new ApplicationRaiseSearchCriteria();
+        Specification<ApplicationRaise> specification = ApplicationRaiseSpecifications.byCriteria(effectiveCriteria)
+                .and(ApplicationRaiseSpecifications.statusNot(ApplicationRaiseStatus.DRAFT));
+        Sort sort = buildSort(effectiveCriteria, "createdAt", Sort.Direction.DESC);
+
+        return repo.findAll(specification, sort).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional
-    public ApplicationRaiseResponse founderPatchStatus(Long id, ApplicationRaiseStatusPatchRequest req) {
+    public ApplicationRaiseResponse youthPatchStatus(Long id, ApplicationRaiseStatusPatchRequest req) {
         User me = currentUser();
-        requireFounder(me);
+        requireYouthBeneficiary(me);
 
         if (req == null || req.status == null) {
             throw new IllegalArgumentException("status is required");
@@ -351,11 +365,11 @@ public class ApplicationRaiseService {
         ApplicationRaise a = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + id));
 
-        if (!a.getFounderUserId().equals(me.getId())) {
+        if (!a.getOwnerUserId().equals(me.getId())) {
             throw new UnauthorizedException("You can only change status of your own application.");
         }
         if (req.status != ApplicationRaiseStatus.SUBMITTED) {
-            throw new IllegalStateException("FOUNDER can only set status to SUBMITTED.");
+            throw new IllegalStateException("YOUTH_BENEFICIARY can only set status to SUBMITTED.");
         }
         if (a.getStatus() != ApplicationRaiseStatus.DRAFT) {
             throw new IllegalStateException("Only DRAFT can be submitted.");
@@ -413,10 +427,58 @@ public class ApplicationRaiseService {
         return toResponse(saved);
     }
 
+    private Sort buildSort(ApplicationRaiseSearchCriteria criteria, String defaultField, Sort.Direction defaultDirection) {
+        String requestedSortBy = criteria != null ? normalizeOptional(criteria.getSortBy()) : null;
+        String requestedSortDir = criteria != null ? normalizeOptional(criteria.getSortDir()) : null;
+
+        String sortBy = requestedSortBy != null ? requestedSortBy : defaultField;
+        Sort.Direction direction = defaultDirection;
+        if (requestedSortDir != null) {
+            direction = "asc".equalsIgnoreCase(requestedSortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        }
+
+        String property = switch (sortBy) {
+            case "id" -> "id";
+            case "ownerUserId" -> "ownerUserId";
+            case "businessName" -> "businessName";
+            case "companyNumber" -> "companyNumber";
+            case "website" -> "website";
+            case "country" -> "country";
+            case "currency" -> "currency";
+            case "sector" -> "sector";
+            case "subSector" -> "subSector";
+            case "summary" -> "summary";
+            case "fundingGoal" -> "fundingGoal";
+            case "investorsPledgedAmount", "raisedAmount" -> "investorsPledgedAmount";
+            case "customerCount" -> "customerCount";
+            case "contactFirstName" -> "contactFirstName";
+            case "contactLastName" -> "contactLastName";
+            case "contactEmail" -> "contactEmail";
+            case "status" -> "status";
+            case "type" -> "type";
+            case "createdAt", "newest", "oldest" -> "createdAt";
+            case "updatedAt" -> "updatedAt";
+            case "companyLegalName" -> "equityDetail.companyLegalName";
+            case "companyRegistrationNumber" -> "equityDetail.companyRegistrationNumber";
+            case "equityOfferedPercent" -> "equityDetail.equityOfferedPercent";
+            case "preMoneyValuation" -> "equityDetail.preMoneyValuation";
+            case "minInvestment" -> "equityDetail.minInvestment";
+            default -> defaultField;
+        };
+
+        if ("newest".equalsIgnoreCase(sortBy)) {
+            direction = Sort.Direction.DESC;
+        } else if ("oldest".equalsIgnoreCase(sortBy)) {
+            direction = Sort.Direction.ASC;
+        }
+
+        return Sort.by(direction, property);
+    }
+
     private ApplicationRaiseResponse toResponse(ApplicationRaise a) {
         ApplicationRaiseResponse r = new ApplicationRaiseResponse();
         r.id = a.getId();
-        r.founderUserId = a.getFounderUserId();
+        r.ownerUserId = a.getOwnerUserId();
         r.type = a.getType();
 
         r.businessName = a.getBusinessName();
@@ -553,9 +615,9 @@ public class ApplicationRaiseService {
         return currentUserService.getCurrentUser();
     }
 
-    private void requireFounder(User u) {
-        if (u.getRole() != Role.FOUNDER) {
-            throw new UnauthorizedException("Only FOUNDER can perform this action.");
+    private void requireYouthBeneficiary(User u) {
+        if (u.getRole() != Role.YOUTH_BENEFICIARY) {
+            throw new UnauthorizedException("Only YOUTH_BENEFICIARY can perform this action.");
         }
     }
 
@@ -571,23 +633,18 @@ public class ApplicationRaiseService {
 
     private ApplicationRaise requireDraftOwner(Long id) {
         User me = currentUser();
-        requireFounder(me);
+        requireYouthBeneficiary(me);
 
         ApplicationRaise a = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + id));
 
-        if (!a.getFounderUserId().equals(me.getId())) {
+        if (!a.getOwnerUserId().equals(me.getId())) {
             throw new UnauthorizedException("You can only modify your own application.");
         }
         if (a.getStatus() != ApplicationRaiseStatus.DRAFT) {
             throw new IllegalStateException("Only DRAFT applications can be changed.");
         }
         return a;
-    }
-
-    private String normalizeRequired(String s, String msg) {
-        if (s == null || s.trim().isEmpty()) throw new IllegalArgumentException(msg);
-        return s.trim();
     }
 
     private String normalizeRequiredField(String value, String fieldName, String message) {
@@ -597,13 +654,13 @@ public class ApplicationRaiseService {
         return value.trim();
     }
 
-    private void assertUniqueBusinessName(Long founderUserId, String businessName, String fieldName, Long currentApplicationId) {
+    private void assertUniqueBusinessName(Long ownerUserId, String businessName, String fieldName, Long currentApplicationId) {
         boolean duplicate = currentApplicationId == null
-                ? repo.existsByFounderUserIdAndBusinessNameIgnoreCase(founderUserId, businessName)
-                : repo.existsByFounderUserIdAndBusinessNameIgnoreCase(founderUserId, businessName)
-                && repo.findById(currentApplicationId)
-                .map(existing -> existing.getBusinessName() == null || !existing.getBusinessName().equalsIgnoreCase(businessName))
-                .orElse(true);
+                ? repo.existsByOwnerUserIdAndBusinessNameIgnoreCase(ownerUserId, businessName)
+                : repo.existsByOwnerUserIdAndBusinessNameIgnoreCase(ownerUserId, businessName)
+                  && repo.findById(currentApplicationId)
+                     .map(existing -> existing.getBusinessName() == null || !existing.getBusinessName().equalsIgnoreCase(businessName))
+                     .orElse(true);
 
         if (duplicate) {
             throw fieldError(fieldName, "You already have an application with the same businessName.");

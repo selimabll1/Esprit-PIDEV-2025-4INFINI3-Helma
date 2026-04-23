@@ -1,9 +1,13 @@
 package com.helma.helmabackend.service.crowdfunding;
 
+import com.helma.helmabackend.dto.crowdfunding.ApplicationRaiseSearchCriteria;
 import com.helma.helmabackend.dto.crowdfunding.CampaignResponse;
 import com.helma.helmabackend.dto.crowdfunding.PledgeCreateRequest;
 import com.helma.helmabackend.dto.crowdfunding.PledgeResponse;
 import com.helma.helmabackend.dto.crowdfunding.PledgeStatusPatchRequest;
+import com.helma.helmabackend.dto.crowdfunding.ai.AiCampaignInsightBatchResponse;
+import com.helma.helmabackend.dto.crowdfunding.ai.AiCampaignInsightRequest;
+import com.helma.helmabackend.dto.crowdfunding.ai.AiCampaignInsightResponse;
 import com.helma.helmabackend.entity.crowdfunding.ApplicationRaise;
 import com.helma.helmabackend.entity.crowdfunding.EquityDetail;
 import com.helma.helmabackend.entity.crowdfunding.Pledge;
@@ -14,22 +18,21 @@ import com.helma.helmabackend.entity.user.Role;
 import com.helma.helmabackend.entity.user.User;
 import com.helma.helmabackend.exception.UnauthorizedException;
 import com.helma.helmabackend.repository.crowdfunding.ApplicationRaiseRepository;
+import com.helma.helmabackend.repository.crowdfunding.ApplicationRaiseSpecifications;
 import com.helma.helmabackend.repository.crowdfunding.EquityDetailRepository;
 import com.helma.helmabackend.repository.crowdfunding.PledgeRepository;
 import com.helma.helmabackend.service.user.CurrentUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.helma.helmabackend.dto.crowdfunding.ai.AiCampaignInsightRequest;
-import com.helma.helmabackend.dto.crowdfunding.ai.AiCampaignInsightResponse;
-import com.helma.helmabackend.dto.crowdfunding.ai.AiCampaignInsightBatchResponse;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-
-import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -45,15 +48,23 @@ public class PledgeService {
     private final AiModelClientService aiModelClientService;
 
     @Transactional(readOnly = true)
-    public List<CampaignResponse> listApprovedCampaigns(String sort) {
-        List<ApplicationRaise> campaigns =
-                applicationRaiseRepo.findByStatusOrderByCreatedAtDesc(ApplicationRaiseStatus.APPROVED);
+    public List<CampaignResponse> listApprovedCampaigns(String sort, String sortDir, ApplicationRaiseSearchCriteria criteria) {
+        ApplicationRaiseSearchCriteria effectiveCriteria = criteria != null ? criteria : new ApplicationRaiseSearchCriteria();
+        effectiveCriteria.setStatus(ApplicationRaiseStatus.APPROVED);
 
+        Specification<ApplicationRaise> specification =
+                ApplicationRaiseSpecifications.byCriteria(effectiveCriteria)
+                        .and(ApplicationRaiseSpecifications.hasStatus(ApplicationRaiseStatus.APPROVED));
+
+        List<ApplicationRaise> campaigns;
         if (!"trending".equalsIgnoreCase(sort)) {
+            campaigns = applicationRaiseRepo.findAll(specification, buildCampaignSort(sort, sortDir));
             return campaigns.stream()
                     .map(a -> toCampaignResponse(a, false))
                     .toList();
         }
+
+        campaigns = applicationRaiseRepo.findAll(specification, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         List<AiCampaignInsightRequest> aiRequests = new ArrayList<>();
         Map<Long, CampaignResponse> responseById = new HashMap<>();
@@ -72,7 +83,7 @@ public class PledgeService {
             aiReq.summary = a.getSummary();
             aiReq.fundingGoal = a.getFundingGoal();
             aiReq.investorsPledgedAmount = a.getInvestorsPledgedAmount();
-            aiReq.currency = a.getCurrency();
+            aiReq.currency = a.getCurrency() != null ? a.getCurrency().name() : null;
 
             if (a.getType() == CrowdfundingType.EQUITY) {
                 equityDetailRepo.findByApplicationRaiseId(a.getId()).ifPresent(ed -> {
@@ -121,6 +132,42 @@ public class PledgeService {
         return results;
     }
 
+    private Sort buildCampaignSort(String sort, String sortDir) {
+        String normalizedSort = normalizeOptional(sort);
+        String normalizedSortDir = normalizeOptional(sortDir);
+
+        if (normalizedSort == null || "newest".equalsIgnoreCase(normalizedSort)) {
+            return Sort.by(Sort.Direction.DESC, "createdAt");
+        }
+        if ("oldest".equalsIgnoreCase(normalizedSort)) {
+            return Sort.by(Sort.Direction.ASC, "createdAt");
+        }
+
+        Sort.Direction direction = "asc".equalsIgnoreCase(normalizedSortDir)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        String property = switch (normalizedSort) {
+            case "id" -> "id";
+            case "businessName" -> "businessName";
+            case "website" -> "website";
+            case "sector" -> "sector";
+            case "subSector" -> "subSector";
+            case "type" -> "type";
+            case "summary" -> "summary";
+            case "fundingGoal" -> "fundingGoal";
+            case "investorsPledgedAmount", "raisedAmount" -> "investorsPledgedAmount";
+            case "currency" -> "currency";
+            case "updatedAt" -> "updatedAt";
+            case "equityOfferedPercent" -> "equityDetail.equityOfferedPercent";
+            case "preMoneyValuation" -> "equityDetail.preMoneyValuation";
+            case "minInvestment" -> "equityDetail.minInvestment";
+            default -> "createdAt";
+        };
+
+        return Sort.by(direction, property);
+    }
+
     private double extractTrendingScore(AiCampaignInsightResponse ai) {
         if (ai == null || ai.trendAlignmentScore == null) {
             return -1.0;
@@ -151,7 +198,9 @@ public class PledgeService {
 
             if (equity.getMinInvestment() != null && req.amount.compareTo(equity.getMinInvestment()) < 0) {
                 throw new IllegalStateException(
-                        "Amount must be at least the minimum investment: " + equity.getMinInvestment() + " " + campaign.getCurrency()
+                        "Amount must be at least the minimum investment: "
+                                + equity.getMinInvestment() + " "
+                                + (campaign.getCurrency() != null ? campaign.getCurrency().name() : "TND")
                 );
             }
         }
@@ -172,7 +221,7 @@ public class PledgeService {
         }
 
         pledge.setAmount(req.amount);
-        pledge.setCurrency(campaign.getCurrency());
+        pledge.setCurrency(campaign.getCurrency() != null ? campaign.getCurrency().name() : "TND");
         pledge.setMessage(req.message);
         pledge.setStatus(PledgeStatus.PENDING);
 
@@ -239,11 +288,11 @@ public class PledgeService {
         boolean allowed =
                 (oldStatus == PledgeStatus.PENDING &&
                         (target == PledgeStatus.PAID || target == PledgeStatus.FAILED || target == PledgeStatus.CANCELED))
-                ||
-                ((oldStatus == PledgeStatus.FAILED || oldStatus == PledgeStatus.CANCELED || oldStatus == PledgeStatus.REFUNDED)
-                        && target == PledgeStatus.PENDING)
-                ||
-                (oldStatus == PledgeStatus.PAID && target == PledgeStatus.REFUNDED);
+                        ||
+                        ((oldStatus == PledgeStatus.FAILED || oldStatus == PledgeStatus.CANCELED || oldStatus == PledgeStatus.REFUNDED)
+                                && target == PledgeStatus.PENDING)
+                        ||
+                        (oldStatus == PledgeStatus.PAID && target == PledgeStatus.REFUNDED);
 
         if (!allowed) {
             throw new IllegalStateException("Invalid pledge status transition: " + oldStatus + " -> " + target);
@@ -268,7 +317,7 @@ public class PledgeService {
         r.summary = a.getSummary();
         r.fundingGoal = a.getFundingGoal();
         r.investorsPledgedAmount = a.getInvestorsPledgedAmount();
-        r.currency = a.getCurrency();
+        r.currency = a.getCurrency() != null ? a.getCurrency().name() : null;
         r.createdAt = a.getCreatedAt();
         r.updatedAt = a.getUpdatedAt();
 
@@ -291,7 +340,7 @@ public class PledgeService {
             aiReq.summary = a.getSummary();
             aiReq.fundingGoal = a.getFundingGoal();
             aiReq.investorsPledgedAmount = a.getInvestorsPledgedAmount();
-            aiReq.currency = a.getCurrency();
+            aiReq.currency = a.getCurrency() != null ? a.getCurrency().name() : null;
             aiReq.equityOfferedPercent = r.equityOfferedPercent;
             aiReq.preMoneyValuation = r.preMoneyValuation;
             aiReq.minInvestment = r.minInvestment;
@@ -343,6 +392,14 @@ public class PledgeService {
             throw new IllegalStateException("This campaign is not available for investors.");
         }
         return campaign;
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private User currentUser() {

@@ -1,19 +1,13 @@
-package com.helma.helmabackend.dto.auth;
+package com.helma.helmabackend.dto.user;
 
 import com.helma.helmabackend.entity.user.Gender;
-import com.helma.helmabackend.entity.user.Role;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-public record RegisterRequest(
-        @Email @NotBlank String email,
-        @NotBlank @Size(min = 6, max = 72) String password,
-        @NotNull Role role,
+public record UserProfileUpsertRequest(
         @NotBlank @Size(max = 80) String firstName,
         @NotBlank @Size(max = 80) String lastName,
         @Size(max = 30) String phoneNumber,

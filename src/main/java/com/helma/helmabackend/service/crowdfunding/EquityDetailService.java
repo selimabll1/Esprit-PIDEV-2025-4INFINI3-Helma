@@ -24,31 +24,25 @@ public class EquityDetailService {
     private final ApplicationRaiseRepository appRepo;
     private final CurrentUserService currentUserService;
 
-    // -------------------------
-    // Founder: upsert equity detail
-    // -------------------------
     @Transactional
     public EquityDetailResponse upsert(Long applicationRaiseId, EquityDetailUpsertRequest req) {
         User me = currentUser();
 
-        if (me.getRole() != Role.FOUNDER) {
-            throw new UnauthorizedException("Only FOUNDER can fill equity details.");
+        if (me.getRole() != Role.YOUTH_BENEFICIARY) {
+            throw new UnauthorizedException("Only YOUTH_BENEFICIARY can fill equity details.");
         }
 
         ApplicationRaise app = appRepo.findById(applicationRaiseId)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
 
-        // must belong to founder
-        if (!app.getFounderUserId().equals(me.getId())) {
+        if (!app.getOwnerUserId().equals(me.getId())) {
             throw new UnauthorizedException("You can only edit equity details for your own application.");
         }
 
-        // only for equity type
         if (app.getType() != CrowdfundingType.EQUITY) {
             throw new IllegalStateException("Equity details are only allowed when crowdfunding type is EQUITY.");
         }
 
-        // only while draft
         if (app.getStatus() != ApplicationRaiseStatus.DRAFT) {
             throw new IllegalStateException("Equity details can only be edited while application is DRAFT.");
         }
@@ -57,10 +51,8 @@ public class EquityDetailService {
             throw new IllegalArgumentException("Equity details payload is required.");
         }
 
-        // normalize registration number for duplicate checks
         String reg = normalizeRequired(req.companyRegistrationNumber, "companyRegistrationNumber is required");
 
-        // unique: companyRegistrationNumber across equity_detail
         boolean duplicate = equityRepo.existsByCompanyRegistrationNumberIgnoreCaseAndApplicationRaiseIdNot(
                 reg, applicationRaiseId
         );
@@ -71,16 +63,13 @@ public class EquityDetailService {
         EquityDetail detail = equityRepo.findByApplicationRaiseId(applicationRaiseId)
                 .orElseGet(() -> {
                     EquityDetail d = new EquityDetail();
-                    d.setApplicationRaise(app); // @MapsId will set applicationRaiseId
+                    d.setApplicationRaise(app);
                     return d;
                 });
 
-        // set fields (normalize important strings)
         detail.setCompanyLegalName(normalizeRequired(req.companyLegalName, "companyLegalName is required"));
         detail.setCompanyRegistrationNumber(reg);
         detail.setCnreProfileUrl(normalizeRequired(req.cnreProfileUrl, "cnreProfileUrl is required"));
-
-        // numeric fields can be null depending on your rules; keep as-is
         detail.setEquityOfferedPercent(req.equityOfferedPercent);
         detail.setPreMoneyValuation(req.preMoneyValuation);
         detail.setMinInvestment(req.minInvestment);
@@ -89,9 +78,6 @@ public class EquityDetailService {
         return toDto(saved);
     }
 
-    // -------------------------
-    // Founder (own) OR Admin/Compliance (any): view
-    // -------------------------
     @Transactional(readOnly = true)
     public EquityDetailResponse getByApplicationRaiseId(Long applicationRaiseId) {
         User me = currentUser();
@@ -99,7 +85,7 @@ public class EquityDetailService {
         ApplicationRaise app = appRepo.findById(applicationRaiseId)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
 
-        boolean isOwner = app.getFounderUserId().equals(me.getId());
+        boolean isOwner = app.getOwnerUserId().equals(me.getId());
         boolean isAdminOrCompliance = me.getRole() == Role.ADMIN || me.getRole() == Role.COMPLIANCE;
 
         if (!isOwner && !isAdminOrCompliance) {
@@ -113,9 +99,6 @@ public class EquityDetailService {
         return toDto(detail);
     }
 
-    // -------------------------
-    // Public mapper (so ApplicationRaiseService can use it)
-    // -------------------------
     public EquityDetailResponse toDto(EquityDetail d) {
         EquityDetailResponse r = new EquityDetailResponse();
         r.applicationRaiseId = d.getApplicationRaiseId();
@@ -130,9 +113,6 @@ public class EquityDetailService {
         return r;
     }
 
-    // -------------------------
-    // Helpers
-    // -------------------------
     private User currentUser() {
         return currentUserService.getCurrentUser();
     }
