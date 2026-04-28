@@ -12,6 +12,8 @@ public class EquityDetailResponse {
 
     public BigDecimal equityOfferedPercent;
     public BigDecimal preMoneyValuation;
+    public BigDecimal fundingGoal;
+    public BigDecimal postMoneyValuation;
     public BigDecimal minInvestment;
 
     public Instant createdAt;

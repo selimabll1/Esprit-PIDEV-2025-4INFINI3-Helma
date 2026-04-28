@@ -19,8 +19,6 @@ public class ApplicationRaiseCreateRequest {
     @Size(min = 2, max = 150, message = "businessName must be between 2 and 150 characters")
     public String businessName;
 
-    @Size(max = 80, message = "companyNumber must be at most 80 characters")
-    public String companyNumber;
 
     @Size(max = 255, message = "website must be at most 255 characters")
     @Pattern(

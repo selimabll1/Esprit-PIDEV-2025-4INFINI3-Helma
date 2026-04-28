@@ -16,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 @Service
 @RequiredArgsConstructor
 public class EquityDetailService {
@@ -70,9 +73,9 @@ public class EquityDetailService {
         detail.setCompanyLegalName(normalizeRequired(req.companyLegalName, "companyLegalName is required"));
         detail.setCompanyRegistrationNumber(reg);
         detail.setCnreProfileUrl(normalizeRequired(req.cnreProfileUrl, "cnreProfileUrl is required"));
-        detail.setEquityOfferedPercent(req.equityOfferedPercent);
-        detail.setPreMoneyValuation(req.preMoneyValuation);
-        detail.setMinInvestment(req.minInvestment);
+        detail.setPreMoneyValuation(requiredMoney(req.preMoneyValuation, "preMoneyValuation is required"));
+        detail.setMinInvestment(requiredMoney(req.minInvestment, "minInvestment is required"));
+        detail.setEquityOfferedPercent(calculateEquityOfferedPercent(app.getFundingGoal(), detail.getPreMoneyValuation()));
 
         EquityDetail saved = equityRepo.save(detail);
         return toDto(saved);
@@ -107,6 +110,9 @@ public class EquityDetailService {
         r.cnreProfileUrl = d.getCnreProfileUrl();
         r.equityOfferedPercent = d.getEquityOfferedPercent();
         r.preMoneyValuation = d.getPreMoneyValuation();
+        BigDecimal fundingGoal = d.getApplicationRaise() != null ? d.getApplicationRaise().getFundingGoal() : BigDecimal.ZERO;
+        r.fundingGoal = moneyOrZero(fundingGoal);
+        r.postMoneyValuation = moneyOrZero(d.getPreMoneyValuation()).add(r.fundingGoal);
         r.minInvestment = d.getMinInvestment();
         r.createdAt = d.getCreatedAt();
         r.updatedAt = d.getUpdatedAt();
@@ -115,6 +121,33 @@ public class EquityDetailService {
 
     private User currentUser() {
         return currentUserService.getCurrentUser();
+    }
+
+
+
+    private BigDecimal calculateEquityOfferedPercent(BigDecimal fundingGoal, BigDecimal preMoneyValuation) {
+        BigDecimal goal = moneyOrZero(fundingGoal);
+        BigDecimal preMoney = moneyOrZero(preMoneyValuation);
+        BigDecimal postMoney = preMoney.add(goal);
+
+        if (goal.compareTo(BigDecimal.ZERO) <= 0 || postMoney.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return goal
+                .multiply(new BigDecimal("100"))
+                .divide(postMoney, 4, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal requiredMoney(BigDecimal value, String messageIfMissing) {
+        if (value == null) {
+            throw new IllegalArgumentException(messageIfMissing);
+        }
+        return value;
+    }
+
+    private BigDecimal moneyOrZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private String normalizeOptional(String s) {

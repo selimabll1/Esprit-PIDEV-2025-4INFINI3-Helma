@@ -25,7 +25,6 @@ public class ApplicationRaiseSearchCriteria {
     private CrowdfundingType type;
 
     private String businessName;
-    private String companyNumber;
     private String website;
     private String country;
     private String currency;

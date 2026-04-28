@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 public class EquityDetailUpsertRequest {
 
     @NotBlank(message = "companyLegalName is required")
-    @Size(min = 2, max = 255, message = "companyLegalName must be between 2 and 255 characters")
+    @Size(min = 2, max = 160, message = "companyLegalName must be between 2 and 160 characters")
     public String companyLegalName;
 
     @NotBlank(message = "companyRegistrationNumber is required")
@@ -18,16 +18,17 @@ public class EquityDetailUpsertRequest {
     @Pattern(regexp = "^(https?://).+", message = "cnreProfileUrl must be a valid URL starting with http:// or https://")
     public String cnreProfileUrl;
 
-    @DecimalMin(value = "0.01", message = "equityOfferedPercent must be at least 0.01")
-    @DecimalMax(value = "100.00", message = "equityOfferedPercent must be at most 100.00")
-    @Digits(integer = 3, fraction = 2, message = "equityOfferedPercent must have up to 3 integer digits and 2 decimals")
+    // Calculated by backend from fundingGoal and preMoneyValuation.
+    // Kept optional only for backward compatibility with old frontend payloads.
     public BigDecimal equityOfferedPercent;
 
-    @DecimalMin(value = "0.000", message = "preMoneyValuation cannot be negative")
-    @Digits(integer = 11, fraction = 3, message = "preMoneyValuation must have up to 11 integer digits and 3 decimals")
+    @NotNull(message = "preMoneyValuation is required")
+    @DecimalMin(value = "1.000", message = "preMoneyValuation must be greater than 0")
+    @Digits(integer = 12, fraction = 3, message = "preMoneyValuation must have up to 12 integer digits and 3 decimals")
     public BigDecimal preMoneyValuation;
 
-    @DecimalMin(value = "0.000", message = "minInvestment cannot be negative")
+    @NotNull(message = "minInvestment is required")
+    @DecimalMin(value = "1.000", message = "minInvestment must be greater than 0")
     @Digits(integer = 9, fraction = 3, message = "minInvestment must have up to 9 integer digits and 3 decimals")
     public BigDecimal minInvestment;
 }

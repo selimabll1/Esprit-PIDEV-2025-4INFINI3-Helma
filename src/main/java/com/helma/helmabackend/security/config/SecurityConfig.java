@@ -18,6 +18,32 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] YOUTH_AUTHORITIES = {
+            "YOUTH_BENEFICIARY",
+            "ROLE_YOUTH_BENEFICIARY"
+    };
+
+    private static final String[] INVESTOR_AUTHORITIES = {
+            "INVESTOR",
+            "ROLE_INVESTOR"
+    };
+
+    private static final String[] ADMIN_COMPLIANCE_AUTHORITIES = {
+            "ADMIN",
+            "COMPLIANCE",
+            "ROLE_ADMIN",
+            "ROLE_COMPLIANCE"
+    };
+
+    private static final String[] YOUTH_ADMIN_COMPLIANCE_AUTHORITIES = {
+            "YOUTH_BENEFICIARY",
+            "ADMIN",
+            "COMPLIANCE",
+            "ROLE_YOUTH_BENEFICIARY",
+            "ROLE_ADMIN",
+            "ROLE_COMPLIANCE"
+    };
+
     private final JwtAuthFilter jwtAuthFilter;
 
     @Bean
@@ -45,16 +71,31 @@ public class SecurityConfig {
                         "/api/crowdfunding/admin/pledges/**",
                         "/api/crowdfunding/admin/payments/**",
                         "/api/crowdfunding/application-raises/*/admin/**"
-                ).hasAnyRole("ADMIN", "COMPLIANCE")
+                ).hasAnyAuthority(ADMIN_COMPLIANCE_AUTHORITIES)
 
                 .requestMatchers(
                         "/api/crowdfunding/campaigns/*/pledges",
                         "/api/crowdfunding/my-pledges/**",
                         "/api/crowdfunding/my-payments/**"
-                ).hasRole("INVESTOR")
+                ).hasAnyAuthority(INVESTOR_AUTHORITIES)
+
+                .requestMatchers(HttpMethod.POST, "/api/crowdfunding/application-raises/drafts")
+                .hasAnyAuthority(YOUTH_AUTHORITIES)
+
+                .requestMatchers(HttpMethod.PATCH, "/api/crowdfunding/application-raises/*/steps/contact")
+                .hasAnyAuthority(YOUTH_AUTHORITIES)
+
+                .requestMatchers(HttpMethod.PATCH, "/api/crowdfunding/application-raises/*/steps/type")
+                .hasAnyAuthority(YOUTH_AUTHORITIES)
+
+                .requestMatchers(HttpMethod.PATCH, "/api/crowdfunding/application-raises/*/steps/details")
+                .hasAnyAuthority(YOUTH_AUTHORITIES)
+
+                .requestMatchers(HttpMethod.POST, "/api/crowdfunding/application-raises/*/submit")
+                .hasAnyAuthority(YOUTH_AUTHORITIES)
 
                 .requestMatchers("/api/crowdfunding/**")
-                .hasAnyRole("YOUTH_BENEFICIARY", "ADMIN", "COMPLIANCE")
+                .hasAnyAuthority(YOUTH_ADMIN_COMPLIANCE_AUTHORITIES)
 
                 .anyRequest().authenticated()
         );

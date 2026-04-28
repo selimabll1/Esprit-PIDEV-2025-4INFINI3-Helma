@@ -46,8 +46,8 @@ public class CrowdfundingController {
     public List<CampaignResponse> listApprovedCampaigns(
             @RequestParam(name = "sort", required = false, defaultValue = "newest") String sort,
             @RequestParam(name = "sortDir", required = false) String sortDir,
-            @ModelAttribute ApplicationRaiseSearchCriteria criteria)
-    {
+            @ModelAttribute ApplicationRaiseSearchCriteria criteria
+    ) {
         return pledgeService.listApprovedCampaigns(sort, sortDir, criteria);
     }
 
@@ -92,7 +92,11 @@ public class CrowdfundingController {
     @GetMapping("/my-payments/{paymentId}/mock-checkout")
     public ApiMessage myPaymentMockCheckout(@PathVariable Long paymentId) {
         paymentService.getMyPaymentById(paymentId);
-        return new ApiMessage("Mock checkout ready. POST /api/crowdfunding/my-payments/" + paymentId + "/mock-result with status SUCCEEDED, FAILED or CANCELED.");
+        return new ApiMessage(
+                "Mock checkout ready. POST /api/crowdfunding/my-payments/"
+                        + paymentId
+                        + "/mock-result with status SUCCEEDED, FAILED or CANCELED."
+        );
     }
 
     @PostMapping("/my-payments/{paymentId}/mock-result")
@@ -195,7 +199,9 @@ public class CrowdfundingController {
     }
 
     @GetMapping("/application-raises/mine")
-    public List<ApplicationRaiseResponse> myApplications(@ModelAttribute ApplicationRaiseSearchCriteria criteria) {
+    public List<ApplicationRaiseResponse> myApplications(
+            @ModelAttribute ApplicationRaiseSearchCriteria criteria
+    ) {
         return service.listMyApplications(criteria);
     }
 
@@ -221,7 +227,9 @@ public class CrowdfundingController {
     }
 
     @GetMapping("/application-raises/admin")
-    public List<ApplicationRaiseResponse> adminListAll(@ModelAttribute ApplicationRaiseSearchCriteria criteria) {
+    public List<ApplicationRaiseResponse> adminListAll(
+            @ModelAttribute ApplicationRaiseSearchCriteria criteria
+    ) {
         return service.adminListAll(criteria);
     }
 
@@ -242,5 +250,39 @@ public class CrowdfundingController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .contentLength(Files.size(path))
                 .body(resource);
+    }
+
+    @PostMapping("/application-raises/drafts")
+    public ApplicationRaiseResponse createEmptyDraft() {
+        return service.createEmptyDraft();
+    }
+
+    @PatchMapping("/application-raises/{id}/steps/contact")
+    public ApplicationRaiseResponse saveContactStep(
+            @PathVariable Long id,
+            @Valid @RequestBody ApplicationRaiseContactStepRequest req
+    ) {
+        return service.saveContactStep(id, req);
+    }
+
+    @PatchMapping("/application-raises/{id}/steps/type")
+    public ApplicationRaiseResponse saveTypeStep(
+            @PathVariable Long id,
+            @Valid @RequestBody ApplicationRaiseTypeStepRequest req
+    ) {
+        return service.saveTypeStep(id, req);
+    }
+
+    @PatchMapping("/application-raises/{id}/steps/details")
+    public ApplicationRaiseResponse saveDetailsStep(
+            @PathVariable Long id,
+            @Valid @RequestBody ApplicationRaiseDetailsStepRequest req
+    ) {
+        return service.saveDetailsStep(id, req);
+    }
+
+    @PostMapping("/application-raises/{id}/submit")
+    public ApplicationRaiseResponse submitDraft(@PathVariable Long id) {
+        return service.submitDraft(id);
     }
 }

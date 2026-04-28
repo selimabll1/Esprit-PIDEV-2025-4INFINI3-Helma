@@ -22,7 +22,7 @@ public class EquityDetail {
     @JoinColumn(name = "application_raise_id")
     private ApplicationRaise applicationRaise;
 
-    @Column(nullable = false, length = 180)
+    @Column(nullable = false, length = 160)
     private String companyLegalName;
 
     @Column(nullable = false, unique = true, length = 120)

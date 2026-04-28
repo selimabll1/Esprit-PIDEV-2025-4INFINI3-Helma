@@ -60,7 +60,7 @@ public final class ApplicationRaiseSpecifications {
             }
 
             addContains(predicates, cb, root.get("businessName"), c.getBusinessName());
-            addContains(predicates, cb, root.get("companyNumber"), c.getCompanyNumber());
+
             addContains(predicates, cb, root.get("website"), c.getWebsite());
             addContains(predicates, cb, root.get("country"), c.getCountry());
             addContains(predicates, cb, root.get("currency").as(String.class), c.getCurrency());
@@ -91,7 +91,6 @@ public final class ApplicationRaiseSpecifications {
                 List<Predicate> searchPredicates = new ArrayList<>();
 
                 addLikeSearch(searchPredicates, cb, root.get("businessName"), term);
-                addLikeSearch(searchPredicates, cb, root.get("companyNumber"), term);
                 addLikeSearch(searchPredicates, cb, root.get("website"), term);
                 addLikeSearch(searchPredicates, cb, root.get("country"), term);
                 addLikeSearch(searchPredicates, cb, root.get("currency").as(String.class), term);

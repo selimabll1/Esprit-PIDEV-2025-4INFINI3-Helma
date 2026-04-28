@@ -47,7 +47,7 @@ public class ApplicationDocumentService {
             DocumentType.PROJECT_PITCH_DECK
     );
 
-    private static final Set<DocumentType> EQUITY_REQUIRED_DOCS = EnumSet.of(
+    private static final Set<DocumentType> EQUITY_EXTRA_DOCS = EnumSet.of(
             DocumentType.CNRE_EXTRACT,
             DocumentType.SHAREHOLDERS_CAP_TABLE,
             DocumentType.FINANCIAL_STATEMENTS,
@@ -168,12 +168,42 @@ public class ApplicationDocumentService {
     }
 
     @Transactional(readOnly = true)
-    public void assertEquityDocsCompleteOrThrow(Long applicationRaiseId) {
+    public void assertRequiredDocsCompleteOrThrow(Long applicationRaiseId) {
         ApplicationRaise app = appRepo.findById(applicationRaiseId)
                 .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
 
-        if (app.getType() != CrowdfundingType.EQUITY) {
-            return;
+        Set<DocumentType> present = docRepo.findByApplicationRaiseId(applicationRaiseId)
+                .stream()
+                .map(ApplicationDocument::getDocType)
+                .collect(java.util.stream.Collectors.toSet());
+
+        for (DocumentType required : requiredDocsFor(app.getType())) {
+            if (!present.contains(required)) {
+                throw new IllegalStateException("Missing required document: " + required);
+            }
+        }
+    }
+
+    public Set<DocumentType> requiredDocsFor(CrowdfundingType appType) {
+        if (appType == CrowdfundingType.DONATION) {
+            return COMMON_DOCS;
+        }
+        if (appType == CrowdfundingType.EQUITY) {
+            Set<DocumentType> required = EnumSet.copyOf(COMMON_DOCS);
+            required.addAll(EQUITY_EXTRA_DOCS);
+            return required;
+        }
+        return EnumSet.noneOf(DocumentType.class);
+    }
+
+    @Transactional(readOnly = true)
+    public int documentCompletionPercent(Long applicationRaiseId) {
+        ApplicationRaise app = appRepo.findById(applicationRaiseId)
+                .orElseThrow(() -> new IllegalArgumentException("ApplicationRaise not found: " + applicationRaiseId));
+
+        Set<DocumentType> required = requiredDocsFor(app.getType());
+        if (required.isEmpty()) {
+            return 0;
         }
 
         Set<DocumentType> present = docRepo.findByApplicationRaiseId(applicationRaiseId)
@@ -181,11 +211,8 @@ public class ApplicationDocumentService {
                 .map(ApplicationDocument::getDocType)
                 .collect(java.util.stream.Collectors.toSet());
 
-        for (DocumentType required : EQUITY_REQUIRED_DOCS) {
-            if (!present.contains(required)) {
-                throw new IllegalStateException("Missing required EQUITY document: " + required);
-            }
-        }
+        long uploadedRequired = required.stream().filter(present::contains).count();
+        return (int) Math.round((uploadedRequired * 100.0) / required.size());
     }
 
     public ApplicationDocumentResponse toDto(ApplicationDocument doc) {
@@ -196,7 +223,12 @@ public class ApplicationDocumentService {
         response.fileName = doc.getFileName();
         response.mimeType = doc.getMimeType();
         response.sizeBytes = doc.getSizeBytes();
+        response.reviewStatus = doc.getReviewStatus();
+        response.reviewedByUserId = doc.getReviewedByUserId();
+        response.reviewedAt = doc.getReviewedAt();
+        response.reviewNote = doc.getReviewNote();
         response.createdAt = doc.getCreatedAt();
+        response.updatedAt = doc.getUpdatedAt();
         return response;
     }
 
@@ -217,7 +249,7 @@ public class ApplicationDocumentService {
         }
 
         if (appType == CrowdfundingType.EQUITY) {
-            if (COMMON_DOCS.contains(docType) || EQUITY_REQUIRED_DOCS.contains(docType)) {
+            if (COMMON_DOCS.contains(docType) || EQUITY_EXTRA_DOCS.contains(docType)) {
                 return;
             }
             throw new IllegalStateException(
