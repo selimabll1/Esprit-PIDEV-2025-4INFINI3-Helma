@@ -1,39 +1,43 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Role } from '../models/role.enum';
-import { AuthStorageService } from '../services/auth-storage.service';
-import { getHomeRouteByRole } from '../utils/role-home.util';
+import { SessionService } from '../services/session.service';
 
 export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const authStorage = inject(AuthStorageService);
+  const sessionService = inject(SessionService);
 
-  return authStorage.isAuthenticated()
-    ? true
-    : router.createUrlTree(['/auth/login']);
+  if (!sessionService.isAuthenticated()) {
+    return router.createUrlTree(['/auth/login']);
+  }
+
+  return true;
 };
 
 export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const authStorage = inject(AuthStorageService);
+  const sessionService = inject(SessionService);
 
-  return !authStorage.isAuthenticated()
-    ? true
-    : router.createUrlTree([getHomeRouteByRole(authStorage.getRole())]);
+  if (sessionService.isAuthenticated()) {
+    return router.createUrlTree([sessionService.getPortalRoute()]);
+  }
+
+  return true;
 };
 
 export const roleGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const authStorage = inject(AuthStorageService);
+  const sessionService = inject(SessionService);
 
-  if (!authStorage.isAuthenticated()) {
+  const allowedRoles = route.data?.['roles'] as string[] | undefined;
+  const currentRole = sessionService.role();
+
+  if (!currentRole) {
     return router.createUrlTree(['/auth/login']);
   }
 
-  const allowedRoles = (route.data['roles'] as Role[] | undefined) ?? [];
-  const currentRole = authStorage.getRole();
+  if (!allowedRoles?.includes(currentRole)) {
+    return router.createUrlTree([sessionService.getPortalRoute()]);
+  }
 
-  return currentRole && allowedRoles.includes(currentRole)
-    ? true
-    : router.createUrlTree([getHomeRouteByRole(currentRole)]);
+  return true;
 };

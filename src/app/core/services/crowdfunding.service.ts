@@ -5,10 +5,13 @@ import { environment } from '../../../environments/environment';
 import {
   ApiMessageResponse,
   ApplicationDocumentResponse,
+  ApplicationRaiseContactStepRequest,
   ApplicationRaiseCreateRequest,
+  ApplicationRaiseDetailsStepRequest,
   ApplicationRaiseResponse,
   ApplicationRaiseSearchCriteria,
   ApplicationRaiseStatus,
+  ApplicationRaiseTypeStepRequest,
   CampaignResponse,
   CampaignSearchCriteria,
   DocumentType,
@@ -30,7 +33,6 @@ export class CrowdfundingService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiBaseUrl}/crowdfunding`;
   private readonly portfolioBaseUrl = `${environment.apiBaseUrl}/portfolio`;
-  
 
   listMyApplications(
     criteria: ApplicationRaiseSearchCriteria = {}
@@ -44,6 +46,50 @@ export class CrowdfundingService {
   getApplicationById(id: number): Observable<ApplicationRaiseResponse> {
     return this.http.get<ApplicationRaiseResponse>(
       `${this.baseUrl}/application-raises/${id}`
+    );
+  }
+
+  createEmptyDraft(): Observable<ApplicationRaiseResponse> {
+    return this.http.post<ApplicationRaiseResponse>(
+      `${this.baseUrl}/application-raises/drafts`,
+      {}
+    );
+  }
+
+  saveContactStep(
+    id: number,
+    payload: ApplicationRaiseContactStepRequest
+  ): Observable<ApplicationRaiseResponse> {
+    return this.http.patch<ApplicationRaiseResponse>(
+      `${this.baseUrl}/application-raises/${id}/steps/contact`,
+      payload
+    );
+  }
+
+  saveTypeStep(
+    id: number,
+    payload: ApplicationRaiseTypeStepRequest
+  ): Observable<ApplicationRaiseResponse> {
+    return this.http.patch<ApplicationRaiseResponse>(
+      `${this.baseUrl}/application-raises/${id}/steps/type`,
+      payload
+    );
+  }
+
+  saveDetailsStep(
+    id: number,
+    payload: ApplicationRaiseDetailsStepRequest
+  ): Observable<ApplicationRaiseResponse> {
+    return this.http.patch<ApplicationRaiseResponse>(
+      `${this.baseUrl}/application-raises/${id}/steps/details`,
+      payload
+    );
+  }
+
+  submitDraft(id: number): Observable<ApplicationRaiseResponse> {
+    return this.http.post<ApplicationRaiseResponse>(
+      `${this.baseUrl}/application-raises/${id}/submit`,
+      {}
     );
   }
 
@@ -251,38 +297,39 @@ export class CrowdfundingService {
       `${this.portfolioBaseUrl}/me/diversification`
     );
   }
-private buildParams(criteria: object): HttpParams {
-  let params = new HttpParams();
 
-  Object.entries(criteria as Record<string, unknown>).forEach(([key, value]) => {
-    if (value === null || value === undefined) return;
+  private buildParams(criteria: object): HttpParams {
+    let params = new HttpParams();
 
-    if (typeof value === 'string') {
-      const normalized = value.trim();
-      if (!normalized) return;
-      params = params.set(key, normalized);
-      return;
-    }
+    Object.entries(criteria as Record<string, unknown>).forEach(([key, value]) => {
+      if (value === null || value === undefined) return;
 
-    if (typeof value === 'number' || typeof value === 'boolean') {
-      params = params.set(key, String(value));
-      return;
-    }
+      if (typeof value === 'string') {
+        const normalized = value.trim();
+        if (!normalized) return;
+        params = params.set(key, normalized);
+        return;
+      }
 
-    if (value instanceof Date) {
-      params = params.set(key, value.toISOString());
-      return;
-    }
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        params = params.set(key, String(value));
+        return;
+      }
 
-    if (Array.isArray(value)) {
-      value
-        .filter((item) => item !== null && item !== undefined && `${item}`.trim() !== '')
-        .forEach((item) => {
-          params = params.append(key, String(item));
-        });
-    }
-  });
+      if (value instanceof Date) {
+        params = params.set(key, value.toISOString());
+        return;
+      }
 
-  return params;
-}
+      if (Array.isArray(value)) {
+        value
+          .filter((item) => item !== null && item !== undefined && `${item}`.trim() !== '')
+          .forEach((item) => {
+            params = params.append(key, String(item));
+          });
+      }
+    });
+
+    return params;
+  }
 }

@@ -61,3 +61,14 @@ img {
   width: min(100% - 32px, var(--container-width));
   margin: 0 auto;
 }
+main,
+section,
+header,
+footer,
+.card,
+.auth-shell,
+.auth-panel,
+.auth-visual {
+  position: relative;
+  z-index: 1;
+}

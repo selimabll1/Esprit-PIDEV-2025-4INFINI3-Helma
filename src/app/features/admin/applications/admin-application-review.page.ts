@@ -74,7 +74,6 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
               <p><strong>Website:</strong> {{ app.website || '—' }}</p>
               <p><strong>Funding goal:</strong> {{ app.fundingGoal ?? '—' }} {{ app.currency }}</p>
               <p><strong>Country:</strong> {{ app.country }}</p>
-              <p><strong>Company number:</strong> {{ app.companyNumber || '—' }}</p>
               <p><strong>Customer count:</strong> {{ app.customerCount ?? '—' }}</p>
               <p><strong>Contact:</strong> {{ app.contactFirstName }} {{ app.contactLastName }}</p>
               <p><strong>Email:</strong> {{ app.contactEmail }}</p>

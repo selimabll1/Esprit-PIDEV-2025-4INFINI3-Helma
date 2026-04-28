@@ -16,6 +16,8 @@ import { TopNavbarComponent } from '../top-navbar/top-navbar.component';
   styles: [`
     .public-main {
       min-height: calc(100vh - var(--navbar-height));
+      position: relative;
+      z-index: 1;
     }
   `]
 })

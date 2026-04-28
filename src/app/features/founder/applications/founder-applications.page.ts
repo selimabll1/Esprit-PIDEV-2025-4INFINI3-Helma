@@ -10,7 +10,7 @@ import {
   SUB_SECTOR_OPTIONS_BY_SECTOR,
   Sector,
   SubSector,
-  TAG_OPTIONS
+  TAG_OPTIONS,
 } from '../../../core/models/application-taxonomy';
 import {
   ApplicationRaiseResponse,
@@ -18,7 +18,7 @@ import {
   ApplicationRaiseStatus,
   ApplicationSortKey,
   CrowdfundingType,
-  SortDirection
+  SortDirection,
 } from '../../../core/models/crowdfunding.models';
 import { CrowdfundingService } from '../../../core/services/crowdfunding.service';
 
@@ -31,12 +31,16 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
       <header class="page-header">
         <div>
           <h1>My applications</h1>
-          <p>Manage your donation and equity drafts before submission.</p>
+          <p>Manage your donation and equity applications before submission.</p>
         </div>
 
         <div class="actions top-actions">
-          <a routerLink="/founder/applications/new/donation">+ Donation draft</a>
-          <a routerLink="/founder/applications/new/equity">+ Equity draft</a>
+          <a routerLink="/youth/applications/new/donation"
+            >+ Donation application</a
+          >
+          <a routerLink="/youth/applications/new/equity"
+            >+ Equity application</a
+          >
         </div>
       </header>
 
@@ -56,7 +60,9 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
             <span>Status</span>
             <select [(ngModel)]="statusFilter">
               <option value="">All statuses</option>
-              <option *ngFor="let status of statusOptions" [value]="status">{{ formatLabel(status) }}</option>
+              <option *ngFor="let status of statusOptions" [value]="status">
+                {{ formatLabel(status) }}
+              </option>
             </select>
           </label>
 
@@ -64,15 +70,22 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
             <span>Type</span>
             <select [(ngModel)]="typeFilter">
               <option value="">All types</option>
-              <option *ngFor="let type of crowdfundingTypes" [value]="type">{{ formatLabel(type) }}</option>
+              <option *ngFor="let type of crowdfundingTypes" [value]="type">
+                {{ formatLabel(type) }}
+              </option>
             </select>
           </label>
 
           <label class="field">
             <span>Sector</span>
-            <select [(ngModel)]="sectorFilter" (ngModelChange)="onSectorChange($event)">
+            <select
+              [(ngModel)]="sectorFilter"
+              (ngModelChange)="onSectorChange($event)"
+            >
               <option value="">All sectors</option>
-              <option *ngFor="let sector of sectorOptions" [value]="sector">{{ formatLabel(sector) }}</option>
+              <option *ngFor="let sector of sectorOptions" [value]="sector">
+                {{ formatLabel(sector) }}
+              </option>
             </select>
           </label>
 
@@ -80,7 +93,10 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
             <span>Sub-sector</span>
             <select [(ngModel)]="subSectorFilter">
               <option value="">All sub-sectors</option>
-              <option *ngFor="let subSector of availableSubSectors" [value]="subSector">
+              <option
+                *ngFor="let subSector of availableSubSectors"
+                [value]="subSector"
+              >
                 {{ formatLabel(subSector) }}
               </option>
             </select>
@@ -90,14 +106,18 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
             <span>Tag</span>
             <select [(ngModel)]="tagFilter">
               <option value="">All tags</option>
-              <option *ngFor="let tag of tagOptions" [value]="tag">{{ formatLabel(tag) }}</option>
+              <option *ngFor="let tag of tagOptions" [value]="tag">
+                {{ formatLabel(tag) }}
+              </option>
             </select>
           </label>
 
           <label class="field">
             <span>Sort by</span>
             <select [(ngModel)]="sortBy">
-              <option *ngFor="let option of sortOptions" [value]="option.value">{{ option.label }}</option>
+              <option *ngFor="let option of sortOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
             </select>
           </label>
 
@@ -112,7 +132,9 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
 
         <div class="toolbar-actions">
           <button type="button" (click)="loadApplications()">Apply</button>
-          <button type="button" class="secondary" (click)="resetFilters()">Reset</button>
+          <button type="button" class="secondary" (click)="resetFilters()">
+            Reset
+          </button>
         </div>
       </div>
 
@@ -139,18 +161,31 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
           </div>
 
           <div class="meta">
-            <p><strong>Sector:</strong> {{ app.sector ? formatLabel(app.sector) : '—' }}</p>
-            <p><strong>Sub-sector:</strong> {{ app.subSector ? formatLabel(app.subSector) : '—' }}</p>
+            <p>
+              <strong>Sector:</strong>
+              {{ app.sector ? formatLabel(app.sector) : '—' }}
+            </p>
+            <p>
+              <strong>Sub-sector:</strong>
+              {{ app.subSector ? formatLabel(app.subSector) : '—' }}
+            </p>
             <p><strong>Tags:</strong> {{ formatTags(app.tags) }}</p>
-            <p><strong>Funding goal:</strong> {{ app.fundingGoal ?? '—' }} {{ app.currency || 'TND' }}</p>
-            <p><strong>Created:</strong> {{ app.createdAt | date:'medium' }}</p>
-            <p><strong>Updated:</strong> {{ app.updatedAt | date:'medium' }}</p>
+            <p>
+              <strong>Funding goal:</strong> {{ app.fundingGoal ?? '—' }}
+              {{ app.currency || 'TND' }}
+            </p>
+            <p>
+              <strong>Created:</strong> {{ app.createdAt | date: 'medium' }}
+            </p>
+            <p>
+              <strong>Updated:</strong> {{ app.updatedAt | date: 'medium' }}
+            </p>
           </div>
 
           <div class="card-actions">
             <a
               *ngIf="app.status === applicationStatus.DRAFT"
-              [routerLink]="['/founder/applications', app.id, 'edit']"
+              [routerLink]="['/youth/applications', app.id, 'edit']"
             >
               Edit
             </a>
@@ -178,193 +213,195 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
       </div>
     </section>
   `,
-  styles: [`
-    .page {
-      display: grid;
-      gap: 20px;
-    }
+  styles: [
+    `
+      .page {
+        display: grid;
+        gap: 20px;
+      }
 
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      align-items: flex-start;
-    }
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: flex-start;
+      }
 
-    .page-header h1 {
-      margin: 0 0 8px;
-      color: #062a2b;
-    }
+      .page-header h1 {
+        margin: 0 0 8px;
+        color: #062a2b;
+      }
 
-    .page-header p {
-      margin: 0;
-      color: #5c6b73;
-    }
+      .page-header p {
+        margin: 0;
+        color: #5c6b73;
+      }
 
-    .toolbar-card,
-    .card,
-    .empty,
-    .state-card {
-      background: white;
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.06);
-    }
+      .toolbar-card,
+      .card,
+      .empty,
+      .state-card {
+        background: white;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+      }
 
-    .toolbar-grid {
-      display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
+      .toolbar-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
 
-    .search-grid .field-wide {
-      grid-column: 1 / -1;
-    }
+      .search-grid .field-wide {
+        grid-column: 1 / -1;
+      }
 
-    .field {
-      display: grid;
-      gap: 8px;
-    }
+      .field {
+        display: grid;
+        gap: 8px;
+      }
 
-    .field span {
-      font-size: 0.86rem;
-      font-weight: 700;
-      color: #33444d;
-    }
+      .field span {
+        font-size: 0.86rem;
+        font-weight: 700;
+        color: #33444d;
+      }
 
-    .field input,
-    .field select {
-      width: 100%;
-      min-height: 44px;
-      border: 1px solid #d8dfe3;
-      border-radius: 10px;
-      padding: 0 12px;
-      font: inherit;
-      background: white;
-    }
+      .field input,
+      .field select {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid #d8dfe3;
+        border-radius: 10px;
+        padding: 0 12px;
+        font: inherit;
+        background: white;
+      }
 
-    .actions,
-    .card-actions,
-    .toolbar-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+      .actions,
+      .card-actions,
+      .toolbar-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
 
-    .top-actions a,
-    .card-actions a,
-    .card-actions button,
-    .toolbar-actions button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 0 14px;
-      border-radius: 10px;
-      border: 0;
-      text-decoration: none;
-      cursor: pointer;
-      background: #062a2b;
-      color: white;
-      font-weight: 600;
-    }
+      .top-actions a,
+      .card-actions a,
+      .card-actions button,
+      .toolbar-actions button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 14px;
+        border-radius: 10px;
+        border: 0;
+        text-decoration: none;
+        cursor: pointer;
+        background: #062a2b;
+        color: white;
+        font-weight: 600;
+      }
 
-    .toolbar-actions {
-      margin-top: 16px;
-    }
+      .toolbar-actions {
+        margin-top: 16px;
+      }
 
-    .toolbar-actions .secondary {
-      background: #eef3f5;
-      color: #062a2b;
-    }
+      .toolbar-actions .secondary {
+        background: #eef3f5;
+        color: #062a2b;
+      }
 
-    .card-actions .danger {
-      background: #c0392b;
-    }
+      .card-actions .danger {
+        background: #c0392b;
+      }
 
-    .grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
 
-    .card {
-      display: grid;
-      gap: 16px;
-    }
+      .card {
+        display: grid;
+        gap: 16px;
+      }
 
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-    }
+      .card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+      }
 
-    .card h2 {
-      margin: 10px 0 0;
-      font-size: 1.15rem;
-      color: #062a2b;
-    }
+      .card h2 {
+        margin: 10px 0 0;
+        font-size: 1.15rem;
+        color: #062a2b;
+      }
 
-    .meta {
-      display: grid;
-      gap: 8px;
-      color: #33444d;
-    }
+      .meta {
+        display: grid;
+        gap: 8px;
+        color: #33444d;
+      }
 
-    .meta p {
-      margin: 0;
-    }
+      .meta p {
+        margin: 0;
+      }
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
 
-    .type {
-      background: #eaf7f5;
-      color: #0b3b3c;
-    }
+      .type {
+        background: #eaf7f5;
+        color: #0b3b3c;
+      }
 
-    .status {
-      background: #eef3f5;
-      color: #455a64;
-    }
+      .status {
+        background: #eef3f5;
+        color: #455a64;
+      }
 
-    .status.draft {
-      background: #eef3f5;
-    }
+      .status.draft {
+        background: #eef3f5;
+      }
 
-    .status.submitted {
-      background: #fff5d7;
-      color: #8a6d1d;
-    }
+      .status.submitted {
+        background: #fff5d7;
+        color: #8a6d1d;
+      }
 
-    .status.under_review {
-      background: #e8f2ff;
-      color: #2c5ea8;
-    }
+      .status.under_review {
+        background: #e8f2ff;
+        color: #2c5ea8;
+      }
 
-    .status.approved {
-      background: #e8f7ef;
-      color: #1f7a43;
-    }
+      .status.approved {
+        background: #e8f7ef;
+        color: #1f7a43;
+      }
 
-    .status.rejected {
-      background: #fdecec;
-      color: #b03a2e;
-    }
+      .status.rejected {
+        background: #fdecec;
+        color: #b03a2e;
+      }
 
-    .error {
-      margin: 0;
-      color: #c0392b;
-      font-weight: 600;
-    }
-  `]
+      .error {
+        margin: 0;
+        color: #c0392b;
+        font-weight: 600;
+      }
+    `,
+  ],
 })
 export class FounderApplicationsPageComponent implements OnInit {
   private readonly service = inject(CrowdfundingService);
@@ -381,13 +418,16 @@ export class FounderApplicationsPageComponent implements OnInit {
   readonly sectorOptions = SECTOR_OPTIONS;
   readonly tagOptions = TAG_OPTIONS;
   readonly allSubSectorOptions = Object.values(SubSector);
-  readonly sortOptions: ReadonlyArray<{ value: ApplicationSortKey; label: string }> = [
+  readonly sortOptions: ReadonlyArray<{
+    value: ApplicationSortKey;
+    label: string;
+  }> = [
     { value: 'updatedAt', label: 'Last updated' },
     { value: 'createdAt', label: 'Created date' },
     { value: 'businessName', label: 'Business name' },
     { value: 'status', label: 'Status' },
     { value: 'fundingGoal', label: 'Funding goal' },
-    { value: 'type', label: 'Type' }
+    { value: 'type', label: 'Type' },
   ];
 
   search = '';
@@ -401,7 +441,10 @@ export class FounderApplicationsPageComponent implements OnInit {
 
   get availableSubSectors(): readonly SubSector[] {
     if (!this.sectorFilter) return this.allSubSectorOptions;
-    return SUB_SECTOR_OPTIONS_BY_SECTOR[this.sectorFilter] ?? this.allSubSectorOptions;
+    return (
+      SUB_SECTOR_OPTIONS_BY_SECTOR[this.sectorFilter] ??
+      this.allSubSectorOptions
+    );
   }
 
   ngOnInit(): void {
@@ -410,7 +453,10 @@ export class FounderApplicationsPageComponent implements OnInit {
 
   onSectorChange(value: string): void {
     this.sectorFilter = (value as Sector | '') || '';
-    if (this.subSectorFilter && !this.availableSubSectors.includes(this.subSectorFilter as SubSector)) {
+    if (
+      this.subSectorFilter &&
+      !this.availableSubSectors.includes(this.subSectorFilter as SubSector)
+    ) {
       this.subSectorFilter = '';
     }
   }
@@ -438,7 +484,7 @@ export class FounderApplicationsPageComponent implements OnInit {
         next: (apps) => this.applications.set(apps),
         error: (err: HttpErrorResponse) => {
           this.error.set(this.extractError(err));
-        }
+        },
       });
   }
 
@@ -457,7 +503,7 @@ export class FounderApplicationsPageComponent implements OnInit {
         next: () => this.loadApplications(),
         error: (err: HttpErrorResponse) => {
           this.error.set(this.extractError(err));
-        }
+        },
       });
   }
 
@@ -474,14 +520,12 @@ export class FounderApplicationsPageComponent implements OnInit {
         ? this.service.deleteEquityDraft(app.id)
         : this.service.deleteDonationDraft(app.id);
 
-    request$
-      .pipe(finalize(() => this.busyId.set(null)))
-      .subscribe({
-        next: () => this.loadApplications(),
-        error: (err: HttpErrorResponse) => {
-          this.error.set(this.extractError(err));
-        }
-      });
+    request$.pipe(finalize(() => this.busyId.set(null))).subscribe({
+      next: () => this.loadApplications(),
+      error: (err: HttpErrorResponse) => {
+        this.error.set(this.extractError(err));
+      },
+    });
   }
 
   formatLabel(value: string): string {
@@ -505,7 +549,7 @@ export class FounderApplicationsPageComponent implements OnInit {
       subSector: this.subSectorFilter || null,
       tag: this.tagFilter || null,
       sortBy: this.sortBy,
-      sortDir: this.sortDir
+      sortDir: this.sortDir,
     };
   }
 

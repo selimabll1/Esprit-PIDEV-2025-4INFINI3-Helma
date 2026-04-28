@@ -13,12 +13,12 @@ import { AuthStorageService } from '../../../core/services/auth-storage.service'
       <aside class="sidebar">
         <div>
           <div class="brand">HELMA</div>
-          <p class="tagline">Founder Portal</p>
+          <p class="tagline">Youth Beneficiary Portal</p>
         </div>
 
         <nav class="nav">
           <a
-            routerLink="/founder"
+            routerLink="/youth"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: true }"
           >
@@ -26,17 +26,17 @@ import { AuthStorageService } from '../../../core/services/auth-storage.service'
           </a>
 
           <a
-            routerLink="/founder/applications/new/donation"
+            routerLink="/youth/applications/new/donation"
             routerLinkActive="active"
           >
-            New donation draft
+            New donation application
           </a>
 
           <a
-            routerLink="/founder/applications/new/equity"
+            routerLink="/youth/applications/new/equity"
             routerLinkActive="active"
           >
-            New equity draft
+            New equity application
           </a>
         </nav>
 

@@ -15,10 +15,7 @@
       <a routerLink="/financing" routerLinkActive="active">Financing</a>
 
       <div class="nav-dropdown">
-        <button type="button" class="nav-dropdown-trigger">
-          Crowdfunding
-        </button>
-
+        <button type="button" class="nav-dropdown-trigger">Crowdfunding</button>
         <div class="nav-dropdown-menu">
           <a routerLink="/crowdfunding/donation" routerLinkActive="active">Donation</a>
           <a routerLink="/crowdfunding/equity" routerLinkActive="active">Equity</a>
@@ -30,9 +27,33 @@
       <a routerLink="/resources" routerLinkActive="active">Resources</a>
     </nav>
 
-    <div class="nav-actions">
+    <div class="nav-actions" *ngIf="!isAuthenticated(); else loggedInActions">
       <a class="login-link" routerLink="/auth/login">Sign in</a>
-      <a class="btn btn-primary" routerLink="/auth/login">Get Started</a>
+      <a class="btn btn-primary" routerLink="/auth/signup">Get Started</a>
     </div>
+
+    <ng-template #loggedInActions>
+      <div class="nav-actions user-actions">
+        <a class="portal-link" [routerLink]="portalRoute()">Portal</a>
+
+        <div class="nav-dropdown user-menu">
+          <button type="button" class="nav-dropdown-trigger user-trigger">
+            {{ roleLabel() }}
+          </button>
+
+          <div class="nav-dropdown-menu user-dropdown">
+            <div class="user-meta">
+              <strong>{{ roleLabel() }}</strong>
+              <small>{{ email() }}</small>
+            </div>
+
+            <a [routerLink]="portalRoute()">Dashboard</a>
+            <a routerLink="/profile">Profile</a>
+            <a routerLink="/settings">Settings</a>
+            <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+          </div>
+        </div>
+      </div>
+    </ng-template>
   </div>
 </header>

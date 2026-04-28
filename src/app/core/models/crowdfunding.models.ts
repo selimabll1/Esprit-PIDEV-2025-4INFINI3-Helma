@@ -13,6 +13,28 @@ export enum ApplicationRaiseStatus {
   REJECTED = 'REJECTED'
 }
 
+export enum ApplicationRaiseDraftStep {
+  CONTACT = 'CONTACT',
+  TYPE = 'TYPE',
+  DETAILS = 'DETAILS',
+  DOCUMENTS = 'DOCUMENTS'
+}
+
+export enum ProjectStage {
+  IDEA = 'IDEA',
+  MVP = 'MVP',
+  EARLY_REVENUE = 'EARLY_REVENUE',
+  GROWING = 'GROWING',
+  REGISTERED_COMPANY = 'REGISTERED_COMPANY'
+}
+
+export enum DocumentReviewStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  NEEDS_REUPLOAD = 'NEEDS_REUPLOAD'
+}
+
 export enum DocumentType {
   ID_CARD = 'ID_CARD',
   PROJECT_PITCH_DECK = 'PROJECT_PITCH_DECK',
@@ -42,10 +64,10 @@ export type ApplicationSortKey =
 export interface ApplicationRaiseSearchCriteria {
   search?: string | null;
   id?: number | null;
-  founderUserId?: number | null;
+  ownerUserId?: number | null;
   type?: CrowdfundingType | null;
   businessName?: string | null;
-  companyNumber?: string | null;
+
   website?: string | null;
   country?: string | null;
   currency?: string | null;
@@ -116,7 +138,12 @@ export interface ApplicationDocumentResponse {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  reviewStatus?: DocumentReviewStatus | null;
+  reviewedByUserId?: number | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
   createdAt: string;
+  updatedAt?: string | null;
 }
 
 export interface EquityDetailResponse {
@@ -126,6 +153,8 @@ export interface EquityDetailResponse {
   cnreProfileUrl: string;
   equityOfferedPercent: number | null;
   preMoneyValuation: number | null;
+  fundingGoal?: number | null;
+  postMoneyValuation?: number | null;
   minInvestment: number | null;
   createdAt: string;
   updatedAt: string;
@@ -133,24 +162,35 @@ export interface EquityDetailResponse {
 
 export interface ApplicationRaiseResponse {
   id: number;
-  founderUserId: number;
-  type: CrowdfundingType;
+  ownerUserId: number;
+  type: CrowdfundingType | null;
 
-  businessName: string;
-  companyNumber: string | null;
+  businessName: string | null;
+
   website: string | null;
 
-  country: string;
-  currency: string;
+  country: string | null;
+  currency: string | null;
 
   sector: Sector | null;
   subSector: SubSector | null;
   tags: AppTag[];
+  stage: ProjectStage | null;
   summary: string | null;
+  problemStatement: string | null;
+  solution: string | null;
+  targetCustomers: string | null;
+  useOfFunds: string | null;
 
   fundingGoal: number | null;
   investorsPledgedAmount: number | null;
+  raisedAmount?: number | null;
+  remainingAmount?: number | null;
+  fundingProgressPercent?: number | null;
   customerCount: number | null;
+  teamSize: number | null;
+  governorate: string | null;
+  city: string | null;
 
   contactFirstName: string | null;
   contactLastName: string | null;
@@ -158,11 +198,18 @@ export interface ApplicationRaiseResponse {
   contactEmail: string | null;
   contactPhone: string | null;
 
+  useProfileContact: boolean;
   acceptedTerms: boolean;
+
   status: ApplicationRaiseStatus;
+  draftStep: ApplicationRaiseDraftStep;
+
+  applicationCompletionPercent?: number | null;
+  documentCompletionPercent?: number | null;
 
   createdAt: string;
   updatedAt: string;
+  submittedAt?: string | null;
 
   equityDetail: EquityDetailResponse | null;
   documents: ApplicationDocumentResponse[];
@@ -171,16 +218,24 @@ export interface ApplicationRaiseResponse {
 export interface ApplicationRaiseCreateRequest {
   type: CrowdfundingType;
   businessName: string;
-  companyNumber?: string | null;
+
   website?: string | null;
 
   sector: Sector;
   subSector: SubSector;
   tags: AppTag[];
+  stage?: ProjectStage | null;
   summary: string;
+  problemStatement?: string | null;
+  solution?: string | null;
+  targetCustomers?: string | null;
+  useOfFunds?: string | null;
 
   fundingGoal: number | null;
   customerCount?: number | null;
+  teamSize?: number | null;
+  governorate?: string | null;
+  city?: string | null;
 
   contactFirstName: string;
   contactLastName: string;
@@ -191,13 +246,50 @@ export interface ApplicationRaiseCreateRequest {
   acceptedTerms: boolean;
 }
 
+export interface ApplicationRaiseContactStepRequest {
+  useProfileContact: boolean;
+  contactFirstName: string;
+  contactLastName: string;
+  contactTitle?: string | null;
+  contactEmail: string;
+  contactPhone?: string | null;
+}
+
+export interface ApplicationRaiseTypeStepRequest {
+  type: CrowdfundingType;
+}
+
 export interface EquityDetailUpsertRequest {
   companyLegalName: string;
   companyRegistrationNumber: string;
   cnreProfileUrl: string;
-  equityOfferedPercent?: number | null;
   preMoneyValuation?: number | null;
   minInvestment?: number | null;
+}
+
+export interface ApplicationRaiseDetailsStepRequest {
+  businessName: string;
+
+  website?: string | null;
+
+  sector: Sector;
+  subSector: SubSector;
+  tags: AppTag[];
+  stage: ProjectStage;
+  summary: string;
+  problemStatement: string;
+  solution: string;
+  targetCustomers: string;
+  useOfFunds: string;
+
+  fundingGoal: number | null;
+  customerCount?: number | null;
+  teamSize: number | null;
+  governorate: string | null;
+  city: string | null;
+
+  equityDetail?: EquityDetailUpsertRequest | null;
+  acceptedTerms: boolean;
 }
 
 export interface EquityApplicationCreateRequest {
@@ -346,6 +438,7 @@ export interface PortfolioPositionResponse {
 
   pledgedAt: string;
 }
+
 export interface PortfolioOverviewResponse {
   summary: PortfolioSummaryResponse;
   sectorAllocation: PortfolioAllocationItemResponse[];

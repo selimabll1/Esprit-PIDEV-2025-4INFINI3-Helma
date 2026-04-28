@@ -18,7 +18,7 @@ import { RouterLink } from '@angular/router';
           </p>
 
           <div class="hero-actions">
-            <a class="btn btn-primary" routerLink="/auth/login">Start Your Journey</a>
+            <a class="btn btn-primary" routerLink="/auth/signup">Start Your Journey</a>
             <a class="btn btn-secondary" routerLink="/discover">Explore Opportunities</a>
           </div>
 
@@ -255,6 +255,8 @@ import { RouterLink } from '@angular/router';
   styles: [`
     :host {
       display: block;
+      position: relative;
+      z-index: 1;
     }
 
     .hero,

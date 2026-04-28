@@ -6,20 +6,20 @@ import {
   OnInit,
   computed,
   inject,
-  signal
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
   FormControl,
   FormGroup,
-  ReactiveFormsModule
+  ReactiveFormsModule,
 } from '@angular/forms';
 import {
   ActivatedRoute,
   Router,
   RouterLink,
-  RouterLinkActive
+  RouterLinkActive,
 } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import {
@@ -29,7 +29,7 @@ import {
   ApplicationRaiseStatus,
   CrowdfundingType,
   DocumentType,
-  EquityApplicationCreateRequest
+  EquityApplicationCreateRequest,
 } from '../../../core/models/crowdfunding.models';
 import {
   AppTag,
@@ -37,7 +37,7 @@ import {
   SubSector,
   SECTOR_OPTIONS,
   SUB_SECTOR_OPTIONS_BY_SECTOR,
-  TAG_OPTIONS
+  TAG_OPTIONS,
 } from '../../../core/models/application-taxonomy';
 import { CrowdfundingService } from '../../../core/services/crowdfunding.service';
 
@@ -51,12 +51,16 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
     <section class="page">
       <div class="header">
         <div>
-          <a class="back" routerLink="/founder">← Back to applications</a>
+          <a class="back" routerLink="/youth">← Back to applications</a>
 
           <div class="title-row">
             <h1>
               {{ mode() === 'create' ? 'Create' : 'Edit' }}
-              {{ currentType() === crowdfundingType.EQUITY ? 'equity' : 'donation' }}
+              {{
+                currentType() === crowdfundingType.EQUITY
+                  ? 'equity'
+                  : 'donation'
+              }}
               application
             </h1>
 
@@ -66,19 +70,21 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
           </div>
 
           <p>
-            Save the draft, then manage documents below. Documents can only be changed while the application is in DRAFT.
+            Complete your application details, save your draft, and submit it
+            when ready. Documents can only be managed while the application is
+            in draft.
           </p>
         </div>
 
         <div class="switcher" *ngIf="mode() === 'create'">
           <a
-            routerLink="/founder/applications/new/donation"
+            routerLink="/youth/applications/new/donation"
             routerLinkActive="active"
           >
             Donation
           </a>
           <a
-            routerLink="/founder/applications/new/equity"
+            routerLink="/youth/applications/new/equity"
             routerLinkActive="active"
           >
             Equity
@@ -90,7 +96,12 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
       <p class="error" *ngIf="error()">{{ error() }}</p>
       <div class="state-card" *ngIf="loading()">Loading application...</div>
 
-      <form class="form" [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading()">
+      <form
+        class="form"
+        [formGroup]="form"
+        (ngSubmit)="save()"
+        *ngIf="!loading()"
+      >
         <section class="card">
           <h2>Business information</h2>
 
@@ -111,16 +122,20 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
                   {{ formatEnumLabel(sector) }}
                 </option>
               </select>
-              <small *ngIf="showError('sector')">
-                Sector is required.
-              </small>
+              <small *ngIf="showError('sector')"> Sector is required. </small>
             </div>
 
             <div class="field">
               <label>Sub-sector *</label>
-              <select formControlName="subSector" [disabled]="!form.get('sector')?.value">
+              <select
+                formControlName="subSector"
+                [disabled]="!form.get('sector')?.value"
+              >
                 <option value="">Select a sub-sector</option>
-                <option *ngFor="let subSector of availableSubSectorOptions()" [value]="subSector">
+                <option
+                  *ngFor="let subSector of availableSubSectorOptions()"
+                  [value]="subSector"
+                >
                   {{ formatEnumLabel(subSector) }}
                 </option>
               </select>
@@ -153,12 +168,11 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
               </small>
             </div>
 
-            <div class="field" *ngIf="currentType() === crowdfundingType.EQUITY">
-              <label>Company number *</label>
-              <input type="text" formControlName="companyNumber" />
-              <small *ngIf="showError('companyNumber')">
-                Company number is required for equity.
-              </small>
+            <div
+              class="field"
+              *ngIf="currentType() === crowdfundingType.EQUITY"
+            >
+              
             </div>
           </div>
 
@@ -175,9 +189,7 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
                 <span>{{ formatEnumLabel(tag) }}</span>
               </label>
             </div>
-            <small *ngIf="showError('tags')">
-              Select at least one tag.
-            </small>
+            <small *ngIf="showError('tags')"> Select at least one tag. </small>
           </div>
 
           <div class="field">
@@ -246,7 +258,9 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
             <div class="field">
               <label>Company legal name *</label>
               <input type="text" formControlName="companyLegalName" />
-              <small *ngIf="showNestedError('equityDetail', 'companyLegalName')">
+              <small
+                *ngIf="showNestedError('equityDetail', 'companyLegalName')"
+              >
                 Company legal name is required.
               </small>
             </div>
@@ -254,7 +268,11 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
             <div class="field">
               <label>Company registration number *</label>
               <input type="text" formControlName="companyRegistrationNumber" />
-              <small *ngIf="showNestedError('equityDetail', 'companyRegistrationNumber')">
+              <small
+                *ngIf="
+                  showNestedError('equityDetail', 'companyRegistrationNumber')
+                "
+              >
                 Company registration number is required.
               </small>
             </div>
@@ -269,20 +287,34 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
 
             <div class="field">
               <label>Equity offered (%)</label>
-              <input type="number" step="0.01" formControlName="equityOfferedPercent" />
-              <small *ngIf="showNestedError('equityDetail', 'equityOfferedPercent')">
+              <input
+                type="number"
+                step="0.01"
+                formControlName="equityOfferedPercent"
+              />
+              <small
+                *ngIf="showNestedError('equityDetail', 'equityOfferedPercent')"
+              >
                 Must be between 0.01 and 100
               </small>
             </div>
 
             <div class="field">
               <label>Pre-money valuation</label>
-              <input type="number" step="0.001" formControlName="preMoneyValuation" />
+              <input
+                type="number"
+                step="0.001"
+                formControlName="preMoneyValuation"
+              />
             </div>
 
             <div class="field">
               <label>Minimum investment</label>
-              <input type="number" step="0.001" formControlName="minInvestment" />
+              <input
+                type="number"
+                step="0.001"
+                formControlName="minInvestment"
+              />
             </div>
           </div>
         </section>
@@ -305,7 +337,8 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
 
           <ng-container *ngIf="hasSavedDraft(); else saveFirstBlock">
             <p class="hint">
-              Upload PDF only, max 10 MB. Uploading the same document type again replaces the old one.
+              Upload PDF only, max 10 MB. Uploading the same document type again
+              replaces the old one.
             </p>
 
             <div class="doc-upload">
@@ -316,7 +349,10 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
                   (change)="onDocTypeChange($any($event.target).value)"
                 >
                   <option value="">Select document type</option>
-                  <option *ngFor="let type of allowedDocumentTypes()" [value]="type">
+                  <option
+                    *ngFor="let type of allowedDocumentTypes()"
+                    [value]="type"
+                  >
                     {{ formatEnumLabel(type) }}
                   </option>
                 </select>
@@ -342,10 +378,15 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
               </div>
             </div>
 
-            <p class="success" *ngIf="documentSuccess()">{{ documentSuccess() }}</p>
+            <p class="success" *ngIf="documentSuccess()">
+              {{ documentSuccess() }}
+            </p>
             <p class="error" *ngIf="documentError()">{{ documentError() }}</p>
 
-            <div class="doc-checklist" *ngIf="currentType() === crowdfundingType.EQUITY">
+            <div
+              class="doc-checklist"
+              *ngIf="currentType() === crowdfundingType.EQUITY"
+            >
               <h3>Equity required before submit</h3>
 
               <div class="check-grid">
@@ -372,7 +413,7 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
                   <p>{{ doc.fileName }}</p>
                   <small>
                     {{ formatBytes(doc.sizeBytes) }} •
-                    {{ doc.createdAt | date:'medium' }}
+                    {{ doc.createdAt | date: 'medium' }}
                   </small>
                 </div>
 
@@ -388,9 +429,7 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
             </div>
 
             <ng-template #noDocsBlock>
-              <div class="empty-box">
-                No documents uploaded yet.
-              </div>
+              <div class="empty-box">No documents uploaded yet.</div>
             </ng-template>
           </ng-container>
 
@@ -404,298 +443,306 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
         <div class="footer-actions">
           <a routerLink="/founder">Back</a>
           <button type="submit" [disabled]="saving() || !isEditable()">
-            {{ saving() ? 'Saving...' : mode() === 'create' ? 'Save draft' : 'Update draft' }}
+            {{
+              saving()
+                ? 'Saving...'
+                : mode() === 'create'
+                  ? 'Save draft'
+                  : 'Update draft'
+            }}
           </button>
         </div>
       </form>
     </section>
   `,
-  styles: [`
-    .page {
-      display: grid;
-      gap: 20px;
-    }
+  styles: [
+    `
+      .page {
+        display: grid;
+        gap: 20px;
+      }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      align-items: flex-start;
-    }
-
-    .back {
-      display: inline-block;
-      margin-bottom: 8px;
-      color: #0b3b3c;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .title-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .header h1 {
-      margin: 0;
-      color: #062a2b;
-    }
-
-    .header p {
-      margin: 8px 0 0;
-      color: #5c6b73;
-      max-width: 760px;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      min-height: 30px;
-      padding: 0 10px;
-      border-radius: 999px;
-      background: #eef3f5;
-      color: #455a64;
-      font-weight: 700;
-      font-size: 0.8rem;
-    }
-
-    .switcher {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .switcher a,
-    .footer-actions a,
-    .footer-actions button,
-    .upload-actions button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 0 14px;
-      border-radius: 10px;
-      text-decoration: none;
-      border: 0;
-      cursor: pointer;
-      background: #eef3f5;
-      color: #062a2b;
-      font-weight: 700;
-    }
-
-    .switcher a.active {
-      background: #2a9d8f;
-      color: #062a2b;
-    }
-
-    .footer-actions button,
-    .upload-actions button {
-      background: #062a2b;
-      color: white;
-    }
-
-    .form {
-      display: grid;
-      gap: 18px;
-    }
-
-    .card,
-    .state-card {
-      background: white;
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.06);
-    }
-
-    .card h2,
-    .doc-checklist h3 {
-      margin: 0 0 16px;
-      color: #062a2b;
-      font-size: 1.1rem;
-    }
-
-    .doc-checklist h3 {
-      font-size: 1rem;
-      margin-top: 8px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    .field {
-      display: grid;
-      gap: 8px;
-    }
-
-    label {
-      font-weight: 600;
-      color: #062a2b;
-    }
-
-    input,
-    textarea,
-    select {
-      width: 100%;
-      border: 1px solid #d8dfe3;
-      border-radius: 10px;
-      padding: 12px;
-      font: inherit;
-      background: #fff;
-    }
-
-    textarea {
-      resize: vertical;
-    }
-
-    input:focus,
-    textarea:focus,
-    select:focus {
-      outline: none;
-      border-color: #2a9d8f;
-      box-shadow: 0 0 0 3px rgba(42,157,143,0.12);
-    }
-
-    .checkbox {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .checkbox input {
-      width: auto;
-    }
-
-    .tag-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-    }
-
-    .tag-option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid #d8dfe3;
-      border-radius: 10px;
-      background: #f8fbfb;
-      cursor: pointer;
-    }
-
-    .tag-option input {
-      width: auto;
-      margin: 0;
-    }
-
-    .doc-upload {
-      display: grid;
-      gap: 14px;
-      grid-template-columns: 1.2fr 1fr auto;
-      align-items: end;
-      margin-bottom: 18px;
-    }
-
-    .doc-list {
-      display: grid;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .doc-card {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      align-items: center;
-      padding: 14px 16px;
-      border: 1px solid #e6ecef;
-      border-radius: 14px;
-      background: #fbfcfd;
-    }
-
-    .doc-card p,
-    .doc-card small {
-      margin: 4px 0 0;
-      color: #5c6b73;
-    }
-
-    .danger {
-      background: #c0392b !important;
-      color: white !important;
-    }
-
-    .empty-box {
-      padding: 16px;
-      border-radius: 12px;
-      background: #f6f8f9;
-      color: #5c6b73;
-    }
-
-    .check-grid {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    .check-item {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      padding: 12px;
-      border-radius: 12px;
-      background: #fff5d7;
-      color: #8a6d1d;
-      font-weight: 600;
-    }
-
-    .check-item.done {
-      background: #e8f7ef;
-      color: #1f7a43;
-    }
-
-    .hint {
-      margin: 0;
-      color: #5c6b73;
-    }
-
-    .footer-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .success {
-      color: #1f7a43;
-      margin: 0;
-      font-weight: 600;
-    }
-
-    .error,
-    small {
-      color: #c0392b;
-      margin: 0;
-    }
-
-    @media (max-width: 960px) {
       .header {
-        flex-direction: column;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: flex-start;
+      }
+
+      .back {
+        display: inline-block;
+        margin-bottom: 8px;
+        color: #0b3b3c;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .title-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .header h1 {
+        margin: 0;
+        color: #062a2b;
+      }
+
+      .header p {
+        margin: 8px 0 0;
+        color: #5c6b73;
+        max-width: 760px;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: #eef3f5;
+        color: #455a64;
+        font-weight: 700;
+        font-size: 0.8rem;
+      }
+
+      .switcher {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .switcher a,
+      .footer-actions a,
+      .footer-actions button,
+      .upload-actions button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 14px;
+        border-radius: 10px;
+        text-decoration: none;
+        border: 0;
+        cursor: pointer;
+        background: #eef3f5;
+        color: #062a2b;
+        font-weight: 700;
+      }
+
+      .switcher a.active {
+        background: #2a9d8f;
+        color: #062a2b;
+      }
+
+      .footer-actions button,
+      .upload-actions button {
+        background: #062a2b;
+        color: white;
+      }
+
+      .form {
+        display: grid;
+        gap: 18px;
+      }
+
+      .card,
+      .state-card {
+        background: white;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+      }
+
+      .card h2,
+      .doc-checklist h3 {
+        margin: 0 0 16px;
+        color: #062a2b;
+        font-size: 1.1rem;
+      }
+
+      .doc-checklist h3 {
+        font-size: 1rem;
+        margin-top: 8px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 600;
+        color: #062a2b;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid #d8dfe3;
+        border-radius: 10px;
+        padding: 12px;
+        font: inherit;
+        background: #fff;
+      }
+
+      textarea {
+        resize: vertical;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #2a9d8f;
+        box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.12);
+      }
+
+      .checkbox {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .checkbox input {
+        width: auto;
+      }
+
+      .tag-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+      }
+
+      .tag-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid #d8dfe3;
+        border-radius: 10px;
+        background: #f8fbfb;
+        cursor: pointer;
+      }
+
+      .tag-option input {
+        width: auto;
+        margin: 0;
       }
 
       .doc-upload {
-        grid-template-columns: 1fr;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 1.2fr 1fr auto;
+        align-items: end;
+        margin-bottom: 18px;
+      }
+
+      .doc-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
       }
 
       .doc-card {
-        flex-direction: column;
-        align-items: flex-start;
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 16px;
+        border: 1px solid #e6ecef;
+        border-radius: 14px;
+        background: #fbfcfd;
       }
-    }
-  `]
+
+      .doc-card p,
+      .doc-card small {
+        margin: 4px 0 0;
+        color: #5c6b73;
+      }
+
+      .danger {
+        background: #c0392b !important;
+        color: white !important;
+      }
+
+      .empty-box {
+        padding: 16px;
+        border-radius: 12px;
+        background: #f6f8f9;
+        color: #5c6b73;
+      }
+
+      .check-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .check-item {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 12px;
+        background: #fff5d7;
+        color: #8a6d1d;
+        font-weight: 600;
+      }
+
+      .check-item.done {
+        background: #e8f7ef;
+        color: #1f7a43;
+      }
+
+      .hint {
+        margin: 0;
+        color: #5c6b73;
+      }
+
+      .footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .success {
+        color: #1f7a43;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .error,
+      small {
+        color: #c0392b;
+        margin: 0;
+      }
+
+      @media (max-width: 960px) {
+        .header {
+          flex-direction: column;
+        }
+
+        .doc-upload {
+          grid-template-columns: 1fr;
+        }
+
+        .doc-card {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    `,
+  ],
 })
 export class FounderApplicationFormPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -712,7 +759,7 @@ export class FounderApplicationFormPageComponent implements OnInit {
 
   readonly donationDocumentTypes: DocumentType[] = [
     DocumentType.ID_CARD,
-    DocumentType.PROJECT_PITCH_DECK
+    DocumentType.PROJECT_PITCH_DECK,
   ];
 
   readonly equityDocumentTypes: DocumentType[] = [
@@ -720,14 +767,14 @@ export class FounderApplicationFormPageComponent implements OnInit {
     DocumentType.CNRE_EXTRACT,
     DocumentType.SHAREHOLDERS_CAP_TABLE,
     DocumentType.FINANCIAL_STATEMENTS,
-    DocumentType.BANK_RIB
+    DocumentType.BANK_RIB,
   ];
 
   readonly equityRequiredDocumentTypes: DocumentType[] = [
     DocumentType.CNRE_EXTRACT,
     DocumentType.SHAREHOLDERS_CAP_TABLE,
     DocumentType.FINANCIAL_STATEMENTS,
-    DocumentType.BANK_RIB
+    DocumentType.BANK_RIB,
   ];
 
   readonly mode = signal<'create' | 'edit'>('create');
@@ -751,13 +798,13 @@ export class FounderApplicationFormPageComponent implements OnInit {
   private applicationId: number | null = null;
 
   readonly hasSavedDraft = computed(
-    () => this.mode() === 'edit' && this.applicationId !== null
+    () => this.mode() === 'edit' && this.applicationId !== null,
   );
 
   readonly allowedDocumentTypes = computed(() =>
     this.currentType() === CrowdfundingType.EQUITY
       ? this.equityDocumentTypes
-      : this.donationDocumentTypes
+      : this.donationDocumentTypes,
   );
 
   readonly missingRequiredEquityDocs = computed(() => {
@@ -766,11 +813,13 @@ export class FounderApplicationFormPageComponent implements OnInit {
     }
 
     const present = new Set(this.documents().map((doc) => doc.docType));
-    return this.equityRequiredDocumentTypes.filter((type) => !present.has(type));
+    return this.equityRequiredDocumentTypes.filter(
+      (type) => !present.has(type),
+    );
   });
 
   readonly missingRequiredEquityDocLabels = computed(() =>
-    this.missingRequiredEquityDocs().map((type) => this.formatEnumLabel(type))
+    this.missingRequiredEquityDocs().map((type) => this.formatEnumLabel(type)),
   );
 
   readonly availableSubSectorOptions = computed(() => {
@@ -781,12 +830,11 @@ export class FounderApplicationFormPageComponent implements OnInit {
 
   readonly form = this.fb.group({
     businessName: [''],
-    companyNumber: [''],
     website: [''],
     sector: [''],
     subSector: [''],
     tags: new FormControl<AppTag[]>([], {
-      nonNullable: true
+      nonNullable: true,
     }),
     summary: [''],
     fundingGoal: [null as number | null],
@@ -803,15 +851,17 @@ export class FounderApplicationFormPageComponent implements OnInit {
       cnreProfileUrl: [''],
       equityOfferedPercent: [null as number | null],
       preMoneyValuation: [null as number | null],
-      minInvestment: [null as number | null]
-    })
+      minInvestment: [null as number | null],
+    }),
   });
 
   ngOnInit(): void {
     this.form
       .get('sector')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((sector) => this.onSectorChanged(sector as Sector | '' | null));
+      .subscribe((sector) =>
+        this.onSectorChanged(sector as Sector | '' | null),
+      );
 
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -837,7 +887,7 @@ export class FounderApplicationFormPageComponent implements OnInit {
         this.currentType.set(
           typeParam === 'equity'
             ? CrowdfundingType.EQUITY
-            : CrowdfundingType.DONATION
+            : CrowdfundingType.DONATION,
         );
 
         this.documents.set([]);
@@ -865,30 +915,32 @@ export class FounderApplicationFormPageComponent implements OnInit {
         ? this.buildEquityRequest(commonPayload)
         : this.buildDonationRequest(commonPayload);
 
-    request$
-      .pipe(finalize(() => this.saving.set(false)))
-      .subscribe({
-        next: (saved) => {
-          const wasCreate = this.mode() === 'create';
+    request$.pipe(finalize(() => this.saving.set(false))).subscribe({
+      next: (saved) => {
+        const wasCreate = this.mode() === 'create';
 
-          this.applicationId = saved.id;
-          this.mode.set('edit');
-          this.patchFromResponse(saved);
+        this.applicationId = saved.id;
+        this.mode.set('edit');
+        this.patchFromResponse(saved);
 
-          this.success.set(
-            wasCreate
-              ? 'Draft created successfully. You can now upload documents.'
-              : 'Draft updated successfully.'
-          );
+        this.success.set(
+          wasCreate
+            ? 'Draft created successfully. You can now upload documents.'
+            : 'Draft updated successfully.',
+        );
 
-          if (wasCreate) {
-            void this.router.navigate(['/founder/applications', saved.id, 'edit']);
-          }
-        },
-        error: (err: HttpErrorResponse) => {
-          this.error.set(this.extractError(err));
+        if (wasCreate) {
+          void this.router.navigate([
+            '/founder/applications',
+            saved.id,
+            'edit',
+          ]);
         }
-      });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(this.extractError(err));
+      },
+    });
   }
 
   uploadDocument(): void {
@@ -898,7 +950,9 @@ export class FounderApplicationFormPageComponent implements OnInit {
     }
 
     if (!this.isEditable()) {
-      this.documentError.set('Documents can only be changed while the application is DRAFT.');
+      this.documentError.set(
+        'Documents can only be changed while the application is DRAFT.',
+      );
       return;
     }
 
@@ -911,7 +965,9 @@ export class FounderApplicationFormPageComponent implements OnInit {
     }
 
     if (!this.allowedDocumentTypes().includes(type)) {
-      this.documentError.set('That document type is not allowed for this application type.');
+      this.documentError.set(
+        'That document type is not allowed for this application type.',
+      );
       return;
     }
 
@@ -934,13 +990,15 @@ export class FounderApplicationFormPageComponent implements OnInit {
       .pipe(finalize(() => this.uploadingDocument.set(false)))
       .subscribe({
         next: () => {
-          this.documentSuccess.set(`${this.formatEnumLabel(type)} uploaded successfully.`);
+          this.documentSuccess.set(
+            `${this.formatEnumLabel(type)} uploaded successfully.`,
+          );
           this.selectedFile.set(null);
           this.refreshDocuments();
         },
         error: (err: HttpErrorResponse) => {
           this.documentError.set(this.extractError(err));
-        }
+        },
       });
   }
 
@@ -950,7 +1008,9 @@ export class FounderApplicationFormPageComponent implements OnInit {
     }
 
     if (!this.isEditable()) {
-      this.documentError.set('Documents can only be changed while the application is DRAFT.');
+      this.documentError.set(
+        'Documents can only be changed while the application is DRAFT.',
+      );
       return;
     }
 
@@ -972,7 +1032,7 @@ export class FounderApplicationFormPageComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.documentError.set(this.extractError(err));
-        }
+        },
       });
   }
 
@@ -987,7 +1047,9 @@ export class FounderApplicationFormPageComponent implements OnInit {
   }
 
   canUploadDocument(): boolean {
-    return !!this.selectedDocType() && !!this.selectedFile() && this.isEditable();
+    return (
+      !!this.selectedDocType() && !!this.selectedFile() && this.isEditable()
+    );
   }
 
   hasDocumentType(type: DocumentType): boolean {
@@ -995,7 +1057,10 @@ export class FounderApplicationFormPageComponent implements OnInit {
   }
 
   isEditable(): boolean {
-    return this.currentStatus() === null || this.currentStatus() === ApplicationRaiseStatus.DRAFT;
+    return (
+      this.currentStatus() === null ||
+      this.currentStatus() === ApplicationRaiseStatus.DRAFT
+    );
   }
 
   showError(_controlName: string): boolean {
@@ -1015,7 +1080,9 @@ export class FounderApplicationFormPageComponent implements OnInit {
     const control = this.form.get('tags');
     if (!control) return;
 
-    const current = new Set(((control.value as AppTag[] | null) ?? []).filter(Boolean));
+    const current = new Set(
+      ((control.value as AppTag[] | null) ?? []).filter(Boolean),
+    );
     if (checked) {
       current.add(tag);
     } else {
@@ -1053,7 +1120,7 @@ export class FounderApplicationFormPageComponent implements OnInit {
         next: (app) => this.patchFromResponse(app),
         error: (err: HttpErrorResponse) => {
           this.error.set(this.extractError(err));
-        }
+        },
       });
   }
 
@@ -1079,7 +1146,6 @@ export class FounderApplicationFormPageComponent implements OnInit {
 
     this.form.patchValue({
       businessName: app.businessName ?? '',
-      companyNumber: app.companyNumber ?? '',
       website: app.website ?? '',
       sector: app.sector ?? '',
       subSector: app.subSector ?? '',
@@ -1095,12 +1161,13 @@ export class FounderApplicationFormPageComponent implements OnInit {
       acceptedTerms: !!app.acceptedTerms,
       equityDetail: {
         companyLegalName: app.equityDetail?.companyLegalName ?? '',
-        companyRegistrationNumber: app.equityDetail?.companyRegistrationNumber ?? '',
+        companyRegistrationNumber:
+          app.equityDetail?.companyRegistrationNumber ?? '',
         cnreProfileUrl: app.equityDetail?.cnreProfileUrl ?? '',
         equityOfferedPercent: app.equityDetail?.equityOfferedPercent ?? null,
         preMoneyValuation: app.equityDetail?.preMoneyValuation ?? null,
-        minInvestment: app.equityDetail?.minInvestment ?? null
-      }
+        minInvestment: app.equityDetail?.minInvestment ?? null,
+      },
     });
 
     this.selectedSector.set(app.sector ?? null);
@@ -1116,7 +1183,7 @@ export class FounderApplicationFormPageComponent implements OnInit {
       next: (docs) => this.documents.set(docs),
       error: (err: HttpErrorResponse) => {
         this.documentError.set(this.extractError(err));
-      }
+      },
     });
   }
 
@@ -1126,10 +1193,7 @@ export class FounderApplicationFormPageComponent implements OnInit {
     return {
       type: this.currentType(),
       businessName: this.normalizeRequired(raw.businessName),
-      companyNumber:
-        this.currentType() === CrowdfundingType.EQUITY
-          ? this.normalizeRequired(raw.companyNumber)
-          : null,
+  
       website: this.normalizeOptional(raw.website),
       sector: this.normalizeRequired(raw.sector) as Sector,
       subSector: this.normalizeRequired(raw.subSector) as SubSector,
@@ -1142,15 +1206,14 @@ export class FounderApplicationFormPageComponent implements OnInit {
       contactTitle: this.normalizeOptional(raw.contactTitle),
       contactEmail: this.normalizeRequired(raw.contactEmail),
       contactPhone: this.normalizeOptional(raw.contactPhone),
-      acceptedTerms: !!raw.acceptedTerms
+      acceptedTerms: !!raw.acceptedTerms,
     };
   }
 
   private buildDonationRequest(commonPayload: ApplicationRaiseCreateRequest) {
     const payload: ApplicationRaiseCreateRequest = {
       ...commonPayload,
-      type: CrowdfundingType.DONATION,
-      companyNumber: null
+      type: CrowdfundingType.DONATION
     };
 
     if (this.mode() === 'edit' && this.applicationId !== null) {
@@ -1166,19 +1229,24 @@ export class FounderApplicationFormPageComponent implements OnInit {
     const payload: EquityApplicationCreateRequest = {
       application: {
         ...commonPayload,
-        type: CrowdfundingType.EQUITY,
-        companyNumber: this.normalizeRequired(raw.companyNumber)
+        type: CrowdfundingType.EQUITY
       },
       equityDetail: {
-        companyLegalName: this.normalizeRequired(raw.equityDetail?.companyLegalName),
-        companyRegistrationNumber: this.normalizeRequired(
-          raw.equityDetail?.companyRegistrationNumber
+        companyLegalName: this.normalizeRequired(
+          raw.equityDetail?.companyLegalName,
         ),
-        cnreProfileUrl: this.normalizeRequired(raw.equityDetail?.cnreProfileUrl),
-        equityOfferedPercent: this.toNumber(raw.equityDetail?.equityOfferedPercent),
+        companyRegistrationNumber: this.normalizeRequired(
+          raw.equityDetail?.companyRegistrationNumber,
+        ),
+        cnreProfileUrl: this.normalizeRequired(
+          raw.equityDetail?.cnreProfileUrl,
+        ),
+        equityOfferedPercent: this.toNumber(
+          raw.equityDetail?.equityOfferedPercent,
+        ),
         preMoneyValuation: this.toNumber(raw.equityDetail?.preMoneyValuation),
-        minInvestment: this.toNumber(raw.equityDetail?.minInvestment)
-      }
+        minInvestment: this.toNumber(raw.equityDetail?.minInvestment),
+      },
     };
 
     if (this.mode() === 'edit' && this.applicationId !== null) {
@@ -1217,8 +1285,8 @@ export class FounderApplicationFormPageComponent implements OnInit {
         cnreProfileUrl: '',
         equityOfferedPercent: null,
         preMoneyValuation: null,
-        minInvestment: null
-      }
+        minInvestment: null,
+      },
     });
   }
 

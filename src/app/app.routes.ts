@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/guards/auth.guards';
-import { Role } from './core/models/role.enum';
 import { PublicShellComponent } from './layout/public-shell/public-shell.component';
 
 export const routes: Routes = [
@@ -116,6 +115,34 @@ export const routes: Routes = [
           description:
             'This page will collect guides, FAQs, documentation, and support-oriented content.'
         }
+      },
+      {
+        path: 'profile',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/public/public-placeholder.page').then(
+            (m) => m.PublicPlaceholderPageComponent
+          ),
+        data: {
+          eyebrow: 'Profile',
+          title: 'Your profile',
+          description:
+            'Manage your personal information, role-specific details, and KYC status.'
+        }
+      },
+      {
+        path: 'settings',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/public/public-placeholder.page').then(
+            (m) => m.PublicPlaceholderPageComponent
+          ),
+        data: {
+          eyebrow: 'Settings',
+          title: 'Account settings',
+          description:
+            'Manage preferences, security, notifications, and account options.'
+        }
       }
     ]
   },
@@ -126,34 +153,40 @@ export const routes: Routes = [
       import('./features/auth/login/login.page').then((m) => m.LoginPageComponent)
   },
   {
-    path: 'founder',
-    canActivate: [authGuard, roleGuard],
-    data: {
-      roles: [Role.FOUNDER]
-    },
-    loadChildren: () =>
-      import('./features/founder/founder.routes').then((m) => m.FOUNDER_ROUTES)
+    path: 'auth/signup',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import('./features/auth/signup/signup.page').then((m) => m.SignupPageComponent)
   },
+{
+  path: 'youth',
+  canActivate: [authGuard, roleGuard],
+  data: { roles: ['YOUTH_BENEFICIARY'] },
+  loadChildren: () =>
+    import('./features/youth-portal/youth.routes').then((m) => m.YOUTH_PORTAL_ROUTES)
+},
   {
     path: 'investor',
     canActivate: [authGuard, roleGuard],
-    data: {
-      roles: [Role.INVESTOR]
-    },
+    data: { roles: ['INVESTOR'] },
     loadChildren: () =>
       import('./features/investor/investor.routes').then((m) => m.INVESTOR_ROUTES)
   },
   {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
-    data: {
-      roles: [Role.ADMIN, Role.COMPLIANCE]
-    },
+    data: { roles: ['ADMIN', 'COMPLIANCE'] },
     loadChildren: () =>
       import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES)
   },
-  {
-    path: '**',
-    redirectTo: ''
-  }
+{
+  path: 'loading',
+  loadComponent: () =>
+    import('./shared/pages/app-loading.page').then((m) => m.AppLoadingPageComponent)
+},
+{
+  path: '**',
+  loadComponent: () =>
+    import('./shared/pages/not-found.page').then((m) => m.NotFoundPageComponent)
+}
 ];

@@ -29,6 +29,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
       display: grid;
       align-items: start;
       background: linear-gradient(180deg, var(--helma-ivory), #fff 55%);
+      position: relative;
+      z-index: 1;
     }
 
     .placeholder-card {
