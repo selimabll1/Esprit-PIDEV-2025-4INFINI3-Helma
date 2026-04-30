@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
+import com.helma.helmabackend.entity.crowdfunding.enums.ProjectStage;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -28,6 +29,18 @@ public class ApplicationRaiseSearchCriteria {
     private String website;
     private String country;
     private String currency;
+    private ProjectStage stage;
+
+    private String problemStatement;
+    private String solution;
+    private String targetCustomers;
+    private String useOfFunds;
+
+    private Integer teamSizeMin;
+    private Integer teamSizeMax;
+
+    private String governorate;
+    private String city;
 
     private Sector sector;
     private SubSector subSector;

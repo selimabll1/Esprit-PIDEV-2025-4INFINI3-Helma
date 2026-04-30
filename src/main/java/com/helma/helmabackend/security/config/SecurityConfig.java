@@ -50,35 +50,51 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable());
 
-        http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.sessionManagement(sm ->
+                sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        );
 
         http.authorizeHttpRequests(auth -> auth
+                // Important for browser preflight requests
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // Public endpoints
                 .requestMatchers(
                         "/api/auth/**",
                         "/swagger-ui/**",
+                        "/swagger-ui.html",
                         "/v3/api-docs/**"
                 ).permitAll()
 
+                // Public campaign browsing
                 .requestMatchers(HttpMethod.GET,
                         "/api/crowdfunding/campaigns",
                         "/api/crowdfunding/campaigns/*"
                 ).permitAll()
 
+                // Current user profile
                 .requestMatchers(HttpMethod.GET, "/api/users/me/profile").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/me/profile").authenticated()
 
+                // Admin + compliance endpoints
                 .requestMatchers(
+                        "/api/crowdfunding/application-raises/admin",
+                        "/api/crowdfunding/application-raises/admin/**",
+                        "/api/crowdfunding/application-raises/*/admin/**",
+                        "/api/crowdfunding/admin/pledges",
                         "/api/crowdfunding/admin/pledges/**",
-                        "/api/crowdfunding/admin/payments/**",
-                        "/api/crowdfunding/application-raises/*/admin/**"
+                        "/api/crowdfunding/admin/payments",
+                        "/api/crowdfunding/admin/payments/**"
                 ).hasAnyAuthority(ADMIN_COMPLIANCE_AUTHORITIES)
 
+                // Investor endpoints
                 .requestMatchers(
                         "/api/crowdfunding/campaigns/*/pledges",
                         "/api/crowdfunding/my-pledges/**",
                         "/api/crowdfunding/my-payments/**"
                 ).hasAnyAuthority(INVESTOR_AUTHORITIES)
 
+                // Youth draft wizard endpoints
                 .requestMatchers(HttpMethod.POST, "/api/crowdfunding/application-raises/drafts")
                 .hasAnyAuthority(YOUTH_AUTHORITIES)
 
@@ -94,6 +110,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/crowdfunding/application-raises/*/submit")
                 .hasAnyAuthority(YOUTH_AUTHORITIES)
 
+                // General crowdfunding access for youth/admin/compliance
                 .requestMatchers("/api/crowdfunding/**")
                 .hasAnyAuthority(YOUTH_ADMIN_COMPLIANCE_AUTHORITIES)
 

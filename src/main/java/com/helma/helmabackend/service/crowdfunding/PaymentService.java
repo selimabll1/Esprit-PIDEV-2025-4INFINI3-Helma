@@ -138,7 +138,8 @@ public class PaymentService {
 
         return paymentRepo.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(this::toPaymentResponse)
+                .limit(100)
+                .map(this::toPaymentResponseSafe)
                 .toList();
     }
 
@@ -284,6 +285,38 @@ public class PaymentService {
         return campaign;
     }
 
+    private PaymentResponse toPaymentResponseSafe(Payment payment) {
+        Pledge pledge = pledgeRepo.findById(payment.getPledgeId()).orElse(null);
+        ApplicationRaise campaign = applicationRaiseRepo.findById(payment.getApplicationRaiseId()).orElse(null);
+
+        PaymentResponse r = new PaymentResponse();
+
+        r.id = payment.getId();
+        r.pledgeId = payment.getPledgeId();
+        r.applicationRaiseId = payment.getApplicationRaiseId();
+        r.backerUserId = payment.getBackerUserId();
+
+        r.amount = payment.getAmount();
+        r.currency = payment.getCurrency();
+
+        r.provider = payment.getProvider();
+        r.providerReference = payment.getProviderReference();
+        r.checkoutSessionId = payment.getCheckoutSessionId();
+        r.checkoutUrl = buildMockCheckoutUrl(payment);
+
+        r.status = payment.getStatus();
+        r.failureReason = payment.getFailureReason();
+
+        r.pledgeStatus = pledge != null ? pledge.getStatus() : null;
+        r.campaignBusinessName = campaign != null ? campaign.getBusinessName() : "Missing campaign";
+
+        r.paidAt = payment.getPaidAt();
+        r.refundedAt = payment.getRefundedAt();
+        r.createdAt = payment.getCreatedAt();
+        r.updatedAt = payment.getUpdatedAt();
+
+        return r;
+    }
     private User currentUser() {
         return currentUserService.getCurrentUser();
     }

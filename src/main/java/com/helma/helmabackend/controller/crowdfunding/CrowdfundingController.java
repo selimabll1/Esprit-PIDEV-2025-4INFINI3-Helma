@@ -227,7 +227,7 @@ public class CrowdfundingController {
     }
 
     @GetMapping("/application-raises/admin")
-    public List<ApplicationRaiseResponse> adminListAll(
+    public List<AdminApplicationRaiseSummaryResponse> adminListAll(
             @ModelAttribute ApplicationRaiseSearchCriteria criteria
     ) {
         return service.adminListAll(criteria);
@@ -284,5 +284,9 @@ public class CrowdfundingController {
     @PostMapping("/application-raises/{id}/submit")
     public ApplicationRaiseResponse submitDraft(@PathVariable Long id) {
         return service.submitDraft(id);
+    }
+    @DeleteMapping("/application-raises/{id}/draft")
+    public void deleteDraft(@PathVariable Long id) {
+        service.deleteDraft(id);
     }
 }

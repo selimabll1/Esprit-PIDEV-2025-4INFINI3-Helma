@@ -50,6 +50,72 @@ public class ApplicationRaiseService {
         application.type = CrowdfundingType.DONATION;
         return createDraft(application);
     }
+    private AdminApplicationRaiseSummaryResponse toAdminSummaryResponse(ApplicationRaise a) {
+        AdminApplicationRaiseSummaryResponse r = new AdminApplicationRaiseSummaryResponse();
+
+        r.id = a.getId();
+        r.ownerUserId = a.getOwnerUserId();
+        r.type = a.getType();
+
+        r.businessName = a.getBusinessName();
+        r.website = a.getWebsite();
+
+        r.country = a.getCountry();
+        r.currency = a.getCurrency();
+
+        r.sector = a.getSector();
+        r.subSector = a.getSubSector();
+
+        if (a.getTags() != null) {
+            r.tags = new LinkedHashSet<>(a.getTags());
+        }
+
+        r.stage = a.getStage();
+
+        r.summary = a.getSummary();
+        r.problemStatement = a.getProblemStatement();
+        r.solution = a.getSolution();
+        r.targetCustomers = a.getTargetCustomers();
+        r.useOfFunds = a.getUseOfFunds();
+
+        r.fundingGoal = moneyOrZero(a.getFundingGoal());
+        r.investorsPledgedAmount = moneyOrZero(a.getInvestorsPledgedAmount());
+        r.raisedAmount = r.investorsPledgedAmount;
+        r.remainingAmount = r.fundingGoal.subtract(r.raisedAmount).max(BigDecimal.ZERO);
+        r.fundingProgressPercent = percent(r.raisedAmount, r.fundingGoal);
+
+        r.customerCount = a.getCustomerCount();
+        r.teamSize = a.getTeamSize();
+        r.governorate = a.getGovernorate();
+        r.city = a.getCity();
+
+        r.contactFirstName = a.getContactFirstName();
+        r.contactLastName = a.getContactLastName();
+        r.contactTitle = a.getContactTitle();
+        r.contactEmail = a.getContactEmail();
+        r.contactPhone = a.getContactPhone();
+
+        r.useProfileContact = a.isUseProfileContact();
+        r.acceptedTerms = a.isAcceptedTerms();
+
+        r.status = a.getStatus();
+        r.draftStep = a.getDraftStep();
+
+        if (a.getType() == CrowdfundingType.EQUITY) {
+            equityRepo.findByApplicationRaiseId(a.getId())
+                    .ifPresent(ed -> r.equityDetail = equityDetailService.toDto(ed));
+        }
+
+        r.documents = documentService.listDocumentResponses(a.getId());
+        r.documentCompletionPercent = documentService.documentCompletionPercent(a.getId());
+        r.applicationCompletionPercent = calculateApplicationCompletionPercent(a, r.documentCompletionPercent);
+
+        r.createdAt = a.getCreatedAt();
+        r.updatedAt = a.getUpdatedAt();
+        r.submittedAt = a.getSubmittedAt();
+
+        return r;
+    }
 
     @Transactional
     public ApplicationRaiseResponse updateDonationDraft(Long id, ApplicationRaiseCreateRequest application) {
@@ -283,6 +349,17 @@ public class ApplicationRaiseService {
         documentService.deleteAllDocumentsForApplication(id);
         repo.delete(a);
     }
+    @Transactional
+    public void deleteDraft(Long id) {
+        ApplicationRaise a = requireDraftOwner(id);
+
+        documentService.deleteAllDocumentsForApplication(id);
+
+        equityRepo.findByApplicationRaiseId(id)
+                .ifPresent(equityRepo::delete);
+
+        repo.delete(a);
+    }
 
     @Transactional
     public void deleteEquityDraft(Long id) {
@@ -327,17 +404,22 @@ public class ApplicationRaiseService {
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationRaiseResponse> adminListAll(ApplicationRaiseSearchCriteria criteria) {
+    public List<AdminApplicationRaiseSummaryResponse> adminListAll(ApplicationRaiseSearchCriteria criteria) {
         User me = currentUser();
         requireAdminOrCompliance(me);
 
-        ApplicationRaiseSearchCriteria effectiveCriteria = criteria != null ? criteria : new ApplicationRaiseSearchCriteria();
-        Specification<ApplicationRaise> specification = ApplicationRaiseSpecifications.byCriteria(effectiveCriteria)
-                .and(ApplicationRaiseSpecifications.statusNot(ApplicationRaiseStatus.DRAFT));
+        ApplicationRaiseSearchCriteria effectiveCriteria =
+                criteria != null ? criteria : new ApplicationRaiseSearchCriteria();
+
+        Specification<ApplicationRaise> specification =
+                ApplicationRaiseSpecifications.byCriteria(effectiveCriteria)
+                        .and(ApplicationRaiseSpecifications.statusNot(ApplicationRaiseStatus.DRAFT));
+
         Sort sort = buildSort(effectiveCriteria, "createdAt", Sort.Direction.DESC);
 
-        return repo.findAll(specification, sort).stream()
-                .map(this::toResponse)
+        return repo.findAll(specification, sort)
+                .stream()
+                .map(this::toAdminSummaryResponse)
                 .toList();
     }
 
@@ -634,11 +716,19 @@ public class ApplicationRaiseService {
             case "type" -> "type";
             case "createdAt", "newest", "oldest" -> "createdAt";
             case "updatedAt" -> "updatedAt";
-            case "companyLegalName" -> "equityDetail.companyLegalName";
-            case "companyRegistrationNumber" -> "equityDetail.companyRegistrationNumber";
-            case "equityOfferedPercent" -> "equityDetail.equityOfferedPercent";
-            case "preMoneyValuation" -> "equityDetail.preMoneyValuation";
-            case "minInvestment" -> "equityDetail.minInvestment";
+            case "companyLegalName" -> "businessName";
+            case "companyRegistrationNumber" -> "businessName";
+            case "equityOfferedPercent" -> "createdAt";
+            case "preMoneyValuation" -> "createdAt";
+            case "stage" -> "stage";
+            case "teamSize" -> "teamSize";
+            case "governorate" -> "governorate";
+            case "city" -> "city";
+            case "problemStatement" -> "problemStatement";
+            case "solution" -> "solution";
+            case "targetCustomers" -> "targetCustomers";
+            case "useOfFunds" -> "useOfFunds";
+            case "minInvestment" -> "createdAt";
             default -> defaultField;
         };
 
