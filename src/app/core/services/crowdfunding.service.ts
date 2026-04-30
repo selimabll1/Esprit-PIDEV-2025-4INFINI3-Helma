@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, catchError, of, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ApiMessageResponse,
@@ -172,15 +172,39 @@ export class CrowdfundingService {
   deleteEquityDraft(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/equities/${id}`);
   }
+  deleteDraft(id: number): Observable<void> {
+  return this.http.delete<void>(
+    `${this.baseUrl}/application-raises/${id}/draft`
+  );
+}
 
-  adminListApplications(
-    criteria: ApplicationRaiseSearchCriteria = {}
-  ): Observable<ApplicationRaiseResponse[]> {
-    return this.http.get<ApplicationRaiseResponse[]>(
-      `${this.baseUrl}/application-raises/admin`,
-      { params: this.buildParams(criteria) }
-    );
-  }
+adminListApplications(): Observable<any[]> {
+  const url = `${this.baseUrl}/application-raises/admin`;
+
+  console.log('[CrowdfundingService] adminListApplications URL:', url);
+
+  const token = localStorage.getItem('helma_token');
+
+  return this.http.get<any[]>(url, {
+    headers: {
+      Authorization: `Bearer ${token ?? ''}`
+    }
+  }).pipe(
+    timeout(6000),
+    catchError((err) => {
+      console.error('[CrowdfundingService] adminListApplications failed:', err);
+      return of([]);
+    })
+  );
+}
+
+adminListPayments(): Observable<PaymentResponse[]> {
+  const url = `${this.baseUrl}/admin/payments`;
+
+  console.log('[CrowdfundingService] adminListPayments URL:', url);
+
+  return this.http.get<PaymentResponse[]>(url).pipe(timeout(8000));
+}
 
   adminPatchApplicationStatus(
     id: number,
@@ -260,9 +284,7 @@ export class CrowdfundingService {
     );
   }
 
-  adminListPayments(): Observable<PaymentResponse[]> {
-    return this.http.get<PaymentResponse[]>(`${this.baseUrl}/admin/payments`);
-  }
+
 
   adminPatchPaymentStatus(
     paymentId: number,

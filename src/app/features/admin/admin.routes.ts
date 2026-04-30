@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/auth.guards';
 import { AdminShellComponent } from './shell/admin-shell.component';
 
 export const ADMIN_ROUTES: Routes = [
@@ -8,6 +9,18 @@ export const ADMIN_ROUTES: Routes = [
     children: [
       {
         path: '',
+        pathMatch: 'full',
+        redirectTo: 'dashboard'
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./dashboard/admin-dashboard.page').then(
+            (m) => m.AdminDashboardPageComponent
+          )
+      },
+      {
+        path: 'applications',
         loadComponent: () =>
           import('./applications/admin-applications.page').then(
             (m) => m.AdminApplicationsPageComponent
@@ -25,6 +38,15 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () =>
           import('./payments/admin-payments.page').then(
             (m) => m.AdminPaymentsPageComponent
+          )
+      },
+      {
+        path: 'compliance/new',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+        loadComponent: () =>
+          import('./compliance/admin-create-compliance.page').then(
+            (m) => m.AdminCreateCompliancePageComponent
           )
       }
     ]

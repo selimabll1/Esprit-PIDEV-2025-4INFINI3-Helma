@@ -25,6 +25,7 @@ import {
   ApplicationRaiseDetailsStepRequest,
   ApplicationRaiseDraftStep,
   ApplicationRaiseResponse,
+  ApplicationRaiseStatus,
   CrowdfundingType,
   DocumentType,
   ProjectStage,
@@ -399,19 +400,30 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
   template: `
     <section class="page">
       <header class="page-header card animate-in">
+        <div class="page-header__actions">
+          <a class="btn btn-ghost" routerLink="/youth/applications">
+            ← Back to My Applications
+          </a>
+        </div>
+
         <div class="page-header__top">
           <div class="page-header__copy">
             <span class="eyebrow">Raise Wizard</span>
             <h1>
               {{
-                isEditMode()
-                  ? 'Continue your application'
-                  : 'Create a new application'
+                isViewOnly()
+                  ? 'View application'
+                  : isEditMode()
+                    ? 'Continue your application'
+                    : 'Create a new application'
               }}
             </h1>
             <p>
-              Move step by step, save automatically, and submit only when your
-              application is ready.
+              {{
+                isViewOnly()
+                  ? 'This application has already been submitted or reviewed, so it is now view-only.'
+                  : 'Move step by step, save automatically, and submit only when your application is ready.'
+              }}
             </p>
           </div>
 
@@ -454,7 +466,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
               class="gold-step"
               [class.gold-step--active]="currentStep() === step.id"
               [class.gold-step--done]="furthestStep() > step.id"
-              [disabled]="step.id > furthestStep()"
+              [disabled]="!isViewOnly() && step.id > furthestStep()"
               (click)="goToStep(step.id)"
             >
               <span class="gold-step__number">{{ step.id }}</span>
@@ -505,6 +517,14 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
       <p class="error animate-pop" *ngIf="error()">{{ error() }}</p>
       <p class="success animate-pop" *ngIf="success()">{{ success() }}</p>
 
+      <div class="view-only-banner animate-pop" *ngIf="isViewOnly()">
+        <strong>View-only mode</strong>
+        <span>
+          This application is no longer a draft. You can review the information,
+          but you cannot edit, upload, remove, or submit changes.
+        </span>
+      </div>
+
       <div class="loading-screen animate-in" *ngIf="loading()">
         <div class="loading-screen__logo-wrap">
           <div class="loading-screen__orbit"></div>
@@ -538,6 +558,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
               type="button"
               class="choice-card"
               [class.active]="useProfileInfo()"
+              [disabled]="isViewOnly()"
               (click)="selectContactSource(true)"
             >
               <div class="choice-card__topline"></div>
@@ -550,6 +571,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
               type="button"
               class="choice-card"
               [class.active]="!useProfileInfo()"
+              [disabled]="isViewOnly()"
               (click)="selectContactSource(false)"
             >
               <div class="choice-card__topline"></div>
@@ -575,6 +597,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
               <button
                 type="button"
                 class="btn btn-ghost btn-sm"
+                [disabled]="isViewOnly()"
                 (click)="selectContactSource(false)"
               >
                 Use custom info
@@ -754,14 +777,27 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
           </ng-template>
 
           <footer class="step-card__footer">
-            <a class="btn btn-ghost" routerLink="/youth/applications">Cancel</a>
+            <a class="btn btn-ghost" routerLink="/youth/applications">
+              Back to My Applications
+            </a>
+
             <button
               class="btn btn-primary"
               type="button"
+              *ngIf="!isViewOnly()"
               [disabled]="saving() || !isContactStepReady()"
               (click)="continueFromContact()"
             >
               {{ saving() ? 'Saving...' : 'Continue' }}
+            </button>
+
+            <button
+              class="btn btn-primary"
+              type="button"
+              *ngIf="isViewOnly()"
+              (click)="goToStep(2)"
+            >
+              Next
             </button>
           </footer>
         </article>
@@ -783,7 +819,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
               [class.choice-card--locked]="
                 isTypeOptionDisabled(crowdfundingType.DONATION)
               "
-              [disabled]="isTypeOptionDisabled(crowdfundingType.DONATION)"
+              [disabled]="isViewOnly() || isTypeOptionDisabled(crowdfundingType.DONATION)"
               (click)="setType(crowdfundingType.DONATION)"
             >
               <div class="choice-card__topline"></div>
@@ -799,7 +835,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
               [class.choice-card--locked]="
                 isTypeOptionDisabled(crowdfundingType.EQUITY)
               "
-              [disabled]="isTypeOptionDisabled(crowdfundingType.EQUITY)"
+              [disabled]="isViewOnly() || isTypeOptionDisabled(crowdfundingType.EQUITY)"
               (click)="setType(crowdfundingType.EQUITY)"
             >
               <div class="choice-card__topline"></div>
@@ -826,10 +862,20 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
             <button
               class="btn btn-primary"
               type="button"
+              *ngIf="!isViewOnly()"
               [disabled]="saving() || !isTypeStepReady()"
               (click)="continueFromType()"
             >
               {{ saving() ? 'Saving...' : 'Continue' }}
+            </button>
+
+            <button
+              class="btn btn-primary"
+              type="button"
+              *ngIf="isViewOnly()"
+              (click)="goToStep(3)"
+            >
+              Next
             </button>
           </footer>
         </article>
@@ -1006,7 +1052,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
               <button
                 type="button"
                 class="btn btn-ghost btn-sm location-button"
-                [disabled]="gpsLoading()"
+                [disabled]="isViewOnly() || gpsLoading()"
                 (click)="fillLocationFromGps()"
               >
                 <span class="location-button__icon" aria-hidden="true">➤</span>
@@ -1324,7 +1370,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                 *ngFor="let tag of tagOptions"
                 [class.selected]="selectedTags().includes(tag)"
                 [class.tag-pill--disabled]="isTagDisabled(tag)"
-                [disabled]="isTagDisabled(tag)"
+                [disabled]="isViewOnly() || isTagDisabled(tag)"
                 (click)="toggleTag(tag)"
               >
                 {{ formatLabel(tag) }}
@@ -1382,7 +1428,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                 <button
                   type="button"
                   class="btn btn-primary"
-                  [disabled]="rneLoading() || !canFetchRne()"
+                  [disabled]="isViewOnly() || rneLoading() || !canFetchRne()"
                   (click)="fetchRneDetails()"
                 >
                   {{ rneLoading() ? 'Checking...' : 'Verify company' }}
@@ -1559,10 +1605,20 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
             <button
               class="btn btn-primary"
               type="button"
+              *ngIf="!isViewOnly()"
               [disabled]="saving() || !isDetailsStepReady()"
               (click)="continueFromDetails()"
             >
               {{ saving() ? 'Saving...' : 'Continue' }}
+            </button>
+
+            <button
+              class="btn btn-primary"
+              type="button"
+              *ngIf="isViewOnly()"
+              (click)="goToStep(4)"
+            >
+              Next
             </button>
           </footer>
         </article>
@@ -1666,6 +1722,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                     <button
                       class="btn btn-ghost btn-sm btn-danger"
                       type="button"
+                      *ngIf="!isViewOnly()"
                       (click)="removeDocument(doc.type)"
                     >
                       Remove
@@ -1674,7 +1731,10 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                 </div>
 
                 <ng-template #requiredUpload>
-                  <label class="upload-box">
+                  <label
+                    class="upload-box"
+                    *ngIf="!isViewOnly(); else missingRequiredReadonly"
+                  >
                     <input
                       class="upload-box__input"
                       type="file"
@@ -1683,6 +1743,10 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                     />
                     <span class="upload-box__text">Upload {{ doc.label }}</span>
                   </label>
+
+                  <ng-template #missingRequiredReadonly>
+                    <div class="readonly-missing-file">Not uploaded</div>
+                  </ng-template>
                 </ng-template>
               </article>
             </div>
@@ -1746,6 +1810,7 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                     <button
                       class="btn btn-ghost btn-sm btn-danger"
                       type="button"
+                      *ngIf="!isViewOnly()"
                       (click)="removeDocument(doc.type)"
                     >
                       Remove
@@ -1754,7 +1819,10 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                 </div>
 
                 <ng-template #optionalUpload>
-                  <label class="upload-box upload-box--optional">
+                  <label
+                    class="upload-box upload-box--optional"
+                    *ngIf="!isViewOnly(); else missingOptionalReadonly"
+                  >
                     <input
                       class="upload-box__input"
                       type="file"
@@ -1763,6 +1831,10 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
                     />
                     <span class="upload-box__text">Add bonus document</span>
                   </label>
+
+                  <ng-template #missingOptionalReadonly>
+                    <div class="readonly-missing-file">Not added</div>
+                  </ng-template>
                 </ng-template>
               </article>
             </div>
@@ -1795,11 +1867,20 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
             <button
               class="btn btn-primary"
               type="button"
+              *ngIf="!isViewOnly()"
               [disabled]="saving() || !canSubmitDocuments()"
               (click)="submitApplication()"
             >
               {{ saving() ? 'Submitting...' : 'Submit application' }}
             </button>
+
+            <a
+              class="btn btn-primary"
+              *ngIf="isViewOnly()"
+              routerLink="/youth/applications"
+            >
+              Back to My Applications
+            </a>
           </footer>
         </article>
       </form>
@@ -1821,6 +1902,51 @@ const EQUITY_DOCUMENTS: readonly DocumentRequirement[] = [
         display: grid;
         gap: 24px;
         padding-bottom: 20px;
+      }
+
+      .page-header__actions {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: flex-start;
+      }
+
+      .view-only-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 18px;
+        border-radius: 20px;
+        background: linear-gradient(
+          135deg,
+          rgba(243, 244, 246, 0.96),
+          rgba(255, 255, 255, 0.98)
+        );
+        border: 1px solid rgba(107, 114, 128, 0.18);
+        color: #4b5563;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+      }
+
+      .view-only-banner strong {
+        color: #111827;
+        white-space: nowrap;
+      }
+
+      .view-only-banner span {
+        line-height: 1.6;
+        font-weight: 650;
+      }
+
+      .readonly-missing-file {
+        min-height: 58px;
+        display: grid;
+        place-items: center;
+        padding: 14px;
+        border-radius: 18px;
+        background: #f9fafb;
+        border: 1px dashed rgba(107, 114, 128, 0.28);
+        color: #6b7280;
+        font-weight: 800;
       }
 
       .card {
@@ -3528,6 +3654,11 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   ];
 
   readonly currentId = signal<number | null>(null);
+  readonly applicationStatus = signal<ApplicationRaiseStatus | null>(null);
+  readonly isViewOnly = computed(() => {
+    const status = this.applicationStatus();
+    return !!status && status !== ApplicationRaiseStatus.DRAFT;
+  });
   readonly lockedType = signal<CrowdfundingType | null>(null);
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -4018,7 +4149,7 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   goToStep(step: WizardStepId): void {
-    if (step <= this.furthestStep()) {
+    if (this.isViewOnly() || step <= this.furthestStep()) {
       this.currentStep.set(step);
       this.clearMessages();
     }
@@ -4031,6 +4162,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   setType(type: CrowdfundingType): void {
+    if (this.isViewOnly()) {
+      return;
+    }
+
     if (this.isTypeOptionDisabled(type)) {
       return;
     }
@@ -4047,6 +4182,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   toggleTag(tag: AppTag): void {
+    if (this.isViewOnly()) {
+      return;
+    }
+
     const current = this.selectedTags();
 
     if (current.includes(tag)) {
@@ -4064,6 +4203,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   selectContactSource(useProfile: boolean): void {
+    if (this.isViewOnly()) {
+      return;
+    }
+
     this.useProfileInfo.set(useProfile);
     this.clearMessages();
 
@@ -4191,6 +4334,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async fetchRneDetails(): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      return;
+    }
+
     const rneId = this.normalizeOptional(this.form.controls.rneId.value);
 
     if (!rneId) {
@@ -4260,6 +4407,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async fillLocationFromGps(): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      return;
+    }
+
     if (!navigator.geolocation) {
       this.gpsError.set(
         'Geolocation is not supported on this device or browser.',
@@ -4393,6 +4544,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async continueFromContact(): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      return;
+    }
+
     this.markContactStepTouched();
 
     if (!this.isContactStepReady()) {
@@ -4433,6 +4588,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async continueFromType(): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      return;
+    }
+
     if (!this.isTypeStepReady()) {
       this.error.set('Please choose a raise type.');
       return;
@@ -4463,6 +4622,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async continueFromDetails(): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      return;
+    }
+
     this.markDetailsStepTouched();
     this.attemptedTagValidation.set(true);
 
@@ -4498,6 +4661,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async submitApplication(): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      return;
+    }
+
     if (!this.currentId()) {
       this.error.set('Complete the earlier steps first.');
       return;
@@ -4538,6 +4705,11 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async onFileSelected(type: DocumentType, event: Event): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      (event.target as HTMLInputElement).value = '';
+      return;
+    }
+
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file || !this.currentId()) {
       return;
@@ -4563,6 +4735,10 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
   }
 
   async removeDocument(type: DocumentType): Promise<void> {
+    if (this.blockIfViewOnly()) {
+      return;
+    }
+
     if (!this.currentId()) {
       return;
     }
@@ -4683,6 +4859,15 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
       preMoneyValuation: app.equityDetail?.preMoneyValuation ?? null,
       minInvestment: app.equityDetail?.minInvestment ?? null,
     });
+
+    this.applicationStatus.set(app.status);
+
+    if (app.status !== ApplicationRaiseStatus.DRAFT) {
+      this.form.disable({ emitEvent: false });
+      this.furthestStep.set(4);
+    } else {
+      this.form.enable({ emitEvent: false });
+    }
   }
 
   private async refreshDocuments(): Promise<void> {
@@ -4938,6 +5123,15 @@ export class YouthApplicationRaiseFormPageComponent implements OnInit {
     if (value == null) return null;
     const trimmed = value.trim();
     return trimmed ? trimmed : null;
+  }
+
+  private blockIfViewOnly(): boolean {
+    if (!this.isViewOnly()) {
+      return false;
+    }
+
+    this.error.set('This application is view-only and cannot be updated.');
+    return true;
   }
 
   private clearMessages(): void {

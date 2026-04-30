@@ -14,19 +14,31 @@ export class TopNavbarComponent {
   private readonly sessionService = inject(SessionService);
   private readonly router = inject(Router);
 
-  readonly isAuthenticated = this.sessionService.isAuthenticated;
-  readonly email = this.sessionService.email;
-  readonly role = this.sessionService.role;
   readonly portalRoute = computed(() => this.sessionService.getPortalRoute());
+
+  isAuthenticated(): boolean {
+    return this.sessionService.isAuthenticated();
+  }
+
+  email(): string | null {
+    return this.sessionService.email();
+  }
+
+  role(): string | null {
+    return this.sessionService.role();
+  }
 
   logout(): void {
     this.sessionService.clearSession();
-    void this.router.navigateByUrl('/');
+    void this.router.navigateByUrl('/auth/login');
   }
 
   roleLabel(): string {
     const role = this.role();
-    if (!role) return 'Account';
+
+    if (!role) {
+      return 'Account';
+    }
 
     switch (role) {
       case 'YOUTH_BENEFICIARY':
