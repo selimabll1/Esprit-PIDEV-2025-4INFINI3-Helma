@@ -14,6 +14,10 @@ import {
   ApplicationRaiseTypeStepRequest,
   CampaignResponse,
   CampaignSearchCriteria,
+  CampaignPageResponse,
+  CampaignPageStatus,
+  CampaignPageStatusPatchRequest,
+  CampaignPageUpsertRequest,
   DocumentType,
   EquityApplicationCreateRequest,
   PaymentResponse,
@@ -219,6 +223,79 @@ adminListPayments(): Observable<PaymentResponse[]> {
   fetchDocumentBlob(applicationId: number, type: DocumentType): Observable<Blob> {
     return this.http.get(
       `${this.baseUrl}/application-raises/${applicationId}/documents/${type}/content`,
+      { responseType: 'blob' }
+    );
+  }
+
+
+
+  createCampaignPage(applicationRaiseId: number): Observable<CampaignPageResponse> {
+    return this.http.post<CampaignPageResponse>(
+      `${this.baseUrl}/application-raises/${applicationRaiseId}/campaign-page`,
+      {}
+    );
+  }
+
+  listMyCampaignPages(): Observable<CampaignPageResponse[]> {
+    return this.http.get<CampaignPageResponse[]>(`${this.baseUrl}/campaign-pages/mine`);
+  }
+
+  getCampaignPageBuilder(campaignPageId: number): Observable<CampaignPageResponse> {
+    return this.http.get<CampaignPageResponse>(
+      `${this.baseUrl}/campaign-pages/${campaignPageId}/builder`
+    );
+  }
+
+  updateCampaignPage(
+    campaignPageId: number,
+    payload: CampaignPageUpsertRequest
+  ): Observable<CampaignPageResponse> {
+    return this.http.put<CampaignPageResponse>(
+      `${this.baseUrl}/campaign-pages/${campaignPageId}`,
+      payload
+    );
+  }
+
+  submitCampaignPage(campaignPageId: number): Observable<CampaignPageResponse> {
+    return this.http.post<CampaignPageResponse>(
+      `${this.baseUrl}/campaign-pages/${campaignPageId}/submit`,
+      {}
+    );
+  }
+
+  adminListCampaignPages(
+    status?: CampaignPageStatus | null
+  ): Observable<CampaignPageResponse[]> {
+    const params = status ? new HttpParams().set('status', status) : undefined;
+    return this.http.get<CampaignPageResponse[]>(`${this.baseUrl}/admin/campaign-pages`, {
+      params
+    });
+  }
+
+  adminPatchCampaignPageStatus(
+    campaignPageId: number,
+    payload: CampaignPageStatusPatchRequest
+  ): Observable<CampaignPageResponse> {
+    return this.http.patch<CampaignPageResponse>(
+      `${this.baseUrl}/admin/campaign-pages/${campaignPageId}/status`,
+      payload
+    );
+  }
+
+  listPublicCampaignPages(): Observable<CampaignPageResponse[]> {
+    return this.http.get<CampaignPageResponse[]>(`${this.baseUrl}/public-campaigns`);
+  }
+
+  getPublicCampaignBySlug(slug: string): Observable<CampaignPageResponse> {
+    return this.http.get<CampaignPageResponse>(`${this.baseUrl}/public-campaigns/${slug}`);
+  }
+
+  fetchPublicCampaignDocumentBlob(
+    slug: string,
+    applicationDocumentId: number
+  ): Observable<Blob> {
+    return this.http.get(
+      `${this.baseUrl}/public-campaigns/${slug}/documents/${applicationDocumentId}/content`,
       { responseType: 'blob' }
     );
   }

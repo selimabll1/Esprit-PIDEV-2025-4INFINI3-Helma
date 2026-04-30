@@ -116,6 +116,14 @@ export const routes: Routes = [
             'This page will collect guides, FAQs, documentation, and support-oriented content.'
         }
       },
+
+      {
+        path: 'campaigns/:slug',
+        loadComponent: () =>
+          import('./features/public/campaign-page/public-campaign-page.page').then(
+            (m) => m.PublicCampaignPageComponent
+          )
+      },
       {
         path: 'profile',
         canActivate: [authGuard],

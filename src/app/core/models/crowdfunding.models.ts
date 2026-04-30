@@ -44,6 +44,118 @@ export enum DocumentType {
   BANK_RIB = 'BANK_RIB'
 }
 
+
+
+export enum CampaignPageStatus {
+  DRAFT = 'DRAFT',
+  PENDING_REVIEW = 'PENDING_REVIEW',
+  PUBLISHED = 'PUBLISHED',
+  CHANGES_REQUESTED = 'CHANGES_REQUESTED',
+  ARCHIVED = 'ARCHIVED'
+}
+
+export type CampaignBlockType =
+  | 'hero'
+  | 'header'
+  | 'subheader'
+  | 'paragraph'
+  | 'image'
+  | 'youtube'
+  | 'document'
+  | 'funding_cta'
+  | 'divider';
+
+export type CampaignBlockSize = 'compact' | 'normal' | 'wide' | 'full';
+
+export interface CampaignBuilderBlock {
+  id: string;
+  type: CampaignBlockType;
+  size?: CampaignBlockSize;
+  title?: string;
+  subtitle?: string;
+  content?: string;
+  url?: string;
+  documentId?: number | null;
+  label?: string;
+}
+
+export interface CampaignContentJson {
+  blocks: CampaignBuilderBlock[];
+}
+
+export interface CampaignStyleJson {
+  fontFamily: string;
+  primaryColor: string;
+  accentColor: string;
+  radius: 'small' | 'medium' | 'large';
+  heroLayout: 'centered' | 'split' | 'editorial';
+  buttonStyle: 'rounded' | 'pill' | 'sharp';
+}
+
+export interface CampaignPageDocumentResponse {
+  id: number;
+  campaignPageId: number;
+  applicationDocumentId: number;
+  docType: DocumentType;
+  fileName: string;
+  label: string | null;
+  sizeBytes: number | null;
+  createdAt: string;
+}
+
+export interface CampaignPageResponse {
+  id: number;
+  applicationRaiseId: number;
+  ownerUserId: number;
+  slug: string;
+  publicUrl: string;
+  title: string | null;
+  subtitle: string | null;
+  coverMediaUrl: string | null;
+  contentJson: string | null;
+  styleJson: string | null;
+  status: CampaignPageStatus;
+  reviewNote: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+
+  applicationType: CrowdfundingType | null;
+  businessName: string | null;
+  website: string | null;
+  sector: Sector | null;
+  subSector: SubSector | null;
+  tags: AppTag[];
+  summary: string | null;
+  problemStatement: string | null;
+  solution: string | null;
+  targetCustomers: string | null;
+  useOfFunds: string | null;
+  fundingGoal: number | null;
+  investorsPledgedAmount: number | null;
+  currency: string | null;
+  governorate: string | null;
+  city: string | null;
+  equityDetail: EquityDetailResponse | null;
+  availableDocuments?: ApplicationDocumentResponse[] | null;
+  publicDocuments: CampaignPageDocumentResponse[];
+}
+
+export interface CampaignPageUpsertRequest {
+  title?: string | null;
+  subtitle?: string | null;
+  slug?: string | null;
+  coverMediaUrl?: string | null;
+  contentJson: string;
+  styleJson: string;
+  publicDocumentIds: number[];
+}
+
+export interface CampaignPageStatusPatchRequest {
+  status: CampaignPageStatus;
+  reviewNote?: string | null;
+}
+
 export type SortDirection = 'asc' | 'desc';
 
 export type CampaignSortKey =

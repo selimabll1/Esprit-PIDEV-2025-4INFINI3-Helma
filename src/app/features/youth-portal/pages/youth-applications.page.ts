@@ -276,6 +276,15 @@ type SortOption =
                 View
               </a>
 
+              <a
+                class="btn btn-primary"
+                *ngIf="app.status === applicationStatus.APPROVED"
+                [routerLink]="['/youth/campaigns/create', app.id]"
+                (click)="$event.stopPropagation()"
+              >
+                Campaign
+              </a>
+
               <button
                 class="btn btn-danger"
                 type="button"

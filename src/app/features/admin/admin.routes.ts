@@ -34,6 +34,20 @@ export const ADMIN_ROUTES: Routes = [
           )
       },
       {
+        path: 'campaigns/:id/preview',
+        loadComponent: () =>
+          import('./campaigns/admin-campaign-page-preview.page').then(
+            (m) => m.AdminCampaignPagePreviewPageComponent
+          )
+      },
+      {
+        path: 'campaigns',
+        loadComponent: () =>
+          import('./campaigns/admin-campaign-pages.page').then(
+            (m) => m.AdminCampaignPagesPageComponent
+          )
+      },
+      {
         path: 'payments',
         loadComponent: () =>
           import('./payments/admin-payments.page').then(

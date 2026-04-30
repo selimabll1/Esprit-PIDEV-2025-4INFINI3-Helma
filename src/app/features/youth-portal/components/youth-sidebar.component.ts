@@ -658,6 +658,12 @@ export class YouthSidebarComponent {
           exact: false,
           icon: '▣',
         },
+        {
+          label: 'Campaign Studio',
+          route: '/youth/campaigns',
+          exact: false,
+          icon: '✎',
+        },
       ],
     },
     {

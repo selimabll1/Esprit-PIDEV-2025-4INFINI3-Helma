@@ -94,6 +94,35 @@ export const YOUTH_PORTAL_ROUTES: Routes = [
             (m) => m.YouthApplicationRaiseFormPageComponent
           )
       },
+
+      {
+        path: 'campaigns',
+        loadComponent: () =>
+          import('./pages/youth-campaign-pages.page').then(
+            (m) => m.YouthCampaignPagesPageComponent
+          )
+      },
+      {
+        path: 'campaigns/create/:applicationId',
+        loadComponent: () =>
+          import('./pages/youth-campaign-builder.page').then(
+            (m) => m.YouthCampaignBuilderPageComponent
+          )
+      },
+      {
+        path: 'campaigns/:id/builder',
+        loadComponent: () =>
+          import('./pages/youth-campaign-builder.page').then(
+            (m) => m.YouthCampaignBuilderPageComponent
+          )
+      },
+      {
+        path: 'campaigns/:id/preview',
+        loadComponent: () =>
+          import('./pages/youth-campaign-preview.page').then(
+            (m) => m.YouthCampaignPreviewPageComponent
+          )
+      },
       {
         path: 'kyc',
         loadComponent: loadYouthFeaturePlaceholder,
