@@ -118,6 +118,13 @@ export const routes: Routes = [
       },
 
       {
+        path: 'campaigns',
+        loadComponent: () =>
+          import('./features/public/campaigns/public-campaigns.page').then(
+            (m) => m.PublicCampaignsPageComponent
+          )
+      },
+      {
         path: 'campaigns/:slug',
         loadComponent: () =>
           import('./features/public/campaign-page/public-campaign-page.page').then(

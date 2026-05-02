@@ -79,8 +79,95 @@ export interface CampaignBuilderBlock {
   label?: string;
 }
 
+export type CampaignSectionType =
+  | 'hero'
+  | 'story'
+  | 'problem_solution'
+  | 'video'
+  | 'gallery'
+  | 'impact'
+  | 'use_of_funds'
+  | 'documents'
+  | 'faq'
+  | 'cta';
+
+export type CampaignSectionWidth = 'compact' | 'normal' | 'wide' | 'full';
+export type CampaignTextAlign = 'left' | 'center' | 'right';
+export type CampaignSectionBackground = 'plain' | 'soft' | 'accent' | 'dark';
+export type CampaignMediaPosition = 'right' | 'left' | 'top' | 'bottom';
+export type CampaignElementType = 'text_box' | 'image_box' | 'button' | 'badge' | 'shape';
+
+export interface CampaignImpactStat {
+  value: string;
+  label: string;
+  helper?: string | null;
+}
+
+export interface CampaignGalleryItem {
+  url: string;
+  caption?: string | null;
+}
+
+export interface CampaignFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface CampaignCanvasElement {
+  id: string;
+  type: CampaignElementType;
+  /** Position and size are percentages inside the section canvas. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  zIndex?: number;
+  text?: string | null;
+  imageUrl?: string | null;
+  href?: string | null;
+  align?: CampaignTextAlign;
+  fontSize?: number;
+  fontWeight?: number;
+  color?: string | null;
+  background?: string | null;
+  borderColor?: string | null;
+  radius?: number;
+  opacity?: number;
+}
+
+export interface CampaignSection {
+  id: string;
+  type: CampaignSectionType;
+  width?: CampaignSectionWidth;
+  align?: CampaignTextAlign;
+  background?: CampaignSectionBackground;
+  mediaPosition?: CampaignMediaPosition;
+  eyebrow?: string | null;
+  heading?: string | null;
+  subheading?: string | null;
+  body?: string | null;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+  ctaLabel?: string | null;
+  ctaText?: string | null;
+  problemHeading?: string | null;
+  problemBody?: string | null;
+  solutionHeading?: string | null;
+  solutionBody?: string | null;
+  stats?: CampaignImpactStat[];
+  gallery?: CampaignGalleryItem[];
+  faq?: CampaignFaqItem[];
+  documentIds?: number[];
+  /** Free-positioned PowerPoint/Canva-style objects inside this guided section. */
+  elements?: CampaignCanvasElement[];
+}
+
 export interface CampaignContentJson {
-  blocks: CampaignBuilderBlock[];
+  /** Legacy free blocks. Kept so older drafts continue to render. */
+  blocks?: CampaignBuilderBlock[];
+  /** New guided campaign sections used by the Canva/Word-style studio. */
+  sections?: CampaignSection[];
 }
 
 export interface CampaignStyleJson {

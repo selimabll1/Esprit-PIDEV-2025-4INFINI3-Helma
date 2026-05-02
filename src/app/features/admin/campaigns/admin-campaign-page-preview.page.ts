@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import {
-  CampaignContentJson,
   CampaignPageResponse,
   CampaignPageStatus,
   CampaignStyleJson,
@@ -12,12 +11,19 @@ import {
 import { CrowdfundingService } from '../../../core/services/crowdfunding.service';
 import { CampaignPageRendererComponent } from '../../../shared/components/campaign-page-renderer.component';
 
+interface StudioContentJson {
+  version?: number;
+  editor?: string;
+  sections?: unknown[];
+  blocks?: unknown[];
+}
+
 const DEFAULT_STYLE: CampaignStyleJson = {
   fontFamily: 'Inter',
   primaryColor: '#111827',
   accentColor: '#C9A227',
   radius: 'large',
-  heroLayout: 'centered',
+  heroLayout: 'split',
   buttonStyle: 'pill',
 };
 
@@ -33,8 +39,8 @@ const DEFAULT_STYLE: CampaignStyleJson = {
           <span class="eyebrow">Compliance preview</span>
           <h1>{{ campaign?.title || campaign?.businessName || 'Campaign preview' }}</h1>
           <p>
-            This is the authenticated admin preview. It works before publication and
-            does not depend on the public <strong>/campaigns/:slug</strong> route.
+            This preview uses the same presentation-studio renderer as the public page,
+            but it works before publication for admin/compliance review.
           </p>
         </div>
 
@@ -82,6 +88,8 @@ const DEFAULT_STYLE: CampaignStyleJson = {
             [content]="content"
             [style]="style"
             [allowDocumentDownload]="false"
+            [showTrustHeader]="true"
+            [showSectionLabels]="false"
           />
         </main>
 
@@ -448,7 +456,7 @@ export class AdminCampaignPagePreviewPageComponent implements OnInit {
   readonly campaignStatus = CampaignPageStatus;
 
   campaign: CampaignPageResponse | null = null;
-  content: CampaignContentJson = { blocks: [] };
+  content: StudioContentJson = { sections: [] };
   style: CampaignStyleJson = { ...DEFAULT_STYLE };
   reviewNote = '';
   loading = false;
@@ -483,7 +491,7 @@ export class AdminCampaignPagePreviewPageComponent implements OnInit {
         next: (campaign) => {
           this.campaign = campaign;
           this.reviewNote = campaign.reviewNote || '';
-          this.content = this.parseContent(campaign.contentJson, campaign);
+          this.content = this.parseContent(campaign.contentJson);
           this.style = this.parseStyle(campaign.styleJson);
         },
         error: (err) => {
@@ -518,7 +526,7 @@ export class AdminCampaignPagePreviewPageComponent implements OnInit {
         next: (updated) => {
           this.campaign = updated;
           this.reviewNote = updated.reviewNote || '';
-          this.content = this.parseContent(updated.contentJson, updated);
+          this.content = this.parseContent(updated.contentJson);
           this.style = this.parseStyle(updated.styleJson);
           this.success = `Campaign ${this.formatLabel(status).toLowerCase()}.`;
         },
@@ -564,30 +572,22 @@ export class AdminCampaignPagePreviewPageComponent implements OnInit {
     }).format(value);
   }
 
-  private parseContent(value: string | null, campaign: CampaignPageResponse): CampaignContentJson {
+  private parseContent(value: string | null): StudioContentJson {
     try {
-      const parsed = JSON.parse(value || '') as Partial<CampaignContentJson>;
-      if (Array.isArray(parsed.blocks)) return { blocks: parsed.blocks };
+      const parsed = JSON.parse(value || '{}') as StudioContentJson;
+      if (Array.isArray(parsed.sections) || Array.isArray(parsed.blocks)) {
+        return parsed;
+      }
     } catch {
       // fallback below
     }
 
-    return {
-      blocks: [
-        {
-          id: 'hero',
-          type: 'hero',
-          size: 'full',
-          title: campaign.title || campaign.businessName || 'Campaign',
-          subtitle: campaign.subtitle || campaign.summary || '',
-        },
-      ],
-    };
+    return { sections: [] };
   }
 
   private parseStyle(value: string | null): CampaignStyleJson {
     try {
-      return { ...DEFAULT_STYLE, ...(JSON.parse(value || '') as Partial<CampaignStyleJson>) };
+      return { ...DEFAULT_STYLE, ...(JSON.parse(value || '{}') as Partial<CampaignStyleJson>) };
     } catch {
       return { ...DEFAULT_STYLE };
     }
