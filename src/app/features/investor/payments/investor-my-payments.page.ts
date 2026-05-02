@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import {
   PaymentResponse,
@@ -18,7 +18,7 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
       <header class="page-header">
         <div>
           <h1>My payments</h1>
-          <p>Initiate mock checkout, track payment status, and simulate provider results for your pledges.</p>
+          <p>Continue Stripe checkout, sync Stripe status, and review completed investment payments.</p>
         </div>
 
         <a class="secondary-link" routerLink="/investor/my-pledges">Back to pledges</a>
@@ -70,52 +70,23 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
 
           <div class="actions">
             <a [routerLink]="['/investor/campaigns', payment.applicationRaiseId]">Open campaign</a>
+
             <button
               type="button"
               class="secondary"
-              (click)="openMockCheckout(payment)"
+              (click)="openStripeCheckout(payment)"
               [disabled]="busyPaymentId() === payment.id || !canUseCheckout(payment)"
             >
-              {{ busyPaymentId() === payment.id ? 'Working...' : 'Mock checkout' }}
-            </button>
-          </div>
-
-          <div class="actions" *ngIf="canResolve(payment)">
-            <button
-              type="button"
-              (click)="patchStatus(payment, paymentStatus.SUCCEEDED)"
-              [disabled]="busyPaymentId() === payment.id"
-            >
-              Mark paid
+              {{ busyPaymentId() === payment.id ? 'Opening...' : 'Continue checkout' }}
             </button>
 
             <button
               type="button"
-              class="warn"
-              (click)="patchStatus(payment, paymentStatus.FAILED, 'Card declined')"
-              [disabled]="busyPaymentId() === payment.id"
+              class="secondary sync"
+              (click)="syncStripePayment(payment.id)"
+              [disabled]="busyPaymentId() === payment.id || payment.status === paymentStatus.SUCCEEDED"
             >
-              Mark failed
-            </button>
-
-            <button
-              type="button"
-              class="secondary"
-              (click)="patchStatus(payment, paymentStatus.CANCELED, 'Customer canceled checkout')"
-              [disabled]="busyPaymentId() === payment.id"
-            >
-              Cancel
-            </button>
-          </div>
-
-          <div class="actions" *ngIf="payment.status === paymentStatus.SUCCEEDED">
-            <button
-              type="button"
-              class="warn"
-              (click)="patchStatus(payment, paymentStatus.REFUNDED, 'Refund requested by investor')"
-              [disabled]="busyPaymentId() === payment.id"
-            >
-              Refund
+              {{ busyPaymentId() === payment.id ? 'Syncing...' : 'Sync Stripe status' }}
             </button>
           </div>
         </article>
@@ -137,7 +108,9 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
 
     .page-header h1 {
       margin: 0 0 8px;
-      color: #062a2b;
+      color: #06152e;
+      font-size: clamp(2rem, 3vw, 3rem);
+      letter-spacing: -0.05em;
     }
 
     .page-header p {
@@ -152,11 +125,12 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
       justify-content: center;
       min-height: 42px;
       padding: 0 14px;
-      border-radius: 10px;
+      border-radius: 14px;
       text-decoration: none;
-      background: #eef3f5;
-      color: #062a2b;
-      font-weight: 700;
+      background: #eef4ff;
+      color: #071a3a;
+      font-weight: 800;
+      border: 1px solid rgba(7, 26, 58, 0.08);
     }
 
     .filters,
@@ -171,12 +145,12 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
     .actions button {
       min-height: 40px;
       border: 0;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 0 14px;
       cursor: pointer;
-      background: #062a2b;
+      background: #071a3a;
       color: white;
-      font-weight: 700;
+      font-weight: 800;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
@@ -185,23 +159,26 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
     }
 
     .filters button {
-      background: #eef3f5;
-      color: #062a2b;
+      background: #eef4ff;
+      color: #071a3a;
+      border: 1px solid rgba(7, 26, 58, 0.08);
     }
 
     .filters button.active {
-      background: #062a2b;
+      background: #071a3a;
       color: white;
     }
 
     .actions .secondary {
-      background: #eef3f5;
-      color: #062a2b;
+      background: #eef4ff;
+      color: #071a3a;
+      border: 1px solid rgba(7, 26, 58, 0.08);
     }
 
-    .actions .warn {
-      background: #b03a2e;
-      color: white;
+    .actions .sync {
+      background: #fff5d7;
+      color: #73580f;
+      border: 1px solid rgba(243, 223, 152, 0.45);
     }
 
     .actions button:disabled {
@@ -218,10 +195,11 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
     .card,
     .empty,
     .state-card {
-      background: white;
-      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 22px;
       padding: 20px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+      border: 1px solid rgba(7, 26, 58, 0.08);
+      box-shadow: 0 18px 42px rgba(7, 26, 58, 0.08);
     }
 
     .card {
@@ -238,7 +216,7 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
 
     .card h2 {
       margin: 10px 0 0;
-      color: #062a2b;
+      color: #06152e;
       font-size: 1.15rem;
     }
 
@@ -250,6 +228,7 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
     .meta p {
       margin: 0;
       color: #33444d;
+      word-break: break-word;
     }
 
     .pill {
@@ -258,12 +237,12 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
       padding: 6px 10px;
       border-radius: 999px;
       font-size: 0.78rem;
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .type {
-      background: #eaf7f5;
-      color: #0b3b3c;
+      background: #eaf4ff;
+      color: #071a3a;
     }
 
     .status {
@@ -289,16 +268,22 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
       color: #b03a2e;
     }
 
-    .success {
+    .success,
+    .error {
       margin: 0;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-weight: 800;
+    }
+
+    .success {
+      background: #e8f7ef;
       color: #1f7a43;
-      font-weight: 600;
     }
 
     .error {
-      margin: 0;
-      color: #c0392b;
-      font-weight: 600;
+      background: #fdecec;
+      color: #b03a2e;
     }
 
     @media (max-width: 960px) {
@@ -310,6 +295,7 @@ import { CrowdfundingService } from '../../../core/services/crowdfunding.service
 })
 export class InvestorMyPaymentsPageComponent implements OnInit {
   private readonly service = inject(CrowdfundingService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly paymentStatus = PaymentStatus;
   readonly loading = signal(false);
@@ -336,6 +322,19 @@ export class InvestorMyPaymentsPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const stripe = this.route.snapshot.queryParamMap.get('stripe');
+    const paymentIdRaw = this.route.snapshot.queryParamMap.get('paymentId');
+    const paymentId = Number(paymentIdRaw);
+
+    if (stripe === 'success' && Number.isFinite(paymentId) && paymentId > 0) {
+      this.syncStripePayment(paymentId);
+      return;
+    }
+
+    if (stripe === 'cancel') {
+      this.error.set('Stripe checkout was canceled. You can continue checkout again.');
+    }
+
     this.load();
   }
 
@@ -352,41 +351,44 @@ export class InvestorMyPaymentsPageComponent implements OnInit {
       });
   }
 
-  openMockCheckout(payment: PaymentResponse): void {
-    this.busyPaymentId.set(payment.id);
-    this.error.set('');
-    this.success.set('');
+  openStripeCheckout(payment: PaymentResponse): void {
+    if (!payment.checkoutUrl) {
+      this.error.set('No Stripe checkout URL is available for this payment.');
+      return;
+    }
 
-    this.service
-      .getMyPaymentMockCheckout(payment.id)
-      .pipe(finalize(() => this.busyPaymentId.set(null)))
-      .subscribe({
-        next: (response) => this.success.set(response.message),
-        error: (err: HttpErrorResponse) => this.error.set(this.extractError(err))
-      });
+    this.busyPaymentId.set(payment.id);
+    window.location.href = payment.checkoutUrl;
   }
 
-  patchStatus(
-    payment: PaymentResponse,
-    status: PaymentStatus,
-    failureReason?: string
-  ): void {
-    this.busyPaymentId.set(payment.id);
+  syncStripePayment(paymentId: number): void {
+    this.loading.set(true);
     this.error.set('');
     this.success.set('');
+    this.busyPaymentId.set(paymentId);
 
     this.service
-      .patchMyPaymentStatus(payment.id, {
-        status,
-        failureReason: failureReason ?? null
-      })
-      .pipe(finalize(() => this.busyPaymentId.set(null)))
+      .syncMyStripePayment(paymentId)
+      .pipe(
+        finalize(() => {
+          this.loading.set(false);
+          this.busyPaymentId.set(null);
+        })
+      )
       .subscribe({
-        next: (updated) => {
-          this.mergePayment(updated);
-          this.success.set(`Payment ${this.formatEnumLabel(updated.status).toLowerCase()} successfully.`);
+        next: (payment) => {
+          this.mergePayment(payment);
+          this.success.set(
+            payment.status === PaymentStatus.SUCCEEDED
+              ? 'Stripe payment confirmed. Your payment is now marked as succeeded.'
+              : `Stripe payment synced. Current status: ${this.formatEnumLabel(payment.status)}.`
+          );
+          this.load();
         },
-        error: (err: HttpErrorResponse) => this.error.set(this.extractError(err))
+        error: (err: HttpErrorResponse) => {
+          this.error.set(this.extractError(err));
+          this.load();
+        }
       });
   }
 
@@ -395,10 +397,6 @@ export class InvestorMyPaymentsPageComponent implements OnInit {
       payment.status === PaymentStatus.CREATED ||
       payment.status === PaymentStatus.PENDING_PROVIDER
     );
-  }
-
-  canResolve(payment: PaymentResponse): boolean {
-    return this.canUseCheckout(payment);
   }
 
   formatEnumLabel(value: string): string {

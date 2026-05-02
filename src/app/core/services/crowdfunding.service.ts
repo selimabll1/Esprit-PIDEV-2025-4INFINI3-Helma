@@ -345,6 +345,13 @@ adminListPayments(): Observable<PaymentResponse[]> {
     return this.http.get<PaymentResponse>(`${this.baseUrl}/my-payments/${paymentId}`);
   }
 
+  syncMyStripePayment(paymentId: number): Observable<PaymentResponse> {
+    return this.http.post<PaymentResponse>(
+      `${this.baseUrl}/my-payments/${paymentId}/stripe-sync`,
+      {}
+    );
+  }
+
   getMyPaymentMockCheckout(paymentId: number): Observable<ApiMessageResponse> {
     return this.http.get<ApiMessageResponse>(
       `${this.baseUrl}/my-payments/${paymentId}/mock-checkout`

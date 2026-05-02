@@ -648,7 +648,8 @@ export interface PortfolioOverviewResponse {
 }
 
 export enum PaymentProvider {
-  MOCK = 'MOCK'
+  MOCK = 'MOCK',
+  STRIPE = 'STRIPE'
 }
 
 export enum PaymentStatus {

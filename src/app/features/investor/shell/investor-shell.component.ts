@@ -1,147 +1,61 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { AuthStorageService } from '../../../core/services/auth-storage.service';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { InvestorSidebarComponent } from '../components/investor-sidebar.component';
 
 @Component({
   selector: 'app-investor-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, InvestorSidebarComponent],
   template: `
-    <div class="shell">
-      <aside class="sidebar">
-        <div>
-          <div class="brand">HELMA</div>
-          <p class="tagline">Investor Portal</p>
-        </div>
+    <div class="investor-portal">
+      <app-investor-sidebar />
 
-        <nav class="nav">
-          <a
-            routerLink="/investor"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }"
-          >
-            Campaigns
-          </a>
-
-          <a
-            routerLink="/investor/my-pledges"
-            routerLinkActive="active"
-          >
-            My pledges
-          </a>
-
-          <a
-            routerLink="/investor/portfolio"
-            routerLinkActive="active"
-          >
-            Portfolio analytics
-          </a>
-        </nav>
-
-        <div class="account" *ngIf="session">
-          <p class="label">Signed in as</p>
-          <strong>{{ session.email }}</strong>
-          <button type="button" (click)="logout()">Logout</button>
-        </div>
-      </aside>
-
-      <main class="content">
+      <main class="investor-portal__content">
         <router-outlet />
       </main>
     </div>
   `,
   styles: [`
-    .shell {
+    .investor-portal {
       min-height: 100vh;
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      background: #f7f7f7;
-    }
-
-    .sidebar {
+      height: 100vh;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 24px;
-      background: #062a2b;
-      color: white;
+      align-items: stretch;
+      background:
+        radial-gradient(circle at 82% 4%, rgba(74, 163, 255, 0.11), transparent 32%),
+        linear-gradient(180deg, #f5f9ff 0%, #f7f3ea 100%);
+      overflow: hidden;
     }
 
-    .brand {
-      font-size: 2rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
+    .investor-portal__content {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 22px 28px 32px;
     }
 
-    .tagline {
-      margin: 6px 0 0;
-      color: rgba(255,255,255,0.75);
-    }
-
-    .nav {
-      display: grid;
-      gap: 10px;
-      margin: 28px 0;
-    }
-
-    .nav a {
-      color: white;
-      text-decoration: none;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.06);
-    }
-
-    .nav a.active {
-      background: #2a9d8f;
-      color: #062a2b;
-      font-weight: 700;
-    }
-
-    .account {
-      display: grid;
-      gap: 10px;
-      padding: 16px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.08);
-    }
-
-    .label {
-      margin: 0;
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.72);
-    }
-
-    .account button {
-      height: 42px;
-      border: 0;
-      border-radius: 10px;
-      cursor: pointer;
-      background: white;
-      color: #062a2b;
-      font-weight: 700;
-    }
-
-    .content {
-      padding: 28px;
+    @media (max-width: 1100px) {
+      .investor-portal__content {
+        padding: 18px 22px 28px;
+      }
     }
 
     @media (max-width: 960px) {
-      .shell {
-        grid-template-columns: 1fr;
+      .investor-portal {
+        min-height: 100vh;
+        height: auto;
+        display: block;
+        overflow: visible;
+      }
+
+      .investor-portal__content {
+        height: auto;
+        overflow: visible;
+        padding: 16px;
       }
     }
-  `]
+  `],
 })
-export class InvestorShellComponent {
-  private readonly authService = inject(AuthService);
-  private readonly authStorage = inject(AuthStorageService);
-
-  readonly session = this.authStorage.getUser();
-
-  logout(): void {
-    this.authService.logout();
-  }
-}
+export class InvestorShellComponent {}
