@@ -8,13 +8,21 @@ import com.helma.helmabackend.service.crowdfunding.ApplicationDocumentService;
 import com.helma.helmabackend.service.crowdfunding.ApplicationRaiseService;
 import com.helma.helmabackend.service.crowdfunding.PaymentService;
 import com.helma.helmabackend.service.crowdfunding.PledgeService;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.model.StripeObject;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +37,9 @@ public class CrowdfundingController {
     private final ApplicationDocumentService documentService;
     private final PledgeService pledgeService;
     private final PaymentService paymentService;
+
+    @Value("${stripe.webhook-secret:}")
+    private String stripeWebhookSecret;
 
     public CrowdfundingController(
             ApplicationRaiseService service,
@@ -89,6 +100,11 @@ public class CrowdfundingController {
         return paymentService.getMyPaymentById(paymentId);
     }
 
+    @PostMapping("/my-payments/{paymentId}/stripe-sync")
+    public PaymentResponse syncMyStripePayment(@PathVariable Long paymentId) {
+        return paymentService.syncMyStripePayment(paymentId);
+    }
+
     @GetMapping("/my-payments/{paymentId}/mock-checkout")
     public ApiMessage myPaymentMockCheckout(@PathVariable Long paymentId) {
         paymentService.getMyPaymentById(paymentId);
@@ -106,6 +122,49 @@ public class CrowdfundingController {
     ) {
         return paymentService.mockPatchMyPaymentStatus(paymentId, req);
     }
+
+
+
+    @PostMapping(value = "/stripe/webhook", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ApiMessage stripeWebhook(
+            @RequestBody String payload,
+            @RequestHeader(name = "Stripe-Signature", required = false) String signatureHeader
+    ) {
+        if (stripeWebhookSecret == null || stripeWebhookSecret.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stripe webhook secret is not configured.");
+        }
+
+        Event event;
+        try {
+            event = Webhook.constructEvent(payload, signatureHeader, stripeWebhookSecret.trim());
+        } catch (SignatureVerificationException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Stripe webhook signature.");
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Stripe webhook payload.");
+        }
+
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject().orElse(null);
+
+        if (stripeObject instanceof Session session) {
+            switch (event.getType()) {
+                case "checkout.session.completed" -> {
+                    if ("paid".equalsIgnoreCase(session.getPaymentStatus())) {
+                        paymentService.markStripePaymentSucceeded(session.getId(), session.getPaymentIntent());
+                    }
+                }
+                case "checkout.session.expired" ->
+                        paymentService.markStripePaymentCanceled(session.getId(), "Stripe checkout session expired.");
+                case "checkout.session.async_payment_failed" ->
+                        paymentService.markStripePaymentFailed(session.getId(), "Stripe asynchronous payment failed.");
+                default -> {
+                    // Ignore unrelated Checkout Session events.
+                }
+            }
+        }
+
+        return new ApiMessage("Stripe event processed: " + event.getType());
+    }
+
 
     @GetMapping("/admin/pledges")
     public List<PledgeResponse> adminListPledges() {

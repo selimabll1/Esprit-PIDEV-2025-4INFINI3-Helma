@@ -64,6 +64,10 @@ public class Payment {
     @Column(name = "checkout_session_id", length = 120, unique = true)
     private String checkoutSessionId;
 
+    @Size(max = 1000, message = "Checkout URL must be at most 1000 characters")
+    @Column(name = "checkout_url", length = 1000)
+    private String checkoutUrl;
+
     @NotNull(message = "status is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)
@@ -114,6 +118,11 @@ public class Payment {
             checkoutSessionId = checkoutSessionId.trim();
         }
 
+        if (checkoutUrl != null) {
+            String trimmed = checkoutUrl.trim();
+            checkoutUrl = trimmed.isEmpty() ? null : trimmed;
+        }
+
         if (failureReason != null) {
             String trimmed = failureReason.trim();
             failureReason = trimmed.isEmpty() ? null : trimmed;
@@ -145,6 +154,9 @@ public class Payment {
 
     public String getCheckoutSessionId() { return checkoutSessionId; }
     public void setCheckoutSessionId(String checkoutSessionId) { this.checkoutSessionId = checkoutSessionId; }
+
+    public String getCheckoutUrl() { return checkoutUrl; }
+    public void setCheckoutUrl(String checkoutUrl) { this.checkoutUrl = checkoutUrl; }
 
     public PaymentStatus getStatus() { return status; }
     public void setStatus(PaymentStatus status) { this.status = status; }

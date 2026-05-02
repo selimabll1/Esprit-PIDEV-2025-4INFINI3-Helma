@@ -66,10 +66,17 @@ public class SecurityConfig {
                         "/v3/api-docs/**"
                 ).permitAll()
 
+                // Stripe webhooks must be public, but verified by Stripe-Signature.
+                .requestMatchers(HttpMethod.POST, "/api/crowdfunding/stripe/webhook").permitAll()
+
                 // Public campaign browsing
                 .requestMatchers(HttpMethod.GET,
                         "/api/crowdfunding/campaigns",
-                        "/api/crowdfunding/campaigns/*"
+                        "/api/crowdfunding/campaigns/*",
+                        "/api/crowdfunding/public-campaigns",
+                        "/api/crowdfunding/public-campaigns/*",
+                        "/api/crowdfunding/public-campaigns/*/documents/*/content"
+
                 ).permitAll()
 
                 // Current user profile
@@ -84,7 +91,9 @@ public class SecurityConfig {
                         "/api/crowdfunding/admin/pledges",
                         "/api/crowdfunding/admin/pledges/**",
                         "/api/crowdfunding/admin/payments",
-                        "/api/crowdfunding/admin/payments/**"
+                        "/api/crowdfunding/admin/payments/**",
+                        "/api/crowdfunding/admin/campaign-pages",
+                        "/api/crowdfunding/admin/campaign-pages/**"
                 ).hasAnyAuthority(ADMIN_COMPLIANCE_AUTHORITIES)
 
                 // Investor endpoints

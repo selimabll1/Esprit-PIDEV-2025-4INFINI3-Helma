@@ -16,6 +16,10 @@ import com.helma.helmabackend.repository.crowdfunding.ApplicationRaiseRepository
 import com.helma.helmabackend.repository.crowdfunding.PaymentRepository;
 import com.helma.helmabackend.repository.crowdfunding.PledgeRepository;
 import com.helma.helmabackend.service.user.CurrentUserService;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +42,10 @@ public class PaymentService {
     private final ApplicationRaiseRepository applicationRaiseRepo;
     private final CurrentUserService currentUserService;
     private final CampaignFundingService campaignFundingService;
+    private final StripeCheckoutService stripeCheckoutService;
+
+    @Value("${stripe.secret-key:}")
+    private String stripeSecretKey;
 
     @Transactional
     public PaymentResponse initiateMyPayment(Long pledgeId) {
@@ -67,7 +74,13 @@ public class PaymentService {
                 .orElse(null);
 
         if (existingActive != null) {
-            return toPaymentResponse(existingActive, pledge, campaign);
+            if (existingActive.getProvider() == PaymentProvider.STRIPE && existingActive.getCheckoutUrl() != null) {
+                return toPaymentResponse(existingActive, pledge, campaign);
+            }
+
+            existingActive.setStatus(PaymentStatus.CANCELED);
+            existingActive.setFailureReason("Replaced by a Stripe checkout session.");
+            paymentRepo.save(existingActive);
         }
 
         Payment payment = new Payment();
@@ -76,10 +89,8 @@ public class PaymentService {
         payment.setBackerUserId(pledge.getBackerUserId());
         payment.setAmount(pledge.getAmount());
         payment.setCurrency(pledge.getCurrency());
-        payment.setProvider(PaymentProvider.MOCK);
-        payment.setProviderReference("mock_pay_" + UUID.randomUUID().toString().replace("-", ""));
-        payment.setCheckoutSessionId("mock_session_" + UUID.randomUUID().toString().replace("-", ""));
-        payment.setStatus(PaymentStatus.PENDING_PROVIDER);
+        payment.setProvider(PaymentProvider.STRIPE);
+        payment.setStatus(PaymentStatus.CREATED);
 
         if (pledge.getStatus() != PledgeStatus.PENDING) {
             pledge.setStatus(PledgeStatus.PENDING);
@@ -87,7 +98,23 @@ public class PaymentService {
         }
 
         Payment saved = paymentRepo.save(payment);
-        return toPaymentResponse(saved, pledge, campaign);
+
+        try {
+            StripeCheckoutService.StripeCheckoutSessionData stripeSession =
+                    stripeCheckoutService.createCheckoutSession(saved, pledge, campaign);
+
+            saved.setCheckoutSessionId(stripeSession.sessionId());
+            saved.setCheckoutUrl(stripeSession.checkoutUrl());
+            saved.setStatus(PaymentStatus.PENDING_PROVIDER);
+
+            Payment ready = paymentRepo.save(saved);
+            return toPaymentResponse(ready, pledge, campaign);
+        } catch (Exception ex) {
+            saved.setStatus(PaymentStatus.FAILED);
+            saved.setFailureReason(cleanFailureReason(ex.getMessage(), "Stripe checkout session creation failed."));
+            paymentRepo.save(saved);
+            throw new IllegalStateException("Stripe checkout could not be created: " + saved.getFailureReason());
+        }
     }
 
 
@@ -129,6 +156,50 @@ public class PaymentService {
         }
 
         return toPaymentResponse(payment);
+    }
+
+
+    @Transactional
+    public PaymentResponse syncMyStripePayment(Long paymentId) {
+        User me = currentUser();
+        requireInvestor(me);
+
+        Payment payment = paymentRepo.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + paymentId));
+
+        if (!payment.getBackerUserId().equals(me.getId())) {
+            throw new UnauthorizedException("You can only sync your own payments.");
+        }
+
+        if (payment.getProvider() != PaymentProvider.STRIPE) {
+            throw new IllegalStateException("This payment is not a Stripe payment.");
+        }
+
+        if (payment.getCheckoutSessionId() == null || payment.getCheckoutSessionId().isBlank()) {
+            throw new IllegalStateException("This payment has no Stripe checkout session id.");
+        }
+
+        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
+            throw new IllegalStateException("Stripe secret key is not configured.");
+        }
+
+        Stripe.apiKey = stripeSecretKey.trim();
+
+        try {
+            Session session = Session.retrieve(payment.getCheckoutSessionId());
+
+            if ("paid".equalsIgnoreCase(session.getPaymentStatus())) {
+                return markStripePaymentSucceeded(session.getId(), session.getPaymentIntent());
+            }
+
+            if ("expired".equalsIgnoreCase(session.getStatus())) {
+                return markStripePaymentCanceled(session.getId(), "Stripe checkout session expired.");
+            }
+
+            return toPaymentResponse(payment);
+        } catch (StripeException ex) {
+            throw new IllegalStateException("Could not sync Stripe payment: " + ex.getMessage(), ex);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -230,6 +301,99 @@ public class PaymentService {
         return toPaymentResponse(saved);
     }
 
+
+
+    @Transactional
+    public PaymentResponse markStripePaymentSucceeded(String checkoutSessionId, String paymentIntentId) {
+        Payment payment = requireStripePaymentBySession(checkoutSessionId);
+
+        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
+            return toPaymentResponseSafe(payment);
+        }
+
+        Pledge pledge = pledgeRepo.findById(payment.getPledgeId())
+                .orElseThrow(() -> new IllegalArgumentException("Pledge not found: " + payment.getPledgeId()));
+
+        payment.setStatus(PaymentStatus.SUCCEEDED);
+        payment.setProviderReference(cleanProviderReference(paymentIntentId));
+        payment.setFailureReason(null);
+        if (payment.getPaidAt() == null) {
+            payment.setPaidAt(Instant.now());
+        }
+
+        pledge.setStatus(PledgeStatus.PAID);
+        pledgeRepo.save(pledge);
+
+        Payment saved = paymentRepo.save(payment);
+        campaignFundingService.syncCampaignRaisedAmount(saved.getApplicationRaiseId());
+
+        return toPaymentResponseSafe(saved);
+    }
+
+    @Transactional
+    public PaymentResponse markStripePaymentFailed(String checkoutSessionId, String reason) {
+        Payment payment = requireStripePaymentBySession(checkoutSessionId);
+        Pledge pledge = pledgeRepo.findById(payment.getPledgeId())
+                .orElseThrow(() -> new IllegalArgumentException("Pledge not found: " + payment.getPledgeId()));
+
+        if (payment.getStatus() == PaymentStatus.SUCCEEDED || payment.getStatus() == PaymentStatus.REFUNDED) {
+            return toPaymentResponseSafe(payment);
+        }
+
+        payment.setStatus(PaymentStatus.FAILED);
+        payment.setFailureReason(cleanFailureReason(reason, "Stripe payment failed."));
+        pledge.setStatus(PledgeStatus.FAILED);
+
+        pledgeRepo.save(pledge);
+        Payment saved = paymentRepo.save(payment);
+        campaignFundingService.syncCampaignRaisedAmount(saved.getApplicationRaiseId());
+
+        return toPaymentResponseSafe(saved);
+    }
+
+    @Transactional
+    public PaymentResponse markStripePaymentCanceled(String checkoutSessionId, String reason) {
+        Payment payment = requireStripePaymentBySession(checkoutSessionId);
+        Pledge pledge = pledgeRepo.findById(payment.getPledgeId())
+                .orElseThrow(() -> new IllegalArgumentException("Pledge not found: " + payment.getPledgeId()));
+
+        if (payment.getStatus() == PaymentStatus.SUCCEEDED || payment.getStatus() == PaymentStatus.REFUNDED) {
+            return toPaymentResponseSafe(payment);
+        }
+
+        payment.setStatus(PaymentStatus.CANCELED);
+        payment.setFailureReason(cleanFailureReason(reason, "Stripe checkout canceled."));
+        pledge.setStatus(PledgeStatus.CANCELED);
+
+        pledgeRepo.save(pledge);
+        Payment saved = paymentRepo.save(payment);
+        campaignFundingService.syncCampaignRaisedAmount(saved.getApplicationRaiseId());
+
+        return toPaymentResponseSafe(saved);
+    }
+
+    private Payment requireStripePaymentBySession(String checkoutSessionId) {
+        if (checkoutSessionId == null || checkoutSessionId.isBlank()) {
+            throw new IllegalArgumentException("Stripe checkout session id is required.");
+        }
+
+        Payment payment = paymentRepo.findByCheckoutSessionId(checkoutSessionId.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found for Stripe session: " + checkoutSessionId));
+
+        if (payment.getProvider() != PaymentProvider.STRIPE) {
+            throw new IllegalStateException("Payment is not a Stripe payment.");
+        }
+
+        return payment;
+    }
+
+    private String cleanProviderReference(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private String cleanFailureReason(String value, String fallback) {
         if (value == null || value.isBlank()) {
             return fallback;
@@ -256,7 +420,7 @@ public class PaymentService {
         r.provider = payment.getProvider();
         r.providerReference = payment.getProviderReference();
         r.checkoutSessionId = payment.getCheckoutSessionId();
-        r.checkoutUrl = buildMockCheckoutUrl(payment);
+        r.checkoutUrl = buildCheckoutUrl(payment);
         r.status = payment.getStatus();
         r.failureReason = payment.getFailureReason();
         r.pledgeStatus = pledge.getStatus();
@@ -268,10 +432,15 @@ public class PaymentService {
         return r;
     }
 
-    private String buildMockCheckoutUrl(Payment payment) {
+    private String buildCheckoutUrl(Payment payment) {
+        if (payment.getProvider() == PaymentProvider.STRIPE) {
+            return payment.getCheckoutUrl();
+        }
+
         if (payment.getCheckoutSessionId() == null) {
             return null;
         }
+
         return "/api/crowdfunding/my-payments/" + payment.getId() + "/mock-checkout?session=" + payment.getCheckoutSessionId();
     }
 
@@ -302,7 +471,7 @@ public class PaymentService {
         r.provider = payment.getProvider();
         r.providerReference = payment.getProviderReference();
         r.checkoutSessionId = payment.getCheckoutSessionId();
-        r.checkoutUrl = buildMockCheckoutUrl(payment);
+        r.checkoutUrl = buildCheckoutUrl(payment);
 
         r.status = payment.getStatus();
         r.failureReason = payment.getFailureReason();
