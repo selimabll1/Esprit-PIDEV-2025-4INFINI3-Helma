@@ -25,6 +25,7 @@ import {
   PledgeCreateRequest,
   PledgeResponse,
   PortfolioDiversificationResponse,
+  PortfolioImportResultResponse,
   PortfolioOverviewResponse,
   PortfolioPositionResponse,
   PortfolioSummaryResponse
@@ -401,6 +402,34 @@ adminListPayments(): Observable<PaymentResponse[]> {
   getMyPortfolioDiversification(): Observable<PortfolioDiversificationResponse> {
     return this.http.get<PortfolioDiversificationResponse>(
       `${this.portfolioBaseUrl}/me/diversification`
+    );
+  }
+
+  exportMyPortfolioPositionsXlsx(): Observable<Blob> {
+    return this.http.get(`${this.portfolioBaseUrl}/me/positions/export-xlsx`, {
+      responseType: 'blob'
+    });
+  }
+
+  downloadPortfolioImportTemplate(): Observable<Blob> {
+    return this.http.get(`${this.portfolioBaseUrl}/me/positions/import-template`, {
+      responseType: 'blob'
+    });
+  }
+
+  importMyPortfolioPositionsXlsx(
+    file: File,
+    replaceExisting = false
+  ): Observable<PortfolioImportResultResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const params = new HttpParams().set('replaceExisting', String(replaceExisting));
+
+    return this.http.post<PortfolioImportResultResponse>(
+      `${this.portfolioBaseUrl}/me/positions/import-xlsx`,
+      formData,
+      { params }
     );
   }
 

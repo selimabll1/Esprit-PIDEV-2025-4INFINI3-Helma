@@ -567,20 +567,53 @@ export interface PortfolioAllocationItemResponse {
   weightPct: number | null;
 }
 
+export interface PortfolioInsightResponse {
+  type: 'INFO' | 'POSITIVE' | 'WARNING' | 'ACTION' | string;
+  title: string;
+  message: string;
+}
+
+export interface PortfolioOptimizationMetricsResponse {
+  committedCapital: number | null;
+  deploymentRatePct: number | null;
+  pendingCommitmentWeightPct: number | null;
+  weightedAverageFundingProgressPct: number | null;
+  averagePositionWeightPct: number | null;
+  effectiveNumberOfPositions: number | null;
+  effectiveNumberOfSectors: number | null;
+  effectiveNumberOfRegions: number | null;
+  sectorConcentrationHhi: number | null;
+  regionConcentrationHhi: number | null;
+  largestRegionWeightPct: number | null;
+  portfolioHealth: string | null;
+  concentrationRisk: string | null;
+  suggestedMaxPositionWeightPct: number | null;
+  overweightPositions: number;
+}
+
 export interface PortfolioDiversificationResponse {
   distinctSectors: number;
   distinctSubSectors: number;
+  distinctRegions: number;
   distinctTags: number;
 
   largestPositionWeightPct: number | null;
   top3PositionsWeightPct: number | null;
   largestSectorWeightPct: number | null;
+  largestRegionWeightPct: number | null;
 
   concentrationIndexHhi: number | null;
+  sectorConcentrationHhi: number | null;
+  regionConcentrationHhi: number | null;
+
+  effectiveNumberOfPositions: number | null;
+  effectiveNumberOfSectors: number | null;
+  effectiveNumberOfRegions: number | null;
 
   breadthPenalty: number;
   positionConcentrationPenalty: number;
   sectorConcentrationPenalty: number;
+  regionConcentrationPenalty: number;
 
   diversificationScore: number;
 }
@@ -593,41 +626,73 @@ export interface PortfolioSummaryResponse {
   activePositions: number;
   averageTicket: number | null;
 
+  committedCapital: number | null;
+  deploymentRatePct: number | null;
+
+  pendingCommitments: number | null;
+  pendingCommitmentsCount: number;
+  pendingCommitmentWeightPct: number | null;
+
+  failedOrCanceledAmount: number | null;
+  failedOrCanceledCount: number;
+
   largestPositionWeightPct: number | null;
   top3PositionsWeightPct: number | null;
   largestSectorWeightPct: number | null;
+  largestRegionWeightPct: number | null;
 
   equityInvested: number | null;
-  donationInvested: number | null;
-
   equityAllocationPct: number | null;
-  donationAllocationPct: number | null;
 
   distinctSectors: number;
   distinctSubSectors: number;
+  distinctRegions: number;
   distinctTags: number;
 
   concentrationIndexHhi: number | null;
+  sectorConcentrationHhi: number | null;
+  regionConcentrationHhi: number | null;
+  effectiveNumberOfPositions: number | null;
+  effectiveNumberOfSectors: number | null;
+  effectiveNumberOfRegions: number | null;
   diversificationScore: number;
+
+  averageOwnershipPercent: number | null;
+  maxOwnershipPercent: number | null;
+  weightedAverageFundingProgressPct: number | null;
+
+  portfolioHealth: string | null;
+  concentrationRisk: string | null;
 }
 
 export interface PortfolioPositionResponse {
-  campaignId: number;
+  campaignId: number | null;
   campaignBusinessName: string;
   campaignType: CrowdfundingType;
 
+  positionSource: 'HELMA' | 'IMPORTED_XLSX' | string;
+  imported: boolean;
+  sourceReference: string | null;
+  notes: string | null;
+  importedAt: string | null;
+
   sector: string | null;
   subSector: string | null;
+  governorate: string | null;
+  city: string | null;
   tags: string[];
 
   investedAmount: number | null;
   currency: string;
 
   positionWeightPct: number | null;
+  concentrationRisk: string | null;
 
   campaignFundingGoal: number | null;
   campaignRaisedAmount: number | null;
   campaignFundingProgressPct: number | null;
+  campaignFundingGap: number | null;
+  campaignFundingGapPct: number | null;
 
   minInvestment: number | null;
   equityOfferedPercent: number | null;
@@ -638,13 +703,49 @@ export interface PortfolioPositionResponse {
   pledgedAt: string;
 }
 
+export interface PortfolioImportRowResponse {
+  rowNumber: number;
+  valid: boolean;
+  errors: string[];
+
+  campaignBusinessName: string | null;
+  sector: string | null;
+  subSector: string | null;
+  governorate: string | null;
+  city: string | null;
+  tags: string[];
+
+  investedAmount: number | null;
+  currency: string | null;
+  campaignFundingGoal: number | null;
+  campaignRaisedAmount: number | null;
+  equityOfferedPercent: number | null;
+  ownershipPercent: number | null;
+  investedAt: string | null;
+  sourceReference: string | null;
+  notes: string | null;
+}
+
+export interface PortfolioImportResultResponse {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  importedRows: number;
+  replaceExisting: boolean;
+  message: string | null;
+  rows: PortfolioImportRowResponse[];
+}
+
 export interface PortfolioOverviewResponse {
   summary: PortfolioSummaryResponse;
   sectorAllocation: PortfolioAllocationItemResponse[];
   subSectorAllocation: PortfolioAllocationItemResponse[];
+  regionAllocation: PortfolioAllocationItemResponse[];
   tagExposure: PortfolioAllocationItemResponse[];
+  insights: PortfolioInsightResponse[];
   positions: PortfolioPositionResponse[];
   diversification: PortfolioDiversificationResponse;
+  optimization: PortfolioOptimizationMetricsResponse;
 }
 
 export enum PaymentProvider {
