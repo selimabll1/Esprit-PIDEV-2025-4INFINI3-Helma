@@ -60,6 +60,8 @@ public class SecurityConfig {
 
                 // Public endpoints
                 .requestMatchers(
+                         "/",
+                        "/health",
                         "/api/auth/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",

@@ -1,8 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -10,32 +6,32 @@
 		<version>4.0.2</version>
 		<relativePath/>
 	</parent>
-
 	<groupId>com.helma</groupId>
 	<artifactId>helma-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>helma-backend</name>
 	<description>helma-backend</description>
-
 	<properties>
 		<java.version>17</java.version>
 		<springdoc.version>2.6.0</springdoc.version>
 		<lombok.version>1.18.32</lombok.version>
 	</properties>
-
-	<!-- Force repositories (helps when settings.xml mirror is weird) -->
+	<!--  Force repositories (helps when settings.xml mirror is weird)  -->
 	<repositories>
 		<repository>
 			<id>central</id>
 			<name>Maven Central</name>
 			<url>https://repo.maven.apache.org/maven2</url>
-			<releases><enabled>true</enabled></releases>
-			<snapshots><enabled>false</enabled></snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
-
 	<dependencies>
-		<!-- WebMVC (matches your Gradle choice) -->
+		<!--  WebMVC (matches your Gradle choice)  -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
@@ -45,9 +41,7 @@
 			<artifactId>stripe-java</artifactId>
 			<version>32.1.0</version>
 		</dependency>
-
-
-		<!-- Data JPA -->
+		<!--  Data JPA  -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -57,35 +51,36 @@
 			<artifactId>mailjet-client</artifactId>
 			<version>6.0.1</version>
 		</dependency>
-
-		<!-- Validation (jakarta.validation.*) -->
+		<!--  XLSX import/export for portfolio positions  -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.4.1</version>
+		</dependency>
+		<!--  Validation (jakarta.validation.*)  -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-
-		<!-- Liquibase -->
+		<!--  Liquibase  -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-liquibase</artifactId>
 		</dependency>
-
-		<!-- MySQL driver -->
+		<!--  MySQL driver  -->
 		<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-
-		<!-- Lombok -->
+		<!--  Lombok  -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>${lombok.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
-		<!-- JJWT -->
+		<!--  JJWT  -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
@@ -103,36 +98,31 @@
 			<version>0.13.0</version>
 			<scope>runtime</scope>
 		</dependency>
-
-
-		<!-- Swagger / OpenAPI -->
+		<!--  Swagger / OpenAPI  -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>3.0.1</version>
 		</dependency>
-		<!-- Spring Security -->
+		<!--  Spring Security  -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
-		<!-- Tests -->
+		<!--  Tests  -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
-
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-
-			<!-- Lombok annotation processing -->
+			<!--  Lombok annotation processing  -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -146,8 +136,6 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
-
 		</plugins>
 	</build>
-
 </project>
