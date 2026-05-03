@@ -1,0 +1,105 @@
+<div class="container mt-4">
+
+  <!-- HEADER -->
+  <div class="rx-voucher-hero mb-5">
+
+    <div>
+      <div class="rx-label">
+        REWARD WALLET
+      </div>
+
+      <div class="rx-total">
+        {{ totalRewards() | number:'1.0-0' }}
+        <span>TND</span>
+      </div>
+
+      <div class="rx-sub">
+        {{ totalCount() }} rewards available
+      </div>
+    </div>
+
+    <i class="bi bi-gift-fill rx-gift"></i>
+
+  </div>
+
+
+  <!-- LOADING -->
+  <div class="text-center py-5" *ngIf="loading()">
+    <div class="spinner-border text-success"></div>
+  </div>
+
+
+  <!-- VOUCHERS -->
+  <div class="row g-4" *ngIf="!loading()">
+
+    <div
+      class="col-md-6 col-lg-4"
+      *ngFor="let v of sortedVouchers()"
+    >
+
+      <div class="rx-voucher-card">
+
+        <!-- VALUE -->
+        <div class="rx-voucher-value">
+          {{ v.value | number:'1.0-0' }} TND
+        </div>
+
+        <div class="rx-voucher-desc">
+          Cashback Reward
+        </div>
+
+        <!-- QR CODE -->
+        <div class="rx-qr-box mt-4">
+
+          <img
+            [src]="'http://localhost:8084/api/vouchers/qr/' + v.id"
+            alt="QR Code"
+            class="rx-qr-img"
+          />
+
+        </div>
+
+        <!-- CODE -->
+        <div class="mt-3 small fw-bold text-center">
+          {{ v.code }}
+        </div>
+
+        <!-- DATES -->
+        <div class="rx-voucher-dates mt-4">
+
+          <div>
+            <small>Created</small>
+            {{ v.creationDate | date:'dd MMM yyyy' }}
+          </div>
+
+          <div>
+            <small>Expires</small>
+            {{ v.deadline | date:'dd MMM yyyy' }}
+          </div>
+
+        </div>
+
+        <!-- STATUS -->
+        <div
+          class="rx-status mt-4"
+          [ngClass]="getStatusClass(v)"
+        >
+          {{ isExpired(v) ? 'EXPIRED' : v.status }}
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- EMPTY -->
+    <div
+      *ngIf="totalCount() === 0"
+      class="text-center mt-5 text-muted"
+    >
+      <i class="bi bi-gift fs-1"></i>
+      <p>No rewards yet.</p>
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,282 @@
+<!-- dashboard-admin.component.html -->
+
+<div class="rx-dashboard-page container mt-4">
+
+    <!-- LOADING -->
+    <div
+      *ngIf="loading()"
+      class="rx-loading-box"
+    >
+      <div class="spinner-border text-success"></div>
+    </div>
+  
+    <!-- CONTENT -->
+    <div *ngIf="stats() as s">
+  
+      <!-- HERO -->
+      <div class="rx-hero mb-4">
+  
+        <div>
+  
+          <div class="rx-badge">
+            <i class="bi bi-shield-check"></i>
+            Administrator Control Center
+          </div>
+  
+          <h1>Platform Dashboard</h1>
+  
+          <p>
+            Real-time global analytics,
+            financial performance,
+            user behavior and AI summaries.
+          </p>
+  
+        </div>
+  
+        <div class="rx-hero-right">
+  
+          <div class="rx-big-number">
+            {{ s.totalSaved | number:'1.0-0' }}
+            <span>TND</span>
+          </div>
+  
+          <small>Total Platform Savings</small>
+  
+        </div>
+  
+      </div>
+  
+  
+      <!-- KPI -->
+      <div class="row g-4 mb-4">
+  
+        <div class="col-md-6 col-xl-3">
+          <div class="rx-kpi-card purple">
+            <small>Total Saved</small>
+            <h3>{{ s.totalSaved | number:'1.0-0' }} TND</h3>
+            <i class="bi bi-wallet2"></i>
+          </div>
+        </div>
+  
+        <div class="col-md-6 col-xl-3">
+          <div class="rx-kpi-card pink">
+            <small>Total Target</small>
+            <h3>{{ s.totalTarget | number:'1.0-0' }} TND</h3>
+            <i class="bi bi-bullseye"></i>
+          </div>
+        </div>
+  
+        <div class="col-md-6 col-xl-3">
+          <div class="rx-kpi-card violet">
+            <small>Users</small>
+            <h3>{{ s.userCount }}</h3>
+            <i class="bi bi-people-fill"></i>
+          </div>
+        </div>
+  
+        <div class="col-md-6 col-xl-3">
+          <div class="rx-kpi-card dark">
+            <small>Goals</small>
+            <h3>{{ s.goalCount }}</h3>
+            <i class="bi bi-trophy"></i>
+          </div>
+        </div>
+  
+      </div>
+  
+  
+      <!-- AI SUMMARY -->
+      <div class="rx-card ai-box mb-4">
+  
+        <div class="rx-card-head">
+  
+          <h5>AI Executive Summary</h5>
+          <span>Smart Global Analysis</span>
+  
+        </div>
+  
+        <!-- SIZE BUTTONS -->
+        <div class="rx-ai-switcher">
+  
+          <button
+            class="rx-switch-btn"
+            [class.active]="summarySize() === 'short'"
+            (click)="setSummarySize('short')"
+          >
+            Short
+          </button>
+  
+          <button
+            class="rx-switch-btn"
+            [class.active]="summarySize() === 'medium'"
+            (click)="setSummarySize('medium')"
+          >
+            Medium
+          </button>
+  
+          <button
+            class="rx-switch-btn"
+            [class.active]="summarySize() === 'long'"
+            (click)="setSummarySize('long')"
+          >
+            Long
+          </button>
+  
+        </div>
+  
+        <!-- MINI STATS -->
+        <div class="rx-ai-metrics">
+  
+          <div class="rx-ai-mini-card">
+            <small>Progress</small>
+            <strong>{{ s.progress }}%</strong>
+          </div>
+  
+          <div class="rx-ai-mini-card">
+            <small>Deposits</small>
+            <strong>{{ s.depositCount }}</strong>
+          </div>
+  
+          <div class="rx-ai-mini-card">
+            <small>Vouchers</small>
+            <strong>{{ s.totalVouchers }}</strong>
+          </div>
+  
+          <div class="rx-ai-mini-card">
+            <small>Users</small>
+            <strong>{{ s.userCount }}</strong>
+          </div>
+  
+        </div>
+  
+        <!-- LOADING -->
+        <div
+          *ngIf="aiLoading()"
+          class="rx-ai-loading"
+        >
+          <div class="spinner-border text-success"></div>
+          <span>Generating executive report...</span>
+        </div>
+  
+        <!-- RESULT -->
+        <div
+          *ngIf="!aiLoading()"
+          class="rx-ai-content"
+        >
+  
+          <div class="rx-ai-icon">
+            <i class="bi bi-stars"></i>
+          </div>
+  
+          <h4>Executive Intelligence</h4>
+  
+          <p>
+            {{ aiSummary() }}
+          </p>
+  
+          <div class="rx-ai-actions">
+  
+            <button
+              class="rx-ai-btn"
+              (click)="loadSummary()"
+            >
+              <i class="bi bi-arrow-repeat"></i>
+              Refresh Summary
+            </button>
+  
+          </div>
+  
+        </div>
+  
+      </div>
+  
+  
+      <!-- CHARTS -->
+      <div class="row g-4">
+  
+        <!-- MONTHLY -->
+        <div class="col-lg-6">
+          <div class="rx-card">
+  
+            <div class="rx-card-head">
+              <h5>Monthly Deposits</h5>
+              <span>Last 6 Months</span>
+            </div>
+  
+            <canvas id="monthlyChart"></canvas>
+  
+          </div>
+        </div>
+  
+        <!-- DAILY -->
+        <div class="col-lg-6">
+          <div class="rx-card">
+  
+            <div class="rx-card-head">
+              <h5>Weekly Activity</h5>
+              <span>Last 7 Days</span>
+            </div>
+  
+            <canvas id="dailyChart"></canvas>
+  
+          </div>
+        </div>
+  
+        <!-- PIE -->
+        <div class="col-lg-12">
+          <div class="rx-card">
+  
+            <div class="rx-card-head">
+              <h5>Goals Status</h5>
+              <span>Global Distribution</span>
+            </div>
+  
+            <canvas id="pieChart"></canvas>
+  
+          </div>
+        </div>
+  
+      </div>
+  
+  
+      <!-- TOP GOALS -->
+      <div class="rx-card mt-4">
+  
+        <div class="rx-card-head mb-4">
+  
+          <h5>Top Performing Goals</h5>
+          <span>Highest Completion</span>
+  
+        </div>
+  
+        <div
+          *ngFor="let g of s.topGoals"
+          class="rx-goal-row"
+        >
+  
+          <div class="d-flex justify-content-between mb-2">
+  
+            <strong>{{ g.title }}</strong>
+  
+            <span class="rx-goal-percent">
+              {{ g.percent }}%
+            </span>
+  
+          </div>
+  
+          <div class="progress rx-progress">
+  
+            <div
+              class="progress-bar"
+              [style.width.%]="g.percent"
+            ></div>
+  
+          </div>
+  
+        </div>
+  
+      </div>
+  
+    </div>
+  
+  </div>

@@ -1,0 +1,112 @@
+<div class="container mt-4">
+
+  <!-- BACK -->
+  <button class="btn btn-secondary mb-4" routerLink="/youth/goals">
+    <i class="bi bi-arrow-left me-2"></i>
+    Back to Goals
+  </button>
+
+  <!-- HEADER -->
+  <div class="rx-history-header">
+
+    <div>
+      <div class="rx-goal-label">
+        {{ goal?.title }}
+      </div>
+
+      <div class="rx-history-label">
+        Account Statement
+      </div>
+
+      <div class="rx-history-total">
+        {{ total }} <span>TND</span>
+      </div>
+
+      <!-- DATE ADDED -->
+      <div class="rx-created-date mt-2">
+        <i class="bi bi-calendar-event me-2"></i>
+        Created:
+        {{ goal?.createdAt | date:'EEEE dd MMMM yyyy' }}
+      </div>
+
+      <!-- DEADLINE -->
+      <div class="rx-created-date mt-1" *ngIf="goal?.deadline">
+        <i class="bi bi-hourglass-split me-2"></i>
+        Deadline:
+        {{ goal?.deadline | date:'EEEE dd MMMM yyyy' }}
+      </div>
+
+    </div>
+
+    <div class="text-end">
+
+      <div class="rx-history-sub">
+        All your savings deposits
+      </div>
+
+      <div class="rx-percent-badge mt-2">
+        {{ goalPercent | number:'1.0-0' }} %
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- TIMELINE -->
+  <div class="rx-timeline">
+
+    <div *ngFor="let d of deposits; let i = index">
+
+      <!-- DATE SEPARATOR -->
+      <div
+        class="rx-date-separator"
+        *ngIf="i==0 || deposits[i-1].dateDeposit !== d.dateDeposit">
+
+        {{ d.dateDeposit | date:'EEEE dd MMMM yyyy' }}
+
+      </div>
+
+      <!-- TRANSACTION CARD -->
+      <div class="rx-transaction-card">
+
+        <div class="rx-t-left">
+
+          <div class="rx-t-icon">
+            <i class="bi bi-piggy-bank"></i>
+          </div>
+
+          <div>
+            <div class="rx-t-title">Savings Deposit</div>
+            <div class="rx-t-desc">
+              Money added to your saving goal
+            </div>
+
+            <!-- TIME -->
+            <div class="rx-mini-time mt-1">
+              <i class="bi bi-clock me-1"></i>
+              {{ d.dateDeposit | date }}
+            </div>
+          </div>
+
+        </div>
+
+        <div class="rx-t-right">
+          <div class="rx-t-amount">
+            +{{ d.amount }} TND
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- EMPTY -->
+    <div *ngIf="deposits.length==0" class="rx-empty">
+      <i class="bi bi-piggy-bank fs-1"></i>
+      <p>No transactions yet</p>
+    </div>
+
+  </div>
+
+</div>

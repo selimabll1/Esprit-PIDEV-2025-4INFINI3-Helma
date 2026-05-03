@@ -1,0 +1,110 @@
+/* =====================================================
+   HELMA CLEAN NAVBAR FIX
+===================================================== */
+
+.rx-topbar{
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid #e9edf2;
+  padding:12px 28px;
+  min-height:78px;
+  position:sticky;
+  top:0;
+  z-index:1050;
+  box-shadow:0 6px 20px rgba(0,0,0,.04);
+}
+
+/* brand */
+.rx-brand{
+  font-size:24px;
+  font-weight:900;
+  color:#0F6B6B !important;
+  text-decoration:none;
+}
+
+.rx-brand img{
+  height:46px;
+  width:auto;
+}
+
+/* reset bootstrap nav */
+.navbar-nav{
+  align-items:center;
+  gap:10px;
+}
+
+/* links */
+.rx-nav-link{
+  padding:12px 18px !important;
+  border-radius:14px;
+  color:#1F2937 !important;
+  font-weight:700;
+  font-size:15px;
+  transition:.2s;
+  white-space:nowrap;
+}
+
+.rx-nav-link:hover{
+  background:#f8fafc;
+  color:#0F6B6B !important;
+}
+ a{
+  text-decoration: none;
+  color: inherit;
+ }
+
+/* button */
+.rx-nav-btn{
+  background:linear-gradient(135deg,#D4A62A,#f0ca63);
+  border:none;
+  border-radius:14px;
+  padding:10px 18px;
+  font-weight:800;
+  color:#1F2937;
+}
+
+/* user */
+.rx-user-btn{
+  background:white;
+  border:1px solid #e6e8ec;
+  border-radius:14px;
+  padding:10px 16px;
+  font-weight:700;
+}
+
+/* page body */
+.rx-page-body{
+  padding:30px;
+  background:#f8fafc;
+  min-height:calc(100vh - 78px);
+}
+
+/* footer */
+.rx-footer{
+  margin:24px;
+  background:linear-gradient(135deg,#0F6B6B,#0B4C4C);
+  border-radius:26px;
+  padding:34px;
+  color:white;
+}
+
+/* MOBILE */
+@media(max-width:992px){
+
+  .navbar-collapse{
+      background:white;
+      margin-top:14px;
+      padding:18px;
+      border-radius:20px;
+      box-shadow:0 20px 40px rgba(0,0,0,.08);
+  }
+
+  .navbar-nav{
+      align-items:stretch;
+  }
+
+  .rx-nav-link{
+      width:100%;
+  }
+
+}

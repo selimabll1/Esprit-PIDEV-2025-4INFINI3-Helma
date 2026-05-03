@@ -1,0 +1,367 @@
+/* =====================================================
+   HELMA CLEAN NAVBAR + INLINE SIDEBAR LAYOUT FIXED
+===================================================== */
+
+/* ================= RESET ================= */
+
+html,
+body{
+    margin:0;
+    padding:0;
+    width:100%;
+    overflow-x:hidden;
+    background:#f8fafc;
+    font-family:Inter,system-ui,-apple-system,sans-serif;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+a{
+    text-decoration:none;
+    color:inherit;
+}
+
+/* ================= APP SHELL ================= */
+
+.rx-app-shell{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+/* =====================================================
+   TOPBAR
+===================================================== */
+
+.rx-topbar{
+    background:rgba(255,255,255,.94);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid #e8edf3;
+    padding:12px 28px;
+    min-height:78px;
+    position:sticky;
+    top:0;
+    z-index:1050;
+    box-shadow:0 8px 24px rgba(0,0,0,.04);
+}
+
+/* BRAND */
+
+.rx-brand{
+    font-size:24px;
+    font-weight:900;
+    color:#0F6B6B !important;
+}
+
+.rx-brand img{
+    height:46px;
+    width:auto;
+    border-radius:12px;
+}
+
+/* NAV */
+
+.navbar-nav{
+    align-items:center;
+    gap:10px;
+}
+
+.rx-nav-link{
+    padding:12px 18px !important;
+    border-radius:14px;
+    color:#1F2937 !important;
+    font-weight:700;
+    font-size:15px;
+    transition:.25s ease;
+    white-space:nowrap;
+}
+
+.rx-nav-link:hover{
+    background:#f1f5f9;
+    color:#0F6B6B !important;
+}
+
+.rx-nav-link.active{
+    background:#0F6B6B;
+    color:#fff !important;
+}
+
+/* USER */
+
+.rx-user-btn{
+    background:#fff;
+    border:1px solid #e6e8ec;
+    border-radius:14px;
+    padding:10px 16px;
+    font-weight:700;
+}
+
+/* =====================================================
+   MAIN BODY LAYOUT
+===================================================== */
+
+.rx-layout-body{
+    display:flex;
+    gap:24px;
+    padding:24px;
+    flex:1;
+    align-items:flex-start;
+}
+
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+.rx-sidebar{
+    width:95px;
+    min-width:95px;
+    height:calc(100vh - 120px);
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.7);
+    border-radius:28px;
+    padding:18px 12px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    position:sticky;
+    top:96px;
+    box-shadow:0 15px 35px rgba(0,0,0,.05);
+    transition:.25s ease;
+    overflow:hidden;
+}
+
+/* LOGO */
+
+.rx-sidebar-logo{
+    display:flex;
+    justify-content:center;
+    margin-bottom:18px;
+}
+
+.rx-sidebar-logo img{
+    width:48px;
+    height:48px;
+    border-radius:16px;
+    object-fit:cover;
+}
+
+/* MENU */
+
+.rx-sidebar-menu{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    flex:1;
+}
+
+/* LINKS */
+
+.rx-side-link{
+    min-height:58px;
+    border-radius:18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    color:#64748b;
+    font-size:11px;
+    font-weight:700;
+    padding:10px 6px;
+    transition:.22s ease;
+    text-align:center;
+}
+
+.rx-side-link i{
+    font-size:19px;
+}
+
+.rx-side-link span{
+    font-size:10px;
+    line-height:1.1;
+}
+
+.rx-side-link:hover{
+    background:#f1f5f9;
+    color:#0F6B6B;
+    transform:translateY(-2px);
+}
+
+.rx-side-link.active{
+    background:linear-gradient(135deg,#0F6B6B,#158585);
+    color:#fff !important;
+    box-shadow:0 10px 18px rgba(15,107,107,.20);
+}
+
+/* BOTTOM */
+
+.rx-sidebar-bottom{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-top:16px;
+}
+
+.rx-side-divider{
+    height:1px;
+    background:linear-gradient(to right,transparent,#e5e7eb,transparent);
+}
+
+.rx-user-pill{
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    margin:auto;
+    background:linear-gradient(135deg,#D4A62A,#f0ca63);
+    color:#1f2937;
+    font-weight:900;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* =====================================================
+   PAGE CONTENT
+===================================================== */
+
+.rx-page-content{
+    flex:1;
+    min-width:0;
+}
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.rx-footer{
+    margin:0 24px 24px;
+    background:linear-gradient(135deg,#0F6B6B,#0B4C4C);
+    border-radius:26px;
+    padding:34px;
+    color:white;
+    box-shadow:0 20px 40px rgba(15,107,107,.15);
+}
+
+/* =====================================================
+   TABLET
+===================================================== */
+
+@media(max-width:1200px){
+
+    .rx-layout-body{
+        flex-direction:column;
+        padding:18px;
+    }
+
+    .rx-sidebar{
+        width:100%;
+        min-width:100%;
+        height:auto;
+        position:relative;
+        top:0;
+        flex-direction:row;
+        align-items:center;
+        gap:12px;
+        padding:14px;
+    }
+
+    .rx-sidebar-logo{
+        margin-bottom:0;
+    }
+
+    .rx-sidebar-menu{
+        flex-direction:row;
+        flex-wrap:wrap;
+        gap:10px;
+    }
+
+    .rx-side-link{
+        width:auto;
+        min-width:90px;
+        min-height:72px;
+    }
+
+    .rx-sidebar-bottom{
+        flex-direction:row;
+        margin-left:auto;
+        margin-top:0;
+        align-items:center;
+    }
+
+    .rx-side-divider{
+        display:none;
+    }
+
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:992px){
+
+    .navbar-collapse{
+        background:#fff;
+        margin-top:14px;
+        padding:18px;
+        border-radius:20px;
+        box-shadow:0 20px 40px rgba(0,0,0,.08);
+    }
+
+    .navbar-nav{
+        align-items:stretch;
+    }
+
+    .rx-nav-link{
+        width:100%;
+    }
+
+    .rx-topbar{
+        padding:12px 16px;
+    }
+
+    .rx-layout-body{
+        padding:14px;
+        gap:16px;
+    }
+
+    .rx-footer{
+        margin:14px;
+        padding:24px;
+    }
+
+}
+
+@media(max-width:576px){
+
+    .rx-brand{
+        font-size:18px;
+    }
+
+    .rx-brand img{
+        height:38px;
+    }
+
+    .rx-footer{
+        border-radius:18px;
+    }
+
+    .rx-sidebar{
+        padding:12px;
+        border-radius:20px;
+    }
+
+    .rx-sidebar-menu{
+        overflow-x:auto;
+        flex-wrap:nowrap;
+    }
+
+    .rx-side-link{
+        min-width:82px;
+        flex-shrink:0;
+    }
+
+}

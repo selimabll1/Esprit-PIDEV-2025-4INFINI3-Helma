@@ -1,0 +1,223 @@
+/* =========================================================
+   HISTORY / TIMELINE UI
+   Converted to HELMA THEME
+   Colors:
+   Gold #D4A62A
+   Deep Teal #0F6B6B
+   Soft Ivory #FCFAF5
+   Mint #DDF4EC
+   Background #F8FAFC
+   Text #1F2937
+   ========================================================= */
+
+/* HEADER */
+.rx-history-header{
+    background:linear-gradient(135deg,#0F6B6B,#0B4C4C);
+    border:none;
+    border-radius:24px;
+    padding:34px 38px;
+    margin-bottom:32px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:#ffffff;
+    box-shadow:0 22px 48px rgba(15,107,107,.18);
+    position:relative;
+    overflow:hidden;
+}
+
+.rx-history-header::after{
+    content:'';
+    position:absolute;
+    width:260px;
+    height:260px;
+    right:-90px;
+    top:-90px;
+    background:radial-gradient(circle,rgba(212,166,42,.18),transparent 70%);
+}
+
+.rx-history-label{
+    font-size:12px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.78);
+    font-weight:700;
+}
+
+.rx-history-total{
+    font-size:50px;
+    font-weight:900;
+    line-height:1.05;
+    color:#ffffff;
+}
+
+.rx-history-total span{
+    font-size:22px;
+    color:rgba(255,255,255,.70);
+}
+
+.rx-history-sub{
+    color:rgba(255,255,255,.78);
+    font-size:14px;
+    margin-top:8px;
+}
+
+/* TIMELINE */
+.rx-timeline{
+    position:relative;
+    padding-left:18px;
+}
+
+.rx-timeline::before{
+    content:'';
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:8px;
+    width:3px;
+    border-radius:20px;
+    background:linear-gradient(180deg,#D4A62A,#0F6B6B,#DDF4EC);
+}
+
+/* DATE */
+.rx-date-separator{
+    font-size:12px;
+    letter-spacing:1.5px;
+    color:#6B7280;
+    margin:28px 0 14px 20px;
+    text-transform:uppercase;
+    font-weight:800;
+}
+
+/* CARD */
+.rx-transaction-card{
+    background:#ffffff;
+    border:1px solid #E6E8EC;
+    border-radius:22px;
+    padding:18px 24px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+    margin-left:18px;
+    transition:.25s ease;
+    position:relative;
+    box-shadow:0 12px 30px rgba(15,23,42,.05);
+}
+
+.rx-transaction-card::before{
+    content:'';
+    position:absolute;
+    left:-22px;
+    top:50%;
+    transform:translateY(-50%);
+    width:13px;
+    height:13px;
+    border-radius:50%;
+    background:#D4A62A;
+    box-shadow:0 0 0 5px #F8FAFC;
+}
+
+.rx-transaction-card:hover{
+    transform:translateY(-5px) translateX(4px);
+    border-color:#d8c37d;
+    background:linear-gradient(135deg,#fffdf8,#ffffff);
+    box-shadow:
+        0 18px 38px rgba(15,23,42,.08),
+        0 8px 18px rgba(212,166,42,.08);
+}
+
+/* LEFT */
+.rx-t-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+.rx-t-icon{
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#DDF4EC,#ffffff);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    color:#0F6B6B;
+    border:1px solid #cfe9de;
+    box-shadow:0 8px 18px rgba(15,107,107,.08);
+}
+
+.rx-t-title{
+    font-weight:800;
+    color:#1F2937;
+    font-size:15px;
+}
+
+.rx-t-desc{
+    font-size:12px;
+    color:#6B7280;
+    margin-top:2px;
+}
+
+/* RIGHT */
+.rx-t-right{
+    text-align:right;
+}
+
+.rx-t-amount{
+    font-weight:900;
+    font-size:22px;
+    color:#0F6B6B;
+    letter-spacing:.2px;
+}
+
+/* NEGATIVE */
+.rx-t-amount.debit{
+    color:#D64546;
+}
+
+/* EMPTY */
+.rx-empty{
+    text-align:center;
+    padding:95px 20px;
+    color:#6B7280;
+}
+
+.rx-empty i{
+    font-size:52px;
+    margin-bottom:12px;
+    display:block;
+    color:#D4A62A;
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+
+    .rx-history-header{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:18px;
+        padding:28px;
+    }
+
+    .rx-history-total{
+        font-size:38px;
+    }
+
+    .rx-transaction-card{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:14px;
+        padding:18px;
+    }
+
+    .rx-t-right{
+        width:100%;
+        text-align:left;
+    }
+
+    .rx-t-amount{
+        font-size:18px;
+    }
+}

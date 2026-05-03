@@ -1,0 +1,103 @@
+<!-- deposit-history-show.component.html -->
+
+<div class="container mt-4 rx-ledger">
+
+  <!-- BACK + TITLE -->
+  <div class="d-flex align-items-center justify-content-between mb-4">
+
+    <button class="btn rx-back-btn" routerLink="/youth/goals">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+
+    <div class="rx-page-title">
+      Goal Ledger
+    </div>
+
+  </div>
+
+
+  <!-- GOAL HERO -->
+  <div class="rx-goal-hero">
+
+    <div class="rx-hero-left">
+
+      <div class="rx-goal-label">
+        TOTAL DEPOSITED
+      </div>
+
+      <div class="rx-goal-total">
+        {{ total }} <span>TND</span>
+      </div>
+
+      <div class="rx-goal-sub">
+        {{ deposits.length }} transactions
+      </div>
+
+    </div>
+
+
+    <!-- PROGRESS CIRCLE -->
+    <div class="rx-progress-circle">
+
+      <div class="rx-circle">
+
+        <div class="rx-percent">
+          {{ goalTarget > 0 ? ((total / goalTarget) * 100 | number:'1.0-0') : 0 }}%
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- TRANSACTIONS -->
+  <div class="rx-ledger-list mt-4">
+
+    <div *ngFor="let d of deposits; let i = index">
+
+      <!-- DATE SEPARATOR -->
+      <div
+        class="rx-date-separator"
+        *ngIf="i === 0 || deposits[i - 1].dateDeposit !== d.dateDeposit"
+      >
+        {{ d.dateDeposit | date:'EEEE dd MMMM yyyy' }}
+      </div>
+
+      <!-- TRANSACTION -->
+      <div class="rx-ledger-item">
+
+        <div class="rx-ledger-left">
+
+          <div class="rx-ledger-icon">
+            <i class="bi bi-piggy-bank"></i>
+          </div>
+
+          <div>
+            <div class="rx-ledger-title">Savings Deposit</div>
+            <div class="rx-ledger-desc">
+              Added to this goal
+            </div>
+          </div>
+
+        </div>
+
+        <div class="rx-ledger-right">
+          +{{ d.amount }} TND
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- EMPTY -->
+    <div *ngIf="deposits.length === 0" class="rx-empty">
+      <i class="bi bi-piggy-bank"></i>
+      <p>No deposits yet</p>
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,251 @@
+<!-- =====================================================
+     HELMA MAIN LAYOUT
+     Navigation moved to NAVBAR
+     Sidebar removed
+===================================================== -->
+
+<div class="rx-app-shell d-flex flex-column min-vh-100">
+
+  <!-- ================================================= -->
+  <!-- TOP NAVBAR -->
+  <!-- ================================================= -->
+  <nav class="navbar navbar-expand-xl rx-topbar navbar-light px-4">
+
+      <div class="container-fluid">
+
+          <!-- BRAND -->
+          <a class="navbar-brand d-flex align-items-center gap-3 rx-brand"
+             routerLink="/">
+
+              <img src="logo.png"
+                   alt="Helma"
+                   style="height:48px;width:auto;border-radius:10px;">
+
+              <div>
+                  <div class="fw-bold">Helma Wallet</div>
+                  <small class="text-muted d-block">
+                      Empower. Innovate. Growth.
+                  </small>
+              </div>
+
+          </a>
+
+          <!-- MOBILE TOGGLER -->
+          <button class="navbar-toggler border-0 shadow-none"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#helmaNavbar">
+
+              <i class="bi bi-list fs-2"></i>
+
+          </button>
+
+          <!-- NAV LINKS -->
+          <div class="collapse navbar-collapse"
+               id="helmaNavbar">
+
+              <ul class="navbar-nav mx-auto align-items-xl-center gap-xl-2 mt-3 mt-xl-0">
+
+                  <li class="nav-item">
+                      <a class="nav-link rx-nav-link"
+                         routerLink="/"
+                         routerLinkActive="active"
+                         [routerLinkActiveOptions]="{ exact:true }">
+
+                          <i class="bi bi-grid-1x2-fill me-2"></i>
+                          Dashboard
+
+                      </a>
+                  </li>
+
+                  <li class="nav-item">
+                      <a class="nav-link rx-nav-link"
+                         routerLink="youth/goals"
+                         routerLinkActive="active">
+
+                          <i class="bi bi-bullseye me-2"></i>
+                          Saving Goals
+
+                      </a>
+                  </li>
+
+                  <li class="nav-item">
+                      <a class="nav-link rx-nav-link"
+                         routerLink="/history"
+                         routerLinkActive="active">
+
+                          <i class="bi bi-clock-history me-2"></i>
+                          History
+
+                      </a>
+                  </li>
+
+                  <li class="nav-item">
+                      <a class="nav-link rx-nav-link"
+                         routerLink="/vouceher"
+                         routerLinkActive="active">
+
+                          <i class="bi bi-gift me-2"></i>
+                          Rewards
+
+                      </a>
+                  </li>
+
+                  <li class="nav-item">
+                      <a class="nav-link rx-nav-link"
+                         routerLink="/wallet"
+                         routerLinkActive="active">
+
+                          <i class="bi bi-wallet2 me-2"></i>
+                          Wallet
+
+                      </a>
+                  </li>
+
+              </ul>
+
+              <!-- RIGHT SIDE -->
+              <div class="d-flex align-items-center gap-3 mt-3 mt-xl-0">
+
+                  <!-- Create Goal -->
+              
+                  <!-- User -->
+                  <div class="dropdown">
+
+                      <button class="btn rx-user-btn dropdown-toggle"
+                              data-bs-toggle="dropdown">
+
+                          <i class="bi bi-person-circle me-2"></i>
+                          yassmine
+
+                      </button>
+
+                      <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-4 p-2">
+
+                          <li>
+                              <a class="dropdown-item rounded-3">
+                                  <i class="bi bi-person me-2"></i>
+                                  Profile
+                              </a>
+                          </li>
+
+                          <li>
+                              <a class="dropdown-item rounded-3">
+                                  <i class="bi bi-gear me-2"></i>
+                                  Settings
+                              </a>
+                          </li>
+
+                          <li><hr class="dropdown-divider"></li>
+
+                          <li>
+                              <a class="dropdown-item rounded-3 text-danger">
+                                  <i class="bi bi-box-arrow-right me-2"></i>
+                                  Logout
+                              </a>
+                          </li>
+
+                      </ul>
+
+                  </div>
+
+              </div>
+
+          </div>
+
+      </div>
+
+  </nav>
+
+
+  <!-- ================================================= -->
+  <!-- PAGE CONTENT -->
+  <!-- ================================================= -->
+  <main class="container-fluid p-4 flex-grow-1 rx-page-body">
+
+      <router-outlet></router-outlet>
+
+  </main>
+
+
+  <!-- ================================================= -->
+  <!-- FOOTER -->
+  <!-- ================================================= -->
+  <footer class="rx-footer">
+
+      <div class="row g-4 align-items-start">
+
+          <!-- LEFT -->
+          <div class="col-lg-4">
+
+              <img src="logoxl.png"
+                   class="img-fluid rounded-4 mb-3"
+                   style="max-width:290px;"
+                   alt="logo">
+
+              <p class="mb-3 text-white-50">
+                  Smart savings platform built for growth,
+                  clarity and modern finance management.
+              </p>
+
+              <div class="d-flex gap-2">
+
+                  <a class="rx-social"><i class="bi bi-facebook"></i></a>
+                  <a class="rx-social"><i class="bi bi-twitter-x"></i></a>
+                  <a class="rx-social"><i class="bi bi-instagram"></i></a>
+                  <a class="rx-social"><i class="bi bi-linkedin"></i></a>
+
+              </div>
+
+          </div>
+
+          <!-- LINKS -->
+          <div class="col-6 col-lg-2">
+              <h6 class="rx-footer-heading">Platform</h6>
+              <a class="rx-footer-link">Dashboard</a>
+              <a class="rx-footer-link">Goals</a>
+              <a class="rx-footer-link">Wallet</a>
+              <a class="rx-footer-link">History</a>
+          </div>
+
+          <div class="col-6 col-lg-2">
+              <h6 class="rx-footer-heading">Resources</h6>
+              <a class="rx-footer-link">Guides</a>
+              <a class="rx-footer-link">Support</a>
+              <a class="rx-footer-link">FAQs</a>
+              <a class="rx-footer-link">Security</a>
+          </div>
+
+          <div class="col-6 col-lg-2">
+              <h6 class="rx-footer-heading">Company</h6>
+              <a class="rx-footer-link">About</a>
+              <a class="rx-footer-link">Contact</a>
+              <a class="rx-footer-link">Privacy</a>
+              <a class="rx-footer-link">Terms</a>
+          </div>
+
+          <!-- NEWSLETTER -->
+          <div class="col-lg-2">
+
+              <h6 class="rx-footer-heading">
+                  Stay Updated
+              </h6>
+
+              <div class="rx-newsletter">
+
+                  <input type="email"
+                         placeholder="Your email">
+
+                  <button>
+                      <i class="bi bi-arrow-right"></i>
+                  </button>
+
+              </div>
+
+          </div>
+
+      </div>
+
+  </footer>
+
+</div>

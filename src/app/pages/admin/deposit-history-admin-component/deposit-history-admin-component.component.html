@@ -1,0 +1,275 @@
+<div class="deposit-admin-page">
+
+  <!-- HERO -->
+  <div class="hero-panel">
+
+    <div>
+      <div class="hero-badge">
+        <i class="bi bi-cash-stack"></i>
+        Deposits Administration
+      </div>
+
+      <h1>Manage Deposit History</h1>
+
+      <p>
+        Track all deposits, users activity and saving goals.
+      </p>
+    </div>
+
+    <button class="btn-refresh" (click)="loadDeposits()">
+      <i class="bi bi-arrow-clockwise"></i>
+      Refresh
+    </button>
+
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+
+    <div class="stat-card">
+      <span>Total Deposits</span>
+      <h3>{{ totalDeposits() }}</h3>
+    </div>
+
+    <div class="stat-card success">
+      <span>Total Amount</span>
+      <h3>{{ totalAmount() | number:'1.0-0' }} TND</h3>
+    </div>
+
+    <div class="stat-card primary">
+      <span>Average Deposit</span>
+      <h3>{{ averageDeposit() | number:'1.0-0' }} TND</h3>
+    </div>
+
+    <div class="stat-card warning">
+      <span>Today Deposits</span>
+      <h3>{{ todayDeposits() }}</h3>
+    </div>
+
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filter-panel">
+
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+
+      <input
+        type="text"
+        placeholder="Search by id / user / goal / amount / date..."
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event); applyFilters()"
+      >
+    </div>
+
+    <select
+      [ngModel]="sortBy()"
+      (ngModelChange)="sortBy.set($event); applyFilters()"
+    >
+      <option value="latest">Latest</option>
+      <option value="oldest">Oldest</option>
+      <option value="highest">Highest Amount</option>
+      <option value="lowest">Lowest Amount</option>
+    </select>
+
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-box" *ngIf="loading()">
+    <div class="spinner-border text-success"></div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrapper" *ngIf="!loading()">
+
+    <table class="table deposits-table">
+
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Goal</th>
+          <th>Status</th>
+          <th>Amount</th>
+          <th>Date</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let item of paginatedDeposits()">
+
+          <!-- USER -->
+          <td>
+            <div class="user-cell">
+
+              <div class="avatar">
+                {{ getUserName(item).charAt(0) }}
+              </div>
+
+              <div>
+                {{ getUserName(item) }}
+              </div>
+
+            </div>
+          </td>
+
+          <!-- GOAL -->
+          <td>
+            <div class="goal-title">
+              {{ getGoalTitle(item) }}
+            </div>
+          </td>
+
+          <!-- STATUS -->
+          <td>
+            <span class="badge bg-success">
+              {{ getGoalStatus(item) }}
+            </span>
+          </td>
+
+          <!-- AMOUNT -->
+          <td>
+            {{ item.amount | number:'1.0-0' }} TND
+          </td>
+
+          <!-- DATE -->
+          <td>
+            {{ item.dateDeposit | date:'dd/MM/yyyy' }}
+          </td>
+
+          <!-- ACTIONS -->
+          <td class="text-end">
+
+            <div class="action-group">
+
+              <button
+                class="btn-icon blue"
+                (click)="openView(item)"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+
+              <button
+                class="btn-icon red"
+                (click)="deleteDeposit(item.id)"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+
+            </div>
+
+          </td>
+
+        </tr>
+
+        <tr *ngIf="paginatedDeposits().length === 0">
+          <td colspan="6" class="empty-row">
+            No deposits found.
+          </td>
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="pagination-wrap" *ngIf="totalPages() > 1">
+
+    <button
+      class="page-btn"
+      (click)="prevPage()"
+      [disabled]="currentPage() === 1"
+    >
+      <i class="bi bi-chevron-left"></i>
+    </button>
+
+    <button
+      class="page-btn"
+      *ngFor="let page of pageNumbers()"
+      (click)="goToPage(page)"
+      [class.active]="currentPage() === page"
+    >
+      {{ page }}
+    </button>
+
+    <button
+      class="page-btn"
+      (click)="nextPage()"
+      [disabled]="currentPage() === totalPages()"
+    >
+      <i class="bi bi-chevron-right"></i>
+    </button>
+
+  </div>
+
+</div>
+
+<!-- VIEW MODAL -->
+<div class="rx" *ngIf="showViewModal()">
+
+  <div class="rx-modal-box large">
+
+    <div class="rx-modal-head">
+
+      <h3>Deposit Details</h3>
+
+      <button (click)="closeView()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+
+    </div>
+
+    <div class="rx-modal-body" *ngIf="selectedDeposit() as item">
+
+      <div class="detail-grid">
+
+        <div class="detail-item">
+          <label>ID</label>
+          <strong>#{{ item.id }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <label>User</label>
+          <strong>{{ getUserName(item) }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <label>Goal</label>
+          <strong>{{ getGoalTitle(item) }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <label>Status</label>
+          <strong>{{ getGoalStatus(item) }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <label>Target</label>
+          <strong>{{ getGoalTarget(item) }} TND</strong>
+        </div>
+
+        <div class="detail-item">
+          <label>Current</label>
+          <strong>{{ getGoalCurrent(item) }} TND</strong>
+        </div>
+
+        <div class="detail-item">
+          <label>Deposit Amount</label>
+          <strong>{{ item.amount }} TND</strong>
+        </div>
+
+        <div class="detail-item">
+          <label>Date</label>
+          <strong>{{ item.dateDeposit | date:'dd/MM/yyyy' }}</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

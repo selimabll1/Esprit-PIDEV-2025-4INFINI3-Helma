@@ -1,0 +1,357 @@
+.rx-dashboard-page {
+  padding-bottom: 40px;
+}
+
+.rx-loading-box {
+  min-height: 420px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #0f6b6b, #0b4c4c);
+  box-shadow: 0 24px 60px rgba(15, 107, 107, 0.22);
+}
+
+/* HERO */
+.rx-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 34px;
+  border-radius: 30px;
+  color: white;
+  background:
+    radial-gradient(circle at top right, rgba(212, 166, 42, .35), transparent 35%),
+    linear-gradient(135deg, #0f6b6b, #0b4c4c);
+  box-shadow: 0 28px 70px rgba(15, 107, 107, .25);
+  overflow: hidden;
+}
+
+.rx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.22);
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+.rx-hero h1 {
+  color: white;
+  font-size: clamp(34px, 4vw, 54px);
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.rx-hero p {
+  max-width: 560px;
+  color: rgba(255,255,255,.8);
+  font-size: 16px;
+}
+
+.rx-hero-right {
+  min-width: 260px;
+  padding: 24px;
+  border-radius: 26px;
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18);
+  backdrop-filter: blur(14px);
+  display: grid;
+  align-content: center;
+}
+
+.rx-big-number {
+  font-size: 46px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.rx-big-number span {
+  font-size: 18px;
+  opacity: .8;
+}
+
+/* KPI */
+.rx-kpi-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 150px;
+  padding: 24px;
+  border-radius: 26px;
+  color: white;
+  box-shadow: 0 20px 45px rgba(15,23,42,.13);
+}
+
+.rx-kpi-card small {
+  opacity: .82;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.rx-kpi-card h3 {
+  color: white;
+  margin-top: 12px;
+  font-size: 30px;
+  font-weight: 950;
+}
+
+.rx-kpi-card i {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  font-size: 44px;
+  opacity: .22;
+}
+
+/* KPI CARDS — HELMA THEME */
+.rx-kpi-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 150px;
+  padding: 24px;
+  border-radius: 26px;
+  color: white;
+  box-shadow: 0 20px 45px rgba(15,23,42,.13);
+}
+
+/* GOLD (was purple) */
+.rx-kpi-card.purple {
+  background: linear-gradient(
+    135deg,
+    var(--helma-gold),
+    var(--helma-gold-dark)
+  );
+}
+
+/* TEAL (was pink) */
+.rx-kpi-card.pink {
+  background: linear-gradient(
+    135deg,
+    var(--helma-teal),
+    var(--helma-teal-dark)
+  );
+}
+
+/* SOFT GOLD (was violet) */
+.rx-kpi-card.violet {
+  background: linear-gradient(
+    135deg,
+    var(--helma-gold-soft),
+    var(--helma-gold)
+  );
+  color: #1f2937; /* better contrast */
+}
+
+/* DARK HELMA */
+.rx-kpi-card.dark {
+  background: linear-gradient(
+    135deg,
+    var(--helma-teal-dark),
+    #111827
+  );
+}
+.rx-card {
+  padding: 26px;
+  border-radius: 28px;
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(229,231,235,.95);
+  box-shadow: 0 18px 42px rgba(15,23,42,.08);
+}
+
+.rx-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.rx-card-head h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 950;
+  color: #111827;
+}
+
+.rx-card-head span {
+  color: #6b7280;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* AI */
+.ai-box {
+  background:
+    radial-gradient(circle at top left, rgba(15,107,107,.12), transparent 34%),
+    linear-gradient(180deg, #ffffff, #f8fafc);
+}
+
+.rx-ai-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.rx-ai-mini-card {
+  padding: 16px;
+  border-radius: 20px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.rx-ai-mini-card small {
+  display: block;
+  color: #6b7280;
+  font-weight: 800;
+}
+
+.rx-ai-mini-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+  color: #0f6b6b;
+}
+
+.rx-ai-loading {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  color: #0f6b6b;
+  font-weight: 800;
+}
+
+.rx-ai-content {
+  position: relative;
+  padding: 26px;
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.rx-ai-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #d4a62a, #f0ca63);
+  color: #1f2937;
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+
+.rx-ai-content h4 {
+  margin-bottom: 10px;
+  font-weight: 950;
+  color: #111827;
+}
+
+.rx-ai-content p {
+  color: #4b5563;
+  line-height: 1.8;
+}
+
+.rx-ai-actions {
+  margin-top: 18px;
+}
+
+.rx-ai-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #0f6b6b, #0b4c4c);
+  color: white;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 14px 30px rgba(15,107,107,.18);
+}
+
+.rx-ai-btn:hover {
+  transform: translateY(-1px);
+}
+
+.rx-ai-footer {
+  margin-top: 18px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+/* CHARTS */
+canvas {
+  width: 100% !important;
+  max-height: 360px;
+}
+
+/* TOP GOALS */
+.rx-goal-row {
+  padding: 18px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.rx-goal-row:last-child {
+  border-bottom: 0;
+}
+
+.rx-goal-percent {
+  font-weight: 950;
+  color: #0f6b6b;
+}
+
+.rx-progress {
+  height: 12px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.rx-progress .progress-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0f6b6b, #d4a62a);
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+  .rx-hero {
+    flex-direction: column;
+  }
+
+  .rx-hero-right {
+    min-width: 100%;
+  }
+
+  .rx-ai-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .rx-dashboard-page {
+    width: 100%;
+    padding-inline: 10px;
+  }
+
+  .rx-hero,
+  .rx-card,
+  .rx-kpi-card {
+    border-radius: 22px;
+    padding: 22px;
+  }
+
+  .rx-ai-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .rx-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

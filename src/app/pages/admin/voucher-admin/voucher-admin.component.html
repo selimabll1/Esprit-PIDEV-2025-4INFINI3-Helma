@@ -1,0 +1,108 @@
+<div class="voucher-admin-page">
+
+    <div class="voucher-hero">
+      <div>
+        <div class="hero-badge">
+          <i class="bi bi-ticket-perforated"></i>
+          Voucher Administration
+        </div>
+  
+        <h1>All Reward Vouchers</h1>
+  
+        <p>
+          Manage claimed vouchers, QR codes, users and saving goals.
+        </p>
+      </div>
+  
+      <button class="btn-refresh" (click)="loadVouchers()">
+        <i class="bi bi-arrow-clockwise"></i>
+        Refresh
+      </button>
+    </div>
+  
+    <div class="voucher-filter">
+      <i class="bi bi-search"></i>
+  
+      <input
+        type="text"
+        placeholder="Search by code / user / goal / status..."
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+      />
+    </div>
+  
+    <div class="loading-box" *ngIf="loading()">
+      <div class="spinner-border text-success"></div>
+    </div>
+  
+    <div class="voucher-grid" *ngIf="!loading()">
+  
+      <div class="voucher-card" *ngFor="let v of filteredVouchers()">
+  
+        <div class="voucher-top">
+          <div>
+            <span class="voucher-label">Voucher Code</span>
+            <h3>{{ v.code }}</h3>
+          </div>
+  
+          <span class="status-badge" [class.claimed]="v.claimed">
+            {{ v.status }}
+          </span>
+        </div>
+  
+        <div class="qr-box">
+          <img
+            [src]="qrUrl(v.id)"
+            alt="Voucher QR Code"
+          />
+        </div>
+  
+        <div class="voucher-info">
+  
+          <div>
+            <label>User</label>
+            <strong>{{ getUserName(v) }}</strong>
+          </div>
+  
+          <div>
+            <label>Goal</label>
+            <strong>{{ getGoalTitle(v) }}</strong>
+          </div>
+  
+          <div>
+            <label>Value</label>
+            <strong>{{ v.value | number:'1.0-0' }} TND</strong>
+          </div>
+  
+          <div>
+            <label>Created</label>
+            <strong>{{ v.creationDate | date:'dd/MM/yyyy' }}</strong>
+          </div>
+  
+          <div>
+            <label>Deadline</label>
+            <strong>{{ v.deadline | date:'dd/MM/yyyy' }}</strong>
+          </div>
+  
+          <div>
+            <label>Claimed</label>
+            <strong>{{ v.claimed ? 'Yes' : 'No' }}</strong>
+          </div>
+  
+        </div>
+  
+        <button class="copy-btn" (click)="copyCode(v.code)">
+          <i class="bi bi-copy"></i>
+          Copy Code
+        </button>
+  
+      </div>
+  
+      <div class="empty-box" *ngIf="filteredVouchers().length === 0">
+        <i class="bi bi-ticket-perforated"></i>
+        <p>No vouchers found.</p>
+      </div>
+  
+    </div>
+  
+  </div>
