@@ -18,7 +18,7 @@ public class AiRecommendationService {
     private final WebClient webClient = WebClient.builder()
             .baseUrl("https://openrouter.ai/api/v1/chat/completions")
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .defaultHeader("Authorization", "Bearer sk-or********************")
+            .defaultHeader("Authorization", "Bearer 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")
             .build();
 
     public String generateAdvice(SavingsGoal goal, List<SavingsDeposit> deposits) {
