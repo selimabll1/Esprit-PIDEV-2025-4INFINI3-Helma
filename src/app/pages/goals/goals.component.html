@@ -67,44 +67,43 @@
           Deadline {{ g.deadline | date:'dd MMM yyyy' }}
         </div>
 
-        <div class="mt-auto d-flex gap-2 flex-wrap">
+        <div class="mt-auto">
+          <!-- MAIN ACTIONS GRID (2x2) -->
+          <div class="goal-main-actions mb-2">
+            <button class="btn btn-success"
+                    [disabled]="isExpired(g)"
+                    (click)="openDepositModal(g.id!)">
+              {{ isExpired(g) ? 'Expired' : 'Deposit' }}
+            </button>
 
-          <button class="btn btn-success flex-grow-1"
-                  (click)="openDepositModal(g.id!)">
-           <button 
-  class="btn btn-success flex-grow-1"
-  [disabled]="isExpired(g)"
-  (click)="openDepositModal(g.id!)">
+            <button class="btn btn-outline-secondary"
+                    (click)="goToGoalHistory(g.id!)">
+              History
+            </button>
 
-  {{ isExpired(g) ? 'Expired' : 'Deposit' }}
-</button>
-          </button>
+            <button class="btn btn-gold"
+                    (click)="openPredictionModal(g)">
+              Prediction
+            </button>
 
-          <button class="btn btn-outline-secondary flex-grow-1"
-                  (click)="goToGoalHistory(g.id!)">
-            History
-          </button>
+            <button class="btn btn-primary" (click)="downloadPdf()">
+              <i class="bi bi-file-earmark-pdf"></i>
+              Statement
+            </button>
+          </div>
 
-          <button class="btn btn-gold flex-grow-1"
-                  (click)="openPredictionModal(g)">
-            Prediction
-          </button>
-          <button class="btn btn-primary" (click)="downloadPdf()">
-            <i class="bi bi-file-earmark-pdf me-2"></i>
-            Download Statement
-          </button>
+          <!-- ICON ACTIONS (Edit / Delete) -->
+          <div class="goal-icon-actions">
+            <button class="btn btn-outline-primary icon-btn"
+                    (click)="openEditModal(g)">
+              <i class="bi bi-pencil-square"></i>
+            </button>
 
-          <button class="btn btn-outline-primary"
-                  (click)="openEditModal(g)">
-            ✎
-          </button>
-
-          <button class="btn btn-outline-danger"
-                  (click)="openDeleteModal(g.id!)">
-            🗑
-          </button>
-          
-
+            <button class="btn btn-outline-danger icon-btn"
+                    (click)="openDeleteModal(g.id!)">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
         </div>
 
       </div>

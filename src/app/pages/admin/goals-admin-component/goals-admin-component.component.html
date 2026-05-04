@@ -62,6 +62,96 @@
   </div>
 
   <!-- ===================================================== -->
+  <!-- RISK MONITORING CENTER -->
+  <!-- ===================================================== -->
+
+  <div class="risk-monitoring-center">
+
+    <div class="risk-header">
+      <div>
+        <h3>Risk Monitoring Center</h3>
+        <p>Monitor savings risks based on user saving behavior.</p>
+      </div>
+      <span class="live-badge">LIVE ANALYSIS</span>
+    </div>
+
+    <!-- RISK SUMMARY CARDS -->
+    <div class="risk-summary-grid">
+
+      <div class="risk-stat-card high">
+        <div class="risk-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div class="risk-info">
+          <span class="count">{{ highRiskCount() }}</span>
+          <span class="label">High Risk Goals</span>
+        </div>
+      </div>
+
+      <div class="risk-stat-card medium">
+        <div class="risk-icon"><i class="bi bi-exclamation-circle-fill"></i></div>
+        <div class="risk-info">
+          <span class="count">{{ mediumRiskCount() }}</span>
+          <span class="label">Medium Risk Goals</span>
+        </div>
+      </div>
+
+      <div class="risk-stat-card low">
+        <div class="risk-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="risk-info">
+          <span class="count">{{ lowRiskCount() }}</span>
+          <span class="label">Low Risk Goals</span>
+        </div>
+      </div>
+
+      <div class="risk-stat-card inactive">
+        <div class="risk-icon"><i class="bi bi-person-x-fill"></i></div>
+        <div class="risk-info">
+          <span class="count">{{ inactiveRiskCount() }}</span>
+          <span class="label">Inactive Users</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DETAILED RISK TABLE -->
+    <div class="risk-table-container">
+      <table class="risk-table">
+        <thead>
+          <tr>
+            <th>Goal Name</th>
+            <th>User</th>
+            <th>Risk Level</th>
+            <th>Risk Reason</th>
+            <th>Recommendation</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let risk of risks()">
+            <td><strong>{{ risk.goalTitle }}</strong></td>
+            <td>{{ risk.userName }}</td>
+            <td>
+              <span class="risk-badge" [ngClass]="risk.riskLevel.toLowerCase()">
+                {{ risk.riskLevel }}
+              </span>
+            </td>
+            <td>{{ risk.reason }}</td>
+            <td>{{ risk.recommendation }}</td>
+            <td class="text-end">
+              <button class="btn-icon blue" (click)="openRiskDetails(risk.goalId)" title="View Risk Analysis">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="risks().length === 0">
+            <td colspan="6" class="text-center py-4">No risk data available.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ===================================================== -->
   <!-- FILTERS -->
   <!-- ===================================================== -->
 
@@ -210,9 +300,6 @@
 
               </button>
 
-              <!-- EDIT -->
-        
-
             </div>
 
           </td>
@@ -264,78 +351,6 @@
       <i class="bi bi-chevron-right"></i>
 
     </button>
-
-  </div>
-
-</div>
-
-<!-- ===================================================== -->
-<!-- VIEW MODAL -->
-<!-- ===================================================== -->
-
-<div class="rx" *ngIf="showViewModal()">
-
-  <div class="rx-modal-box large">
-
-    <div class="rx-modal-head">
-
-      <h3>
-        Goal Details
-      </h3>
-
-      <button (click)="closeView()">
-        <i class="bi bi-x-lg"></i>
-      </button>
-
-    </div>
-
-    <div class="rx-modal-body" *ngIf="selectedGoal() as goal">
-
-      <div class="detail-grid">
-
-        <div class="detail-item">
-          <label>ID</label>
-          <strong>#{{ goal.id }}</strong>
-        </div>
-
-        <div class="detail-item">
-          <label>User</label>
-          <strong>{{ getUserName(goal) }}</strong>
-        </div>
-
-        <div class="detail-item">
-          <label>Title</label>
-          <strong>{{ goal.title }}</strong>
-        </div>
-
-        <div class="detail-item">
-          <label>Status</label>
-          <strong>{{ statusLabel(goal.status) }}</strong>
-        </div>
-
-        <div class="detail-item">
-          <label>Target</label>
-          <strong>{{ goal.targetAmount }} TND</strong>
-        </div>
-
-        <div class="detail-item">
-          <label>Saved</label>
-          <strong>{{ goal.currentAmount }} TND</strong>
-        </div>
-
-        <div class="detail-item">
-          <label>Progress</label>
-          <strong>{{ getProgress(goal) }}%</strong>
-        </div>
-
-        <div class="detail-item">
-          <label>Deadline</label>
-          <strong>{{ goal.deadline | date:'dd/MM/yyyy' }}</strong>
-        </div>
-
-      </div>
-
-    </div>
 
   </div>
 
@@ -422,7 +437,7 @@
 </div>
 
 <!-- ===================================================== -->
-<!-- DELETE MODAL — NOUVEAU -->
+<!-- DELETE MODAL -->
 <!-- ===================================================== -->
 
 <div class="rx" *ngIf="showDeleteModal()">
@@ -469,4 +484,83 @@
 
   </div>
 
+</div>
+
+<!-- ===================================================== -->
+<!-- VIEW MODAL (Unified Grid Version) -->
+<!-- ===================================================== -->
+
+<div class="rx-modal-backdrop" *ngIf="showViewModal()" (click)="closeView()">
+  <div class="rx-modal-box large" (click)="$event.stopPropagation()">
+    <div class="rx-modal-head">
+      <h3>Goal Details</h3>
+      <button (click)="closeView()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="rx-modal-body" *ngIf="selectedGoal() as goal">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>ID</label>
+          <strong>#{{ goal.id }}</strong>
+        </div>
+        <div class="detail-item">
+          <label>User</label>
+          <strong>{{ getUserName(goal) }}</strong>
+        </div>
+        <div class="detail-item">
+          <label>Title</label>
+          <strong>{{ goal.title }}</strong>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <strong>{{ statusLabel(goal.status) }}</strong>
+        </div>
+        <div class="detail-item">
+          <label>Target</label>
+          <strong>{{ goal.targetAmount | number:'1.0-0' }} TND</strong>
+        </div>
+        <div class="detail-item">
+          <label>Saved</label>
+          <strong>{{ goal.currentAmount | number:'1.0-0' }} TND</strong>
+        </div>
+        <div class="detail-item">
+          <label>Progress</label>
+          <strong>{{ getProgress(goal) }}%</strong>
+        </div>
+        <div class="detail-item">
+          <label>Deadline</label>
+          <strong>{{ goal.deadline | date:'dd/MM/yyyy' }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="rx-modal-backdrop" *ngIf="showRiskModal()" (click)="showRiskModal.set(false)">
+  <div class="rx-modal-box large" (click)="$event.stopPropagation()">
+    <div class="rx-modal-head">
+      <h3>Risk Analysis Report</h3>
+      <button (click)="showRiskModal.set(false)"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="rx-modal-body" *ngIf="selectedRiskDetail() as r">
+      <div class="risk-status-box" [ngClass]="r.riskLevel.toLowerCase()" style="margin-bottom: 20px;">
+        <div class="risk-level-header">
+          <span class="risk-level-tag">{{ r.riskLevel }} RISK</span>
+        </div>
+        <div style="font-size: 18px; font-weight: 800; margin-top: 10px;">{{ r.goalTitle }}</div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item risk-detail-full">
+          <label>Observation</label>
+          <div>{{ r.reason }}</div>
+        </div>
+        <div class="detail-item risk-detail-full">
+          <label>Recommendation</label>
+          <div>{{ r.recommendation }}</div>
+        </div>
+      </div>
+      <div style="margin-top: 24px; text-align: center;">
+         <button class="save-btn" (click)="openViewByRisk(r.goalId); showRiskModal.set(false)">View Details</button>
+      </div>
+    </div>
+  </div>
 </div>

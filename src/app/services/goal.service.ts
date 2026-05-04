@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { Goal } from '../models/goal';
 import { CreateGoal } from '../models/create-goal';
+import { RiskAnalysis } from '../models/risk-analysis';
 
 @Injectable({
   providedIn: 'root'
@@ -40,6 +41,14 @@ export class GoalService {
   }
   getGoalsAdmin(): Observable<Goal[]> {
     return this.http.get<Goal[]>(`${this.apiUrl}/admin`);
+  }
+
+  /**
+   * Fetches the automated risk analysis for all user goals.
+   * Analyzes behavior patterns to flag high-risk or inactive goals.
+   */
+  getRiskAnalysis(): Observable<RiskAnalysis[]> {
+    return this.http.get<RiskAnalysis[]>('/api/admin/goals/risk-analysis');
   }
 
 

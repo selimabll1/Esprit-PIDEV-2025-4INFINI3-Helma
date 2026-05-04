@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 
 import { GoalService } from '../../../services/goal.service';
 import { Goal } from '../../../models/goal';
+import { RiskAnalysis } from '../../../models/risk-analysis';
 
 @Component({
   selector: 'app-goals-admin-component',
@@ -39,11 +40,29 @@ export class GoalsAdminComponentComponent implements OnInit {
   pageSize = 6;
 
   /* =====================================================
+     RISK MONITORING STATE (Helma Risk System)
+     ===================================================== */
+  risks = signal<RiskAnalysis[]>([]);
+  riskLoading = signal(false);
+
+  // Aggregated Risk Metrics for Dashboard Cards
+  highRiskCount = computed(() => this.risks().filter(r => r.riskLevel === 'HIGH').length);
+  mediumRiskCount = computed(() => this.risks().filter(r => r.riskLevel === 'MEDIUM').length);
+  lowRiskCount = computed(() => this.risks().filter(r => r.riskLevel === 'LOW').length);
+  inactiveRiskCount = computed(() => this.risks().filter(r => r.riskLevel === 'INACTIVE').length);
+
+  /* =====================================================
      VIEW MODAL
   ===================================================== */
 
   showViewModal = signal(false);
   selectedGoal = signal<Goal | null>(null);
+
+  /* =====================================================
+     RISK DETAILS MODAL
+     ===================================================== */
+  showRiskModal = signal(false);
+  selectedRiskDetail = signal<RiskAnalysis | null>(null);
 
   /* =====================================================
      EDIT MODAL
@@ -73,6 +92,7 @@ export class GoalsAdminComponentComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadGoals();
+    this.loadRiskAnalysis();
   }
 
   /* =====================================================
@@ -98,6 +118,24 @@ export class GoalsAdminComponentComponent implements OnInit {
       }
     });
 
+  }
+
+  /**
+   * Charge l'analyse de risque automatisée depuis le backend.
+   * Analyse les comportements d'épargne pour signaler les objectifs à risque ou inactifs.
+   */
+  loadRiskAnalysis(): void {
+    this.riskLoading.set(true);
+    this.goalService.getRiskAnalysis().subscribe({
+      next: (data) => {
+        this.risks.set(data || []);
+        this.riskLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Erreur analyse risque:', err);
+        this.riskLoading.set(false);
+      }
+    });
   }
 
   /* =====================================================
@@ -308,13 +346,38 @@ export class GoalsAdminComponentComponent implements OnInit {
 
   }
 
-  getUserName(goal:any): string {
-
-    if (goal?.user?.name) {
-      return goal.user.name;
+  getUserName(goal: any): string {
+    if (goal?.user?.profile) {
+      return goal.user.profile.firstName + ' ' + goal.user.profile.lastName;
     }
-
+    if (goal?.user?.email) {
+      return goal.user.email;
+    }
     return 'Unknown User';
+  }
+
+  getRiskForGoal(goalId: number | undefined): RiskAnalysis | undefined {
+    if (!goalId) return undefined;
+    return this.risks().find(r => r.goalId === goalId);
+  }
+
+  openRiskDetails(riskId: any): void {
+    const id = Number(riskId);
+    const risk = this.risks().find(r => r.goalId === id);
+    if (risk) {
+      this.selectedRiskDetail.set(risk);
+      this.showRiskModal.set(true);
+    }
+  }
+
+  openViewByRisk(goalId: any): void {
+    const numericId = Number(goalId);
+    const goal = this.goals().find(g => Number(g.id) === numericId);
+    
+    if (goal) {
+      this.selectedGoal.set(goal);
+      this.showViewModal.set(true);
+    }
   }
 
   /* =====================================================
