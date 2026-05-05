@@ -26,12 +26,12 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     /**
      * Cherche tous les comptes d'un utilisateur
      */
-    List<BankAccount> findByUserId(Long userId);
+    List<BankAccount> findByUser_Id(Long userId);
 
     /**
      * Cherche tous les comptes actifs d'un utilisateur
      */
-    @Query("SELECT ba FROM BankAccount ba WHERE ba.userId = :userId AND ba.status = :status")
+    @Query("SELECT ba FROM BankAccount ba WHERE ba.user.id = :userId AND ba.status = :status")
     List<BankAccount> findActiveAccountsByUserId(@Param("userId") Long userId, @Param("status") AccountStatus status);
 
     /**
@@ -42,7 +42,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     /**
      * Compte tous les comptes d'un utilisateur
      */
-    long countByUserId(Long userId);
+    long countByUser_Id(Long userId);
 
     /**
      * Récupère les comptes par type

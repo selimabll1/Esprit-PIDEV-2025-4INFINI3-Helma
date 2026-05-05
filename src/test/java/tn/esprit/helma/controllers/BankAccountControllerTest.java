@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import tn.esprit.helma.entities.BankAccount;
+import tn.esprit.helma.entities.User;
 import tn.esprit.helma.enums.AccountStatus;
 import tn.esprit.helma.enums.AccountType;
 import tn.esprit.helma.services.IBankAccountService;
@@ -32,9 +33,16 @@ class BankAccountControllerTest {
 
     @Test
     void createAccount_ignoresExtraFields() throws Exception {
+        User user = User.builder()
+                .id(1L)
+                .prenom("yassine")
+                .nom("kamoun")
+                .createdAt(LocalDateTime.now())
+                .build();
+
         BankAccount saved = BankAccount.builder()
                 .id(1L)
-                .userId(1L)
+                .user(user)
                 .rib("TN123456789000")
                 .balance(BigDecimal.ZERO)
                 .currency("TND")
@@ -44,7 +52,7 @@ class BankAccountControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(accountService.createAccount(eq(1L), eq("TN123456789000"), eq(AccountType.COURANT), eq("TND")))
+        when(accountService.createAccount(eq("TN123456789000"), eq(AccountType.COURANT), eq("TND")))
                 .thenReturn(saved);
 
         String payload = "{" +
@@ -77,6 +85,8 @@ class BankAccountControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.userPrenom").value("yassine"))
+                .andExpect(jsonPath("$.userNom").value("kamoun"))
                 .andExpect(jsonPath("$.rib").value("TN123456789000"))
                 .andExpect(jsonPath("$.currency").value("TND"))
                 .andExpect(jsonPath("$.accountType").value("COURANT"))

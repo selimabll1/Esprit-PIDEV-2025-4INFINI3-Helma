@@ -3,6 +3,8 @@ package tn.esprit.helma.services;
 import tn.esprit.helma.entities.Transaction;
 import tn.esprit.helma.enums.TransactionStatus;
 import tn.esprit.helma.enums.TransactionType;
+import tn.esprit.helma.dtos.RecommendationDTO;
+import tn.esprit.helma.dtos.TransactionStatisticsDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,6 +28,10 @@ public interface ITransactionService {
 
     BigDecimal getTotalSpentThisMonth(Long accountId);
 
+    TransactionStatisticsDTO getMonthlyStatistics(Long accountId);
+
+    List<RecommendationDTO> getRecommendations(Long accountId);
+
     String generateMonthlySummary(Long accountId);
 
     List<Transaction> searchTransactions(Long accountId, Map<String, Object> filters);
@@ -39,4 +45,24 @@ public interface ITransactionService {
     Transaction rejectSuspiciousTransaction(Long transactionId);
 
     Transaction approvePendingTransaction(Long transactionId);
+
+    /**
+     * Définir un PIN (4 chiffres) pour un compte
+     */
+    void setPinForAccount(Long accountId, String pin);
+
+    /**
+     * Valider et confirmer une transaction avec vérification du PIN
+     */
+    Transaction confirmSuspiciousTransactionWithPin(Long transactionId, String pin);
+
+    /**
+     * Vérifier si une transaction nécessite un PIN avant confirmation
+     */
+    boolean requiresPinVerification(Transaction transaction);
+
+    /**
+     * Charger une transaction par son identifiant
+     */
+    Transaction getTransactionById(Long transactionId);
 }

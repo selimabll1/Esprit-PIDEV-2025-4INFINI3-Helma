@@ -28,4 +28,8 @@ public class TransactionDTO {
     private Integer riskScore;
     private LocalDateTime createdAt;
     private LocalDateTime confirmedAt;
+    private BigDecimal convertedAmount;
+    private BigDecimal exchangeRate;
+    private String targetCurrency;
+    private Boolean pinRequired;
 }

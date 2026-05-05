@@ -2,12 +2,18 @@ package tn.esprit.helma.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import tn.esprit.helma.entities.BankAccount;
 import tn.esprit.helma.entities.VirtualCard;
 import tn.esprit.helma.enums.CardStatus;
+import tn.esprit.helma.repositories.BankAccountRepository;
 import tn.esprit.helma.repositories.VirtualCardRepository;
 import tn.esprit.helma.services.IVirtualCardService;
+import tn.esprit.helma.services.auth.CurrentUserProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,7 +34,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class VirtualCardServiceImpl implements IVirtualCardService {
 
+    private final BankAccountRepository bankAccountRepository;
     private final VirtualCardRepository virtualCardRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     /**
      * Crée une nouvelle carte virtuelle
@@ -37,8 +45,11 @@ public class VirtualCardServiceImpl implements IVirtualCardService {
     public VirtualCard createCard(Long bankAccountId, String expiryDate, String cvvHash, BigDecimal paymentLimit) {
         log.info("Création d'une carte virtuelle pour le compte: {}", bankAccountId);
 
+        BankAccount bankAccount = bankAccountRepository.findById(bankAccountId)
+            .orElseThrow(() -> new IllegalArgumentException("Compte introuvable"));
+
         VirtualCard card = VirtualCard.builder()
-                .bankAccount(null) // Sera défini par la relation
+            .bankAccount(bankAccount)
                 .cardNumber(generateCardNumber())
                 .expiryDate(expiryDate)
                 .cvvHash(cvvHash)
@@ -206,5 +217,46 @@ public class VirtualCardServiceImpl implements IVirtualCardService {
     @Override
     public long countCardsByBankAccount(Long bankAccountId) {
         return virtualCardRepository.countByBankAccountId(bankAccountId);
+    }
+
+    @Override
+    public String revealCardNumber(Long cardId, String pin) {
+        VirtualCard card = virtualCardRepository.findById(cardId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+
+        BankAccount account = card.getBankAccount();
+
+        Long currentUserId = currentUserProvider.getCurrentUserId();
+        if (!currentUserId.equals(account.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ACCESS_DENIED");
+        }
+
+        if (account.getPinHash() == null || account.getPinHash().isBlank()) {
+            throw new IllegalArgumentException("Aucun PIN configuré pour ce compte.");
+        }
+
+        // Lockout : 5 échecs dans les 15 dernières minutes
+        if (account.getPinAttemptCount() >= 5
+                && account.getLastPinAttempt() != null
+                && account.getLastPinAttempt().isAfter(LocalDateTime.now().minusMinutes(15))) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, "PIN_LOCKED");
+        }
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        if (!encoder.matches(pin, account.getPinHash())) {
+            account.setPinAttemptCount(account.getPinAttemptCount() + 1);
+            account.setLastPinAttempt(LocalDateTime.now());
+            bankAccountRepository.save(account);
+            log.warn("PIN échoué pour révélation de carte ({}/5) compte {}", account.getPinAttemptCount(), account.getId());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "PIN_INCORRECT");
+        }
+
+        // PIN correct — réinitialiser le compteur
+        account.setPinAttemptCount(0);
+        account.setLastPinAttempt(null);
+        bankAccountRepository.save(account);
+
+        log.info("Numéro de carte {} révélé pour l'utilisateur {}", cardId, currentUserId);
+        return card.getCardNumber();
     }
 }

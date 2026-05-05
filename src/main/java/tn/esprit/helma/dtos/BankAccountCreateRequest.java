@@ -19,9 +19,6 @@ import tn.esprit.helma.enums.AccountType;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BankAccountCreateRequest {
-    @NotNull
-    private Long userId;
-
     @NotBlank
     @Size(max = 27)
     private String rib;

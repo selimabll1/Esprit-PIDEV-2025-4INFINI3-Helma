@@ -131,6 +131,24 @@ public class Transaction {
     private LocalDateTime confirmedAt;
 
     /**
+     * Montant converti dans la devise du bénéficiaire (null si pas de conversion)
+     */
+    @Column(precision = 19, scale = 2)
+    private BigDecimal convertedAmount;
+
+    /**
+     * Taux de change appliqué (null si pas de conversion)
+     */
+    @Column(precision = 19, scale = 6)
+    private BigDecimal exchangeRate;
+
+    /**
+     * Devise cible du bénéficiaire (null si même devise)
+     */
+    @Column(length = 3)
+    private String targetCurrency;
+
+    /**
      * Mise à jour automatique de confirmedAt si le statut change à CONFIRMED
      */
     @PreUpdate

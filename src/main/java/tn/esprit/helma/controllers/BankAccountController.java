@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import tn.esprit.helma.dtos.BankAccountCreateRequest;
 import tn.esprit.helma.dtos.BankAccountDTO;
 import tn.esprit.helma.entities.BankAccount;
+import tn.esprit.helma.entities.User;
 import tn.esprit.helma.services.IBankAccountService;
+import tn.esprit.helma.repositories.UserRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,12 +20,12 @@ import java.util.stream.Collectors;
 public class BankAccountController {
 
     IBankAccountService accountService;
+    UserRepository userRepository;
 
     @PostMapping("/add")
     public BankAccountDTO createAccount(@Valid @RequestBody BankAccountCreateRequest request) {
         String currency = normalizeCurrency(request.getCurrency());
         BankAccount created = accountService.createAccount(
-                request.getUserId(),
                 request.getRib(),
                 request.getAccountType(),
                 currency
@@ -38,14 +40,21 @@ public class BankAccountController {
                 .orElse(null);
     }
 
+    @GetMapping("/rib/{rib}")
+    public BankAccountDTO getAccountByRib(@PathVariable String rib) {
+        return accountService.getAccountByRib(rib)
+                .map(this::mapToDTO)
+                .orElse(null);
+    }
+
     @GetMapping("/balance/{id}")
     public BigDecimal getBalance(@PathVariable Long id) {
         return accountService.getBalance(id);
     }
 
-    @GetMapping("/user/{userId}")
-    public List<BankAccountDTO> getUserAccounts(@PathVariable Long userId) {
-        return accountService.getUserAccounts(userId).stream()
+    @GetMapping("/my")
+    public List<BankAccountDTO> getCurrentUserAccounts() {
+        return accountService.getCurrentUserAccounts().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -86,14 +95,31 @@ public class BankAccountController {
     }
 
     private BankAccountDTO mapToDTO(BankAccount account) {
+        String ownerPrenom = null;
+        String ownerNom = null;
+
+        if (account.getUserId() != null) {
+            try {
+                var owner = userRepository.findById(account.getUserId()).orElse(null);
+                if (owner != null && owner.getProfile() != null) {
+                    ownerPrenom = owner.getProfile().getFirstName();
+                    ownerNom = owner.getProfile().getLastName();
+                }
+            } catch (Exception ignored) {
+                // Keep account response available even if owner lookup fails.
+            }
+        }
+
         return BankAccountDTO.builder()
                 .id(account.getId())
                 .userId(account.getUserId())
+                .userPrenom(ownerPrenom)
+                .userNom(ownerNom)
                 .rib(account.getRib())
                 .balance(account.getBalance())
                 .currency(account.getCurrency())
-                .accountType(account.getAccountType().toString())
-                .status(account.getStatus().toString())
+                .accountType(account.getAccountType() != null ? account.getAccountType().toString() : null)
+                .status(account.getStatus() != null ? account.getStatus().toString() : null)
                 .createdAt(account.getCreatedAt())
                 .updatedAt(account.getUpdatedAt())
                 .build();

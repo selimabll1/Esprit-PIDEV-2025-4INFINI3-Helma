@@ -1,6 +1,8 @@
 package tn.esprit.helma.controllers;
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.helma.dtos.VirtualCardDTO;
 import tn.esprit.helma.entities.VirtualCard;
@@ -8,7 +10,10 @@ import tn.esprit.helma.enums.CardStatus;
 import tn.esprit.helma.services.IVirtualCardService;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -116,6 +121,28 @@ public class VirtualCardController {
     @GetMapping("/account/{bankAccountId}/count")
     public long countCardsByBankAccount(@PathVariable Long bankAccountId) {
         return cardService.countCardsByBankAccount(bankAccountId);
+    }
+
+    @PostMapping("/{cardId}/reveal-number")
+    public ResponseEntity<Map<String, String>> revealCardNumber(
+            @PathVariable Long cardId,
+            @RequestBody Map<String, String> body) {
+        String pin = body.get("pin");
+        String fullNumber = cardService.revealCardNumber(cardId, pin);
+        String formatted = fullNumber.replaceAll("(.{4})", "$1 ").trim();
+        return ResponseEntity.ok(Map.of("cardNumber", formatted));
+    }
+
+    @PostMapping("/admin-generate/{bankAccountId}")
+    public VirtualCardDTO adminGenerateCard(
+            @PathVariable Long bankAccountId,
+            @RequestParam(defaultValue = "5000") BigDecimal paymentLimit) {
+        LocalDate expiry = LocalDate.now().plusYears(3);
+        String expiryDate = String.format("%02d/%02d", expiry.getMonthValue(), expiry.getYear() % 100);
+        String cvvHash = new BCryptPasswordEncoder().encode(
+                String.format("%03d", 100 + new Random().nextInt(900)));
+        VirtualCard card = cardService.createCard(bankAccountId, expiryDate, cvvHash, paymentLimit);
+        return mapToDTO(card);
     }
 
     private VirtualCardDTO mapToDTO(VirtualCard card) {

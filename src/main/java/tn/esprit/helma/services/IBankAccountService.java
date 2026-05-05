@@ -17,7 +17,7 @@ public interface IBankAccountService {
     /**
      * Crée un nouveau compte bancaire
      */
-    BankAccount createAccount(Long userId, String rib, AccountType accountType, String currency);
+    BankAccount createAccount(String rib, AccountType accountType, String currency);
 
     /**
      * Récupère un compte par son ID
@@ -35,9 +35,19 @@ public interface IBankAccountService {
     List<BankAccount> getUserAccounts(Long userId);
 
     /**
+     * Récupère tous les comptes de l'utilisateur connecté
+     */
+    List<BankAccount> getCurrentUserAccounts();
+
+    /**
      * Récupère tous les comptes actifs d'un utilisateur
      */
     List<BankAccount> getActiveUserAccounts(Long userId);
+
+    /**
+     * Récupère tous les comptes actifs de l'utilisateur connecté
+     */
+    List<BankAccount> getCurrentUserActiveAccounts();
 
     /**
      * Met à jour le solde du compte

@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 public class BankAccountDTO {
     private Long id;
     private Long userId;
+    private String userPrenom;
+    private String userNom;
     private String rib;
     private BigDecimal balance;
     private String currency;

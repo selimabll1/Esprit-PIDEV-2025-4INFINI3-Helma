@@ -24,8 +24,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(exclude = {"transactions", "virtualCards"})
-@ToString(exclude = {"transactions", "virtualCards"})
+@EqualsAndHashCode(exclude = {"user", "transactions", "virtualCards"})
+@ToString(exclude = {"user", "transactions", "virtualCards"})
 public class BankAccount {
 
     @Id
@@ -33,9 +33,16 @@ public class BankAccount {
     private Long id;
 
     /**
-     * Identifiant de l'utilisateur propriétaire du compte
+     * Utilisateur propriétaire du compte
      */
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    /**
+     * Identifiant brut du propriétaire. Permet de lire le user_id sans charger l'entité User.
+     */
+    @Column(name = "user_id", insertable = false, updatable = false)
     private Long userId;
 
     /**
@@ -98,6 +105,33 @@ public class BankAccount {
      */
     @OneToMany(mappedBy = "bankAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<VirtualCard> virtualCards;
+
+    /**
+     * Hash du PIN pour la sécurisation des transactions sensibles (nullable = compte peut ne pas avoir de PIN)
+     */
+    @Column(nullable = true, length = 100)
+    private String pinHash;
+
+    /**
+     * Nombre de tentatives de PIN échouées (pour rate limiting)
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer pinAttemptCount = 0;
+
+    /**
+     * Timestamp de la dernière tentative de PIN (pour calcul du lockout)
+     */
+    @Column(nullable = true)
+    private LocalDateTime lastPinAttempt;
+
+    /**
+     * Compteur de transactions avec riskScore < 30 depuis la dernière vérification PIN
+     * Après 3 tx, la 4ème demande un PIN (puis réinitialise le compteur à 0)
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer pinCounterUnderThreshold = 0;
 
     /**
      * Mise à jour automatique de la date de modification avant chaque sauvegarde

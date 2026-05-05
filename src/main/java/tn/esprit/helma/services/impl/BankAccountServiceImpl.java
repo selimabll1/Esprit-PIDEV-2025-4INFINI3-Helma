@@ -5,10 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.helma.entities.BankAccount;
+import tn.esprit.helma.entities.User;
 import tn.esprit.helma.enums.AccountStatus;
 import tn.esprit.helma.enums.AccountType;
 import tn.esprit.helma.repositories.BankAccountRepository;
+import tn.esprit.helma.repositories.UserRepository;
 import tn.esprit.helma.services.IBankAccountService;
+import tn.esprit.helma.services.auth.CurrentUserProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,13 +29,20 @@ import java.util.Optional;
 public class BankAccountServiceImpl implements IBankAccountService {
 
     private final BankAccountRepository bankAccountRepository;
+    private final UserRepository userRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     /**
      * Crée un nouveau compte bancaire avec validation
      */
     @Override
-    public BankAccount createAccount(Long userId, String rib, AccountType accountType, String currency) {
+    public BankAccount createAccount(String rib, AccountType accountType, String currency) {
+        Long userId = currentUserProvider.getCurrentUserId();
         log.info("Création d'un nouveau compte pour l'utilisateur: {}", userId);
+
+        // Charger l'entité User
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
         // Vérifier que le RIB n'existe pas déjà
         if (bankAccountRepository.existsByRib(rib)) {
@@ -42,7 +52,7 @@ public class BankAccountServiceImpl implements IBankAccountService {
 
         // Créer le compte
         BankAccount account = BankAccount.builder()
-                .userId(userId)
+                .user(user)
                 .rib(rib)
                 .balance(BigDecimal.ZERO)
                 .currency(currency != null ? currency : "TND")
@@ -71,13 +81,23 @@ public class BankAccountServiceImpl implements IBankAccountService {
     @Override
     public List<BankAccount> getUserAccounts(Long userId) {
         log.debug("Récupération des comptes de l'utilisateur: {}", userId);
-        return bankAccountRepository.findByUserId(userId);
+        return bankAccountRepository.findByUser_Id(userId);
+    }
+
+    @Override
+    public List<BankAccount> getCurrentUserAccounts() {
+        return getUserAccounts(currentUserProvider.getCurrentUserId());
     }
 
     @Override
     public List<BankAccount> getActiveUserAccounts(Long userId) {
         log.debug("Récupération des comptes actifs de l'utilisateur: {}", userId);
         return bankAccountRepository.findActiveAccountsByUserId(userId, AccountStatus.ACTIVE);
+    }
+
+    @Override
+    public List<BankAccount> getCurrentUserActiveAccounts() {
+        return getActiveUserAccounts(currentUserProvider.getCurrentUserId());
     }
 
     /**

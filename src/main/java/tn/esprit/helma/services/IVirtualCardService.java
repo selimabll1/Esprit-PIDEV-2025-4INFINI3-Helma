@@ -87,4 +87,9 @@ public interface IVirtualCardService {
      * Compte les cartes d'un compte
      */
     long countCardsByBankAccount(Long bankAccountId);
+
+    /**
+     * Révèle le numéro complet après vérification du PIN
+     */
+    String revealCardNumber(Long cardId, String pin);
 }

@@ -45,6 +45,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                        @Param("start") LocalDateTime start,
                                        @Param("end") LocalDateTime end);
 
+    @Query("SELECT t FROM Transaction t JOIN FETCH t.bankAccount WHERE t.id = :id")
+    Optional<Transaction> findByIdWithAccount(@Param("id") Long id);
+
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.bankAccount.id = :bankAccountId " +
             "AND t.status = :status AND t.createdAt >= :start")
     BigDecimal sumSince(@Param("bankAccountId") Long bankAccountId,

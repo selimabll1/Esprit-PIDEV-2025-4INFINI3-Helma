@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import tn.esprit.helma.entities.BankAccount;
 import tn.esprit.helma.entities.Transaction;
+import tn.esprit.helma.entities.User;
 import tn.esprit.helma.enums.AccountStatus;
 import tn.esprit.helma.enums.AccountType;
 import tn.esprit.helma.enums.TransactionStatus;
@@ -36,9 +37,16 @@ class TransactionControllerTest {
 
     @Test
     void createTransaction_ignoresExtraFields() throws Exception {
+        User user = User.builder()
+                .id(1L)
+                .prenom("yassine")
+                .nom("kamoun")
+                .createdAt(LocalDateTime.now())
+                .build();
+
         BankAccount account = BankAccount.builder()
                 .id(10L)
-                .userId(1L)
+                .user(user)
                 .rib("TN123456789000")
                 .balance(BigDecimal.valueOf(1000))
                 .currency("TND")

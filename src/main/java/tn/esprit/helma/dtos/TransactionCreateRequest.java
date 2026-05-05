@@ -79,9 +79,16 @@ public class TransactionCreateRequest {
 
     /**
      * Date de prochaine exécution (REQUISE pour PERMANENT, IGNORÉE pour NOW et SCHEDULED)
-     * 
+     *
      * ⚠️ OPTIONNEL pour PERMANENT (défaut: +30 jours à partir de maintenant)
      * ✅ VÉRIFICATION: Service valident automatiquement
      */
     private LocalDateTime nextExecutionDate;
+
+    /**
+     * Devise cible du bénéficiaire pour conversion automatique (optionnel)
+     * Ex: "USD" si le bénéficiaire souhaite recevoir en dollars
+     */
+    @Size(max = 3)
+    private String beneficiaryCurrency;
 }
