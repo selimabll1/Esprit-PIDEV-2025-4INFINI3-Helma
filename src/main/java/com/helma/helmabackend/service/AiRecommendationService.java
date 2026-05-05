@@ -9,18 +9,26 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.beans.factory.annotation.Value;
+
 
 import java.util.List;
 
 @Service
 public class AiRecommendationService {
 
-    private final WebClient webClient = WebClient.builder()
-            .baseUrl("https://openrouter.ai/api/v1/chat/completions")
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .defaultHeader("Authorization", "Bearer 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")
-            .build();
+  private final WebClient webClient;
 
+  public AiRecommendationService(
+    @Value("${openrouter.api.url}") String apiUrl,
+    @Value("${openrouter.api.key}") String apiKey
+  ) {
+    this.webClient = WebClient.builder()
+      .baseUrl(apiUrl)
+      .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+      .defaultHeader("Authorization", "Bearer " + apiKey)
+      .build();
+  }
     public String generateAdvice(SavingsGoal goal, List<SavingsDeposit> deposits) {
 
         try {
