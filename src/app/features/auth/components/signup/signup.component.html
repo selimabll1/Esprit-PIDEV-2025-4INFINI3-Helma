@@ -1,0 +1,114 @@
+<section class="auth-shell">
+  <div class="auth-leaves" aria-hidden="true">
+    <span class="falling-leaf fl-1"></span>
+    <span class="falling-leaf fl-2"></span>
+    <span class="falling-leaf fl-3"></span>
+    <span class="falling-leaf fl-4"></span>
+    <span class="falling-leaf fl-5"></span>
+  </div>
+
+  <div class="auth-layout">
+    <div class="auth-visual">
+      <div class="visual-inner">
+        <img src="logo/helma-logo.png" alt="Helma logo" class="visual-logo" />
+
+        <div class="brand-copy">
+          <p class="eyebrow-pill">Welcome to Helma</p>
+          <h1>Build your dream with inclusive finance</h1>
+          <p class="description">
+            Helma empowers youth to innovate, grow, and access meaningful
+            financial opportunity through guidance, financing, and crowdfunding.
+          </p>
+
+          <div class="pill-list">
+            <span>Empower</span>
+            <span>Innovate</span>
+            <span>Growth</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Why join Helma?</h3>
+          <ul>
+            <li>Apply for micro-loans and track repayments</li>
+            <li>Get an AI-powered financial health score</li>
+            <li>Access early-warning financial insights</li>
+            <li>Built on transparent, inclusive credit principles</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-panel">
+      <div class="form-card">
+        <div class="form-head">
+          <h2>Create your account</h2>
+          <p>Start your journey with Helma today.</p>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="two-cols">
+            <div class="form-field">
+              <label for="firstName">First name</label>
+              <input id="firstName" type="text" formControlName="firstName" />
+              <small *ngIf="invalid('firstName')">2 to 50 characters, letters only.</small>
+            </div>
+
+            <div class="form-field">
+              <label for="lastName">Last name</label>
+              <input id="lastName" type="text" formControlName="lastName" />
+              <small *ngIf="invalid('lastName')">2 to 50 characters, letters only.</small>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="email">Email</label>
+            <input id="email" type="email" formControlName="email" placeholder="you@helma.tn" />
+            <small *ngIf="invalid('email')">Enter a valid email address.</small>
+          </div>
+
+          <div class="two-cols">
+            <div class="form-field">
+              <label for="password">Password</label>
+              <input id="password" type="password" formControlName="password" />
+              <small *ngIf="invalid('password')">8–64 chars, upper, lower, digit, special.</small>
+            </div>
+
+            <div class="form-field">
+              <label for="confirmPassword">Confirm password</label>
+              <input id="confirmPassword" type="password" formControlName="confirmPassword" />
+              <small *ngIf="passwordMismatch()">Passwords do not match.</small>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="role">I want to join as</label>
+            <select id="role" formControlName="role">
+              <option value="">Select a role</option>
+              <option value="YOUTH_BENEFICIARY">Youth Beneficiary</option>
+              <option value="INVESTOR">Investor</option>
+            </select>
+            <small *ngIf="invalid('role')">Please choose a role.</small>
+          </div>
+
+          <label class="check-row">
+            <input type="checkbox" formControlName="acceptTerms" />
+            <span>I agree to the platform terms and privacy policy.</span>
+          </label>
+          <small *ngIf="invalid('acceptTerms')">You must accept the terms.</small>
+
+          <p class="error-msg" *ngIf="error">{{ error }}</p>
+
+          <button class="submit-btn" type="submit" [disabled]="loading">
+            {{ loading ? 'Creating account...' : 'Create account' }}
+          </button>
+        </form>
+
+        <p class="switch-auth">
+          Already have an account?
+          <a routerLink="/auth/login">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,264 @@
+<section class="page-shell" *ngIf="loan">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Loan detail</span>
+      <h1>Loan #{{ loan.id }}</h1>
+      <p class="section-copy">
+        Review borrower details, repayment progress, upcoming installments, and operational
+        analytics from `loan-service`.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a class="btn btn-secondary" routerLink="/loans">Back to list</a>
+      <ng-container *ngIf="summary?.nextPayment as nextPayment">
+        <button
+          class="btn btn-primary"
+          type="button"
+          *ngIf="hasRole('YOUTH_BENEFICIARY')"
+          (click)="goToPayment(nextPayment)"
+        >
+          Pay next installment
+        </button>
+      </ng-container>
+      <button
+        class="btn btn-secondary"
+        type="button"
+        *ngIf="canDownloadContract()"
+        (click)="downloadContract()"
+      >
+        Telecharger Contrat PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+  <div class="state-card" *ngIf="loading">Loading loan detail...</div>
+
+  <section class="stats-grid">
+    <article class="metric-card">
+      <span class="metric-label">Principal</span>
+      <strong>{{ loan.principalAmount }}</strong>
+      <small>{{ loan.loanType }} · {{ loan.durationMonths }} months</small>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Rate & monthly</span>
+      <strong>{{ loan.interestRate }}%</strong>
+      <small>{{ loan.monthlyPayment || 0 }} per installment</small>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Status</span>
+      <strong>{{ loan.status }}</strong>
+      <small>Risk score {{ loan.riskScore || 0 }}</small>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Repayment progress</span>
+      <strong>{{ progressPercent() | number:'1.0-0' }}%</strong>
+      <small>{{ summary?.totalPaid || 0 }} paid so far</small>
+    </article>
+  </section>
+
+  <section class="split-layout">
+    <article class="surface-card">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Summary</span>
+          <h2>Repayment snapshot</h2>
+        </div>
+      </div>
+
+      <div class="detail-list">
+        <div><span>Total paid</span><strong>{{ summary?.totalPaid || 0 }}</strong></div>
+        <div><span>Total remaining</span><strong>{{ summary?.totalRemaining || 0 }}</strong></div>
+        <div><span>Start date</span><strong>{{ loan.startDate || 'Pending approval' }}</strong></div>
+        <div>
+          <span>Next due date</span>
+          <strong>{{ summary?.nextPayment?.dueDate || 'No pending installment' }}</strong>
+        </div>
+      </div>
+    </article>
+
+    <article class="surface-card">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Upcoming installments</span>
+          <h2>Pending schedule</h2>
+        </div>
+      </div>
+
+      <div class="table-wrap" *ngIf="pendingSchedule().length; else noSchedule">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Due date</th>
+              <th>Expected</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of pendingSchedule() | slice:0:5">
+              <td>{{ item.installmentNumber }}</td>
+              <td>{{ item.dueDate }}</td>
+              <td>{{ item.expectedAmount }}</td>
+              <td>{{ item.status }}</td>
+              <td>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  type="button"
+                  *ngIf="hasRole('YOUTH_BENEFICIARY')"
+                  (click)="goToPayment(item)"
+                >
+                  Pay
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noSchedule>
+        <p class="section-copy">No pending installments are available yet.</p>
+      </ng-template>
+    </article>
+  </section>
+
+  <section class="surface-card">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Payments</span>
+        <h2>Payment history</h2>
+      </div>
+    </div>
+
+    <div class="table-wrap" *ngIf="payments.length; else noPayments">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let payment of payments">
+            <td>{{ payment.paidAt }}</td>
+            <td>{{ payment.amount }}</td>
+            <td>{{ payment.paymentMethod }}</td>
+            <td>{{ payment.reference }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #noPayments>
+      <p class="section-copy">No payment has been recorded for this loan yet.</p>
+    </ng-template>
+  </section>
+
+  <section class="surface-card" *ngIf="hasRole('ADMIN') || hasRole('COMPLIANCE')">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Risk decision support</span>
+        <h2>Explainable analysis tools</h2>
+        <p class="section-copy">
+          These tools do not create or approve loans by themselves. They help the back office compare rule-based AI, multi-agent reasoning, ML default probability, and Markov state transition.
+        </p>
+      </div>
+
+      <div class="button-row">
+        <button class="btn btn-secondary" type="button" *ngIf="hasRole('ADMIN')" (click)="getAIDecision()">Rule AI review</button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          *ngIf="hasRole('ADMIN')"
+          [disabled]="multiAgentLoading"
+          (click)="getMultiAgentDecision()"
+        >
+          {{ multiAgentLoading ? 'Analyse...' : 'Multi-agent decision' }}
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="getMLPrediction()">Default prediction</button>
+        <button class="btn btn-secondary" type="button" (click)="getMarkovPrediction()">3-month state forecast</button>
+      </div>
+    </div>
+
+    <div class="state-card" *ngIf="multiAgentLoading">Analyse multi-agent en cours...</div>
+
+    <div class="section-grid" *ngIf="multiAgentDecision">
+      <article class="card">
+        <span class="eyebrow">CreditScoringAgent</span>
+        <h3>Score ajuste {{ multiAgentDecision.adjustedScore }}</h3>
+        <p class="section-copy">{{ multiAgentDecision.creditScoringAnalysis }}</p>
+        <span class="status-badge" [attr.data-status]="multiAgentDecision.criticalFlag ? 'DEFAULTED' : 'ACTIVE'">
+          {{ multiAgentDecision.criticalFlag ? 'Critique' : 'Stable' }}
+        </span>
+      </article>
+      <article class="card">
+        <span class="eyebrow">FraudDetectionAgent</span>
+        <h3>Risque {{ multiAgentDecision.fraudRisk }}</h3>
+        <p class="section-copy">{{ multiAgentDecision.fraudDetectionAnalysis }}</p>
+      </article>
+      <article class="card">
+        <span class="eyebrow">MarketContextAgent</span>
+        <h3>Contexte Tunisie</h3>
+        <p class="section-copy">{{ multiAgentDecision.marketContext }}</p>
+      </article>
+      <article class="card">
+        <span class="eyebrow">FinalDecisionAgent</span>
+        <h3>{{ multiAgentDecision.finalDecision }}</h3>
+        <p class="section-copy">{{ multiAgentDecision.explanation }}</p>
+      </article>
+    </div>
+
+    <div class="prediction-grid">
+      <article class="prediction-card" *ngIf="aiResult">
+        <span class="metric-label">Rule AI review</span>
+        <h3>{{ resultText(aiResult, 'decision') }}</h3>
+        <span class="risk-badge" [attr.data-risk]="riskBadgeValue(resultText(aiResult, 'decision'))">
+          Confidence {{ resultText(aiResult, 'confidence') }}
+        </span>
+        <p>{{ resultText(aiResult, 'explanation') }}</p>
+        <details>
+          <summary>Technical JSON</summary>
+          <pre>{{ aiResult | json }}</pre>
+        </details>
+      </article>
+
+      <article class="prediction-card" *ngIf="mlResult">
+        <span class="metric-label">Default prediction</span>
+        <h3>{{ resultText(mlResult, 'finalRecommendation', resultText(mlResult, 'recommendation')) }}</h3>
+        <span class="risk-badge" [attr.data-risk]="riskBadgeValue(resultText(mlResult, 'mlPrediction.riskLevel', resultText(mlResult, 'riskLevel')))">
+          {{ resultText(mlResult, 'mlPrediction.riskLevel', resultText(mlResult, 'riskLevel')) }}
+        </span>
+        <div class="detail-list">
+          <div><span>Default probability</span><strong>{{ resultPercent(mlResult, 'mlPrediction.defaultProbability') }}</strong></div>
+          <div><span>Expected loss</span><strong>{{ resultText(mlResult, 'monteCarlo.expectedLoss') }}</strong></div>
+          <div><span>Simulations</span><strong>{{ resultText(mlResult, 'monteCarlo.simulations') }}</strong></div>
+        </div>
+        <details>
+          <summary>Technical JSON</summary>
+          <pre>{{ mlResult | json }}</pre>
+        </details>
+      </article>
+
+      <article class="prediction-card" *ngIf="markovResult">
+        <span class="metric-label">3-month state forecast</span>
+        <h3>{{ resultText(markovResult, 'predictedState') }}</h3>
+        <span class="risk-badge" [attr.data-risk]="riskBadgeValue(resultText(markovResult, 'riskLevel'))">
+          {{ resultText(markovResult, 'riskLevel') }}
+        </span>
+        <div class="detail-list">
+          <div><span>Default risk</span><strong>{{ resultText(markovResult, 'defaultRiskPercent') }}</strong></div>
+          <div><span>Current state</span><strong>{{ resultText(markovResult, 'currentState') }}</strong></div>
+          <div><span>Horizon</span><strong>{{ resultText(markovResult, 'monthsAhead') }} months</strong></div>
+        </div>
+        <details>
+          <summary>Technical JSON</summary>
+          <pre>{{ markovResult | json }}</pre>
+        </details>
+      </article>
+    </div>
+  </section>
+</section>

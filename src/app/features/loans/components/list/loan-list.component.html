@@ -1,0 +1,86 @@
+<section class="page-shell">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">{{ hasAnyRole(['ADMIN', 'COMPLIANCE']) ? 'Back office credit' : 'My loan space' }}</span>
+      <h1>{{ hasAnyRole(['ADMIN', 'COMPLIANCE']) ? 'Loan applications review' : 'My loan requests' }}</h1>
+      <p class="section-copy">
+        {{ hasAnyRole(['ADMIN', 'COMPLIANCE'])
+          ? 'Admin and compliance users review submitted applications, risk signals, and repayment exposure.'
+          : 'Youth users can create loan requests, follow their own repayment schedule, and pay upcoming installments.' }}
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a class="btn btn-secondary" routerLink="/simulate">Simulation</a>
+      <a
+        class="btn btn-primary"
+        routerLink="/loans/create"
+        *ngIf="hasRole('YOUTH_BENEFICIARY')"
+      >
+        New loan request
+      </a>
+    </div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+  <div class="state-card" *ngIf="loading">Loading loans...</div>
+
+  <div class="empty-state" *ngIf="!loading && !loans.length">
+    <h2>No loans found</h2>
+    <p>{{ hasRole('YOUTH_BENEFICIARY') ? 'You have not submitted a loan request yet.' : 'No loan applications match this back-office view yet.' }}</p>
+  </div>
+
+  <section class="section-grid" *ngIf="loans.length">
+    <article class="card" *ngFor="let loan of loans">
+      <div class="card-top">
+        <div>
+          <span class="pill pill-soft">{{ loan.loanType }}</span>
+          <h3>Loan #{{ loan.id }}</h3>
+        </div>
+        <span class="status-badge" [attr.data-status]="loan.status">{{ loan.status }}</span>
+      </div>
+
+      <div class="detail-list">
+        <div><span>Principal</span><strong>{{ loan.principalAmount }}</strong></div>
+        <div><span>Interest rate</span><strong>{{ loan.interestRate }}%</strong></div>
+        <div><span>Duration</span><strong>{{ loan.durationMonths }} months</strong></div>
+        <div><span>User ID</span><strong>{{ loan.userId }}</strong></div>
+      </div>
+
+      <div class="button-row">
+        <a class="btn btn-secondary" [routerLink]="['/loans', loan.id]">View details</a>
+        <button
+          class="btn btn-primary"
+          type="button"
+          *ngIf="hasRole('ADMIN') && loan.status === 'PENDING'"
+          (click)="approveLoan(loan.id)"
+        >
+          Approve
+        </button>
+        <button
+          class="btn btn-ghost-danger"
+          type="button"
+          *ngIf="hasRole('ADMIN') && loan.status === 'PENDING'"
+          (click)="rejectLoan(loan.id)"
+        >
+          Reject
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <div class="pagination-bar" *ngIf="hasAnyRole(['ADMIN', 'COMPLIANCE']) && loans.length">
+    <button class="btn btn-secondary" type="button" (click)="prevPage()" [disabled]="page === 0">
+      Previous
+    </button>
+    <span>Page {{ page + 1 }} · {{ totalElements }} total loans</span>
+    <button
+      class="btn btn-secondary"
+      type="button"
+      (click)="nextPage()"
+      [disabled]="(page + 1) * pageSize >= totalElements"
+    >
+      Next
+    </button>
+  </div>
+</section>

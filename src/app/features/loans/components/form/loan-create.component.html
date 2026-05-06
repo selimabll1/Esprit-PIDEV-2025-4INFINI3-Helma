@@ -1,0 +1,88 @@
+<section class="page-shell">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Application</span>
+      <h1>Create a loan request</h1>
+      <p class="section-copy">
+        Submit a new request for your own Helma account. Back-office users can review, but only
+        youth beneficiaries can create loan applications.
+      </p>
+    </div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <div class="split-layout">
+    <article class="surface-card">
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <label class="field">
+          <span>Helma user ID</span>
+          <input class="input" type="number" formControlName="userId" min="1" readonly />
+        </label>
+
+        <label class="field">
+          <span>Loan type</span>
+          <select class="select" formControlName="loanType">
+            <option value="">Select type</option>
+            <option *ngFor="let type of loanTypes" [value]="type">{{ type }}</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Principal amount</span>
+          <input class="input" type="number" formControlName="principalAmount" min="100" />
+        </label>
+
+        <label class="field">
+          <span>Duration in months</span>
+          <input class="input" type="number" formControlName="durationMonths" min="1" max="240" />
+        </label>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" type="button" (click)="simulate()">Preview schedule</button>
+          <button class="btn btn-primary" type="submit" [disabled]="loading">
+            {{ loading ? 'Submitting...' : 'Create loan' }}
+          </button>
+        </div>
+      </form>
+    </article>
+
+    <article class="surface-card">
+      <span class="eyebrow">Simulation</span>
+      <h2>Expected repayment preview</h2>
+      <p class="section-copy">
+        The simulation endpoint applies a minimum backend rate of 20% for previewing repayment.
+      </p>
+
+      <div *ngIf="simulationResult; else simulationPlaceholder" class="detail-list">
+        <div><span>Interest rate</span><strong>{{ simulationResult.interestRate }}%</strong></div>
+        <div><span>Monthly payment</span><strong>{{ simulationResult.monthlyPayment }}</strong></div>
+        <div><span>Total interest</span><strong>{{ simulationResult.totalInterest }}</strong></div>
+        <div><span>Total cost</span><strong>{{ simulationResult.totalCost }}</strong></div>
+      </div>
+
+      <ng-template #simulationPlaceholder>
+        <p class="section-copy">Run a preview to display the repayment summary and first installments.</p>
+      </ng-template>
+
+      <div class="table-wrap" *ngIf="simulationResult?.schedule?.length">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Due date</th>
+              <th>Expected amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of simulationResult!.schedule | slice:0:6">
+              <td>{{ item.installmentNumber }}</td>
+              <td>{{ item.dueDate }}</td>
+              <td>{{ item.expectedAmount }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </div>
+</section>

@@ -1,0 +1,75 @@
+<section class="page-shell public-page">
+  <div class="hero-banner">
+    <div>
+      <span class="eyebrow">Public tool</span>
+      <h1>Loan simulation workspace</h1>
+      <p class="section-copy">
+        This is the only public `loan-service` route. Adjust the inputs to preview the monthly
+        payment, total cost, and the generated schedule.
+      </p>
+    </div>
+    <a class="btn btn-primary" routerLink="/auth/login">Open secured workspace</a>
+  </div>
+
+  <div class="split-layout">
+    <article class="surface-card">
+      <form class="form-grid" [formGroup]="form">
+        <label class="field">
+          <span>Principal amount</span>
+          <input class="input" type="number" formControlName="principalAmount" min="100" />
+        </label>
+
+        <label class="field">
+          <span>Interest rate</span>
+          <input class="input" type="number" formControlName="interestRate" min="0.1" max="100" />
+        </label>
+
+        <label class="field">
+          <span>Duration in months</span>
+          <input class="input" type="number" formControlName="durationMonths" min="1" max="240" />
+        </label>
+      </form>
+    </article>
+
+    <article class="surface-card">
+      <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+      <div class="state-card" *ngIf="loading">Calculating simulation...</div>
+
+      <div *ngIf="simulationResult" class="detail-list">
+        <div><span>Principal</span><strong>{{ simulationResult.principalAmount }}</strong></div>
+        <div><span>Rate</span><strong>{{ simulationResult.interestRate }}%</strong></div>
+        <div><span>Monthly payment</span><strong>{{ simulationResult.monthlyPayment }}</strong></div>
+        <div><span>Total interest</span><strong>{{ simulationResult.totalInterest }}</strong></div>
+        <div><span>Total cost</span><strong>{{ simulationResult.totalCost }}</strong></div>
+      </div>
+    </article>
+  </div>
+
+  <section class="surface-card" *ngIf="simulationResult?.schedule?.length">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Repayment schedule</span>
+        <h2>Generated installments</h2>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Due date</th>
+            <th>Expected amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of simulationResult!.schedule">
+            <td>{{ item.installmentNumber }}</td>
+            <td>{{ item.dueDate }}</td>
+            <td>{{ item.expectedAmount }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

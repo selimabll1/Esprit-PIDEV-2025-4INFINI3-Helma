@@ -1,0 +1,56 @@
+<section class="page-shell">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Early Warnings</span>
+      <h1>Risk alerts</h1>
+      <p class="section-copy">
+        Review predictive alerts generated from ML, Markov, Monte Carlo, and IA explanations.
+      </p>
+    </div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+  <div class="state-card" *ngIf="loading">Loading early warning alerts...</div>
+
+  <section class="surface-card" *ngIf="warnings.length; else emptyWarnings">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Loan</th>
+            <th>User</th>
+            <th>Combined</th>
+            <th>ML</th>
+            <th>Markov</th>
+            <th>Monte Carlo</th>
+            <th>Risk</th>
+            <th>IA explanation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let warning of warnings">
+            <td><a [routerLink]="['/loans', warning.loanId]">#{{ warning.loanId }}</a></td>
+            <td>{{ warning.userId }}</td>
+            <td>{{ warning.combinedScore | percent:'1.0-1' }}</td>
+            <td>{{ warning.mlScore | percent:'1.0-1' }}</td>
+            <td>{{ warning.markovScore | percent:'1.0-1' }}</td>
+            <td>{{ warning.mcScore | percent:'1.0-1' }}</td>
+            <td>
+              <span class="risk-badge" [attr.data-risk]="riskLevel(warning.combinedScore)">
+                {{ riskLevel(warning.combinedScore) }}
+              </span>
+            </td>
+            <td>{{ warning.aiExplanation }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <ng-template #emptyWarnings>
+    <div class="empty-state" *ngIf="!loading && !error">
+      <h2>No open high-risk alerts</h2>
+      <p class="section-copy">The nightly scan has not found loans above the 0.6 threshold.</p>
+    </div>
+  </ng-template>
+</section>

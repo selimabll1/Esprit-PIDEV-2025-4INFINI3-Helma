@@ -1,0 +1,14 @@
+<section class="page-shell narrow-page">
+  <article class="surface-card centered-card">
+    <span class="eyebrow">Access control</span>
+    <h1>Permission denied</h1>
+    <p class="section-copy">
+      Your current role does not have access to this route. Switch to a role that matches the
+      backend security rules, or return to the dashboard.
+    </p>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="button" (click)="goBack()">Return to dashboard</button>
+      <a class="btn btn-secondary" routerLink="/auth/login">Change session</a>
+    </div>
+  </article>
+</section>

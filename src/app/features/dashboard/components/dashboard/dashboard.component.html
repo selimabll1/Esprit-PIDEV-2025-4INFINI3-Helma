@@ -1,0 +1,138 @@
+<section class="page-shell">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">
+        {{
+          hasRole('YOUTH_BENEFICIARY')
+            ? 'Youth workspace'
+            : hasRole('ADMIN')
+              ? 'Admin credit desk'
+              : hasRole('COMPLIANCE')
+                ? 'Compliance monitoring'
+                : 'Investor overview'
+        }}
+      </span>
+      <h1>
+        {{
+          hasRole('YOUTH_BENEFICIARY')
+            ? 'My financing journey'
+            : hasRole('ADMIN')
+              ? 'Applications waiting for decision'
+              : hasRole('COMPLIANCE')
+                ? 'Portfolio risk overview'
+                : 'Portfolio snapshot'
+        }}
+      </h1>
+      <p class="section-copy">
+        {{ hasRole('YOUTH_BENEFICIARY')
+          ? 'Create loan requests, follow only your own repayment schedule, and keep your HELMA score healthy.'
+          : hasRole('ADMIN')
+            ? 'Review submitted requests, approve or reject loans, and use AI only as decision support.'
+            : hasRole('COMPLIANCE')
+              ? 'Track portfolio exposure, early warnings, and predictive risk signals without modifying loan requests.'
+              : 'View portfolio indicators and updates relevant to investors.' }}
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a class="btn btn-secondary" routerLink="/simulate">Run simulation</a>
+      <a class="btn btn-primary" routerLink="/loans/create" *ngIf="hasRole('YOUTH_BENEFICIARY')">
+        New loan request
+      </a>
+      <a class="btn btn-primary" routerLink="/loans" *ngIf="hasRole('ADMIN')">
+        Review applications
+      </a>
+      <a class="btn btn-primary" routerLink="/early-warnings" *ngIf="hasAnyRole(['ADMIN', 'COMPLIANCE'])">
+        Open risk alerts
+      </a>
+    </div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+  <div class="state-card" *ngIf="loading">Loading dashboard data...</div>
+
+  <section class="surface-card" *ngIf="hasRole('YOUTH_BENEFICIARY') && financialHealth">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Financial Health Score</span>
+        <h2>HELMA score {{ financialHealth.helmaScore }} / 1000</h2>
+        <p class="section-copy">This score estimates your borrowing capacity from repayment history, regularity, active debt, platform seniority, and loan type.</p>
+      </div>
+      <span class="health-level" [attr.data-level]="financialHealth.level">{{ financialHealth.level }}</span>
+    </div>
+    <div class="score-gauge" [attr.data-level]="financialHealth.level">
+      <span [style.width.%]="scorePercent()"></span>
+    </div>
+    <div class="stats-grid compact-grid">
+      <article class="mini-stat"><span>Max loan</span><strong>{{ financialHealth.maxLoanAmount | currency:'TND ':'symbol':'1.0-0' }}</strong></article>
+      <article class="mini-stat"><span>Preferential rate</span><strong>{{ financialHealth.preferentialRate ? 'Eligible' : 'Standard' }}</strong></article>
+      <article class="mini-stat"><span>My active loans</span><strong>{{ activeLoans().length }}</strong></article>
+      <article class="mini-stat"><span>Pending requests</span><strong>{{ pendingLoans().length }}</strong></article>
+    </div>
+  </section>
+
+  <section class="stats-grid" *ngIf="hasAnyRole(['ADMIN', 'COMPLIANCE', 'INVESTOR']) && statistics">
+    <article class="metric-card">
+      <span class="metric-label">Portfolio loans</span>
+      <strong>{{ statistics.totalLoans }}</strong>
+      <small>Visible to back-office roles only</small>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Active exposure</span>
+      <strong>{{ statistics.activeLoans }}</strong>
+      <small>Approved loans currently running</small>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Pending review</span>
+      <strong>{{ pendingReviewCount() }}</strong>
+      <small>Applications requiring admin decision</small>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Defaulted</span>
+      <strong>{{ statistics.defaultedLoans }}</strong>
+      <small>Loans requiring recovery attention</small>
+    </article>
+  </section>
+
+  <section class="surface-card" *ngIf="hasAnyRole(['ADMIN', 'COMPLIANCE']) && statistics">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Portfolio at risk</span>
+        <h2>PAR 30 / 60 / 90</h2>
+        <p class="section-copy">Compliance uses these indicators to prioritize monitoring and early intervention.</p>
+      </div>
+      <strong class="risk-value">{{ statistics.par30 | percent:'1.0-1' }}</strong>
+    </div>
+    <div class="stats-grid compact-grid">
+      <article class="mini-stat"><span>PAR 30</span><strong>{{ statistics.par30 | percent:'1.0-1' }}</strong></article>
+      <article class="mini-stat"><span>PAR 60</span><strong>{{ statistics.par60 | percent:'1.0-1' }}</strong></article>
+      <article class="mini-stat"><span>PAR 90</span><strong>{{ statistics.par90 | percent:'1.0-1' }}</strong></article>
+    </div>
+  </section>
+
+  <section class="surface-card" *ngIf="hasRole('YOUTH_BENEFICIARY') && userLoans.length">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">My portfolio</span>
+        <h2>Only my loan activity</h2>
+      </div>
+      <a class="btn btn-secondary" routerLink="/loans">Open my loans</a>
+    </div>
+    <div class="section-grid">
+      <article class="card" *ngFor="let loan of userLoans | slice:0:3">
+        <div class="card-top">
+          <div>
+            <span class="pill pill-soft">{{ loan.loanType }}</span>
+            <h3>#{{ loan.id }} &middot; {{ loan.principalAmount | currency:'TND ':'symbol':'1.0-0' }}</h3>
+          </div>
+          <span class="status-badge" [attr.data-status]="loan.status">{{ loan.status }}</span>
+        </div>
+        <div class="detail-list">
+          <div><span>Duration</span><strong>{{ loan.durationMonths }} months</strong></div>
+          <div><span>Monthly payment</span><strong>{{ loan.monthlyPayment || 0 }}</strong></div>
+        </div>
+        <a class="btn btn-secondary" [routerLink]="['/loans', loan.id]">Open details</a>
+      </article>
+    </div>
+  </section>
+</section>

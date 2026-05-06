@@ -1,0 +1,69 @@
+<section class="page-shell">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Repayment</span>
+      <h1>Submit an installment payment</h1>
+      <p class="section-copy">
+        Payments are sent to `POST /api/loans/payments` with `loanId`, `scheduleId`, `amount`, and
+        `paymentMethod`.
+      </p>
+    </div>
+
+    <a class="btn btn-secondary" [routerLink]="['/loans', loanId]">Back to loan</a>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <div class="split-layout">
+    <article class="surface-card">
+      <span class="eyebrow">Select installment</span>
+      <h2>Pending schedules</h2>
+
+      <div class="schedule-list" *ngIf="availableSchedules.length; else noSchedules">
+        <button
+          class="schedule-card"
+          type="button"
+          *ngFor="let item of availableSchedules"
+          [class.active]="schedule?.id === item.id"
+          (click)="selectSchedule(item)"
+        >
+          <strong>#{{ item.installmentNumber }}</strong>
+          <span>{{ item.dueDate }}</span>
+          <small>{{ item.expectedAmount }}</small>
+        </button>
+      </div>
+
+      <ng-template #noSchedules>
+        <p class="section-copy">No payable installments were returned for this loan.</p>
+      </ng-template>
+    </article>
+
+    <article class="surface-card">
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <label class="field">
+          <span>Schedule ID</span>
+          <input class="input" type="number" formControlName="scheduleId" readonly />
+        </label>
+
+        <label class="field">
+          <span>Amount</span>
+          <input class="input" type="number" formControlName="amount" />
+        </label>
+
+        <label class="field">
+          <span>Payment method</span>
+          <select class="select" formControlName="paymentMethod">
+            <option value="">Choose a method</option>
+            <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
+          </select>
+        </label>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" [disabled]="loading">
+            {{ loading ? 'Submitting payment...' : 'Confirm payment' }}
+          </button>
+        </div>
+      </form>
+    </article>
+  </div>
+</section>
