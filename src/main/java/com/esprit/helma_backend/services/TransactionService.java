@@ -1,5 +1,13 @@
 package com.esprit.helma_backend.services;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.esprit.helma_backend.dto.TransactionDto;
 import com.esprit.helma_backend.entities.Transaction;
 import com.esprit.helma_backend.entities.Transaction.TransactionType;
@@ -8,13 +16,6 @@ import com.esprit.helma_backend.repositories.TransactionRepository;
 import com.esprit.helma_backend.repositories.UserRepository;
 import com.esprit.helma_backend.services.risk.RiskDecision;
 import com.esprit.helma_backend.services.risk.RiskEngineService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.List;
 
 @Service
 @Transactional
@@ -28,6 +29,7 @@ public class TransactionService {
     private final BurnRateService burnRateService;
     private final TrustBadgeService trustBadgeService;
     private final AuditLogService auditLogService;
+    private final CategoryService categoryService;
 
     public TransactionService(TransactionRepository txRepo,
                               UserRepository userRepo,
@@ -36,7 +38,8 @@ public class TransactionService {
                               CashFlowService cashFlowService,
                               BurnRateService burnRateService,
                               TrustBadgeService trustBadgeService,
-                              AuditLogService auditLogService) {
+                              AuditLogService auditLogService,
+                            CategoryService categoryService ) {
         this.txRepo = txRepo;
         this.userRepo = userRepo;
         this.riskEngine = riskEngine;
@@ -45,6 +48,7 @@ public class TransactionService {
         this.burnRateService = burnRateService;
         this.trustBadgeService = trustBadgeService;
         this.auditLogService = auditLogService;
+         this.categoryService = categoryService; 
     }
 
     private static TransactionDto.Response toResponse(Transaction t) {
@@ -73,10 +77,16 @@ public class TransactionService {
                 .build();
 
         Transaction saved = txRepo.save(t);
+        categoryService.track(user.getId(), saved.getCategory());
 
         // Step 1 — Risk Engine (EXPENSE only)
         if (saved.getType() == TransactionType.EXPENSE) {
             RiskDecision decision = riskEngine.evaluate(saved);
+            System.out.println("=== RISK DEBUG === Transaction created: " + saved.getAmount()
+                    + " | Type: " + saved.getType()
+                    + " | Risk triggered: " + decision.triggered()
+                    + " | Risk level: " + decision.riskLevel()
+                    + " | Reasons: " + decision.reasons());
             if (decision.triggered()) {
                 riskCaseService.upsertOpenCase(user.getId(), decision.riskLevel(), decision.reasons());
             }

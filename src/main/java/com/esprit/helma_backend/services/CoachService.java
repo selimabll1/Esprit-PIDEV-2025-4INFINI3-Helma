@@ -1,5 +1,14 @@
 package com.esprit.helma_backend.services;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.esprit.helma_backend.dto.CoachDto;
 import com.esprit.helma_backend.entities.CoachMessage;
 import com.esprit.helma_backend.entities.CoachSession;
@@ -8,14 +17,6 @@ import com.esprit.helma_backend.entities.User;
 import com.esprit.helma_backend.repositories.CoachMessageRepository;
 import com.esprit.helma_backend.repositories.CoachSessionRepository;
 import com.esprit.helma_backend.repositories.UserRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @Transactional
@@ -41,7 +42,7 @@ Tu tutoies toujours ton client (ton/ta/tes — jamais vous/votre).
 ═══════════════════════════════════════
 RÈGLES ABSOLUES
 ═══════════════════════════════════════
-1. Tu réponds TOUJOURS en français
+1. Tu réponds TOUJOURS en anglais
 2. Tu cites TOUJOURS les chiffres exacts du contexte — jamais de généralités
 3. Si une donnée est "Non disponible" → demande d'abord d'ajouter des transactions
 4. Tu ne promets JAMAIS de rendements garantis

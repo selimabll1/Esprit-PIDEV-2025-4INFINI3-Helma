@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELMA — My Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F7F7F7;
+            --surface: #FFFFFF;
+            --surface-soft: #F0F4F2;
+            --text: #062A2B;
+            --text-soft: #637B7B;
+            --secondary: #0B3B3C;
+            --accent: #E9C460;
+            --mint: #2A9D8F;
+            --danger: #C86B5D;
+            --line: #DCE7E5;
+            --shadow: 0 20px 60px rgba(6,42,43,0.08);
+            --radius-xl: 28px;
+            --radius-lg: 22px;
+            --radius-md: 16px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, rgba(233,196,96,0.16), transparent 28%),
+                        radial-gradient(circle at bottom right, rgba(42,157,143,0.10), transparent 28%),
+                        var(--bg);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            padding: 16px 28px;
+            background: rgba(247,247,247,0.90);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(11,59,60,0.08);
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-mark {
+            width: 44px; height: 44px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--secondary), var(--mint));
+            color: #fff; display: grid; place-items: center; font-size: 16px; font-weight: 800;
+        }
+        .brand h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.04em; color: var(--secondary); }
+        .brand p { font-size: 11px; color: var(--text-soft); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; }
+        .btn-logout {
+            padding: 8px 18px; border-radius: 14px; font-size: 13px; font-weight: 700;
+            background: rgba(200,107,93,0.10); color: var(--danger);
+            border: 1px solid rgba(200,107,93,0.20); cursor: pointer; font-family: inherit;
+        }
+
+        /* ── Main ── */
+        .main {
+            max-width: 860px; margin: 0 auto; padding: 48px 28px; flex: 1;
+            display: flex; flex-direction: column; gap: 24px;
+        }
+
+        /* ── Profile card ── */
+        .profile-card {
+            background: var(--surface); border-radius: var(--radius-xl);
+            padding: 36px; border: 1px solid var(--line); box-shadow: var(--shadow);
+            display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+        }
+        .avatar {
+            width: 80px; height: 80px; border-radius: 24px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--secondary), var(--mint));
+            display: grid; place-items: center; font-size: 28px; font-weight: 800; color: #fff;
+        }
+        .profile-info h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.04em; color: var(--secondary); margin-bottom: 6px; }
+        .profile-info p { font-size: 14px; color: var(--text-soft); margin-bottom: 10px; }
+        .role-chip {
+            display: inline-block; padding: 6px 14px; border-radius: 999px;
+            font-size: 12px; font-weight: 700; letter-spacing: .06em;
+            background: rgba(99,123,123,0.12); color: var(--text-soft);
+            border: 1px solid rgba(99,123,123,0.18);
+        }
+
+        /* ── Info cards ── */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+        .info-card {
+            background: var(--surface); border-radius: var(--radius-lg);
+            padding: 28px; border: 1px solid var(--line); box-shadow: var(--shadow);
+        }
+        .info-card-icon {
+            width: 48px; height: 48px; border-radius: 14px; margin-bottom: 16px;
+            display: grid; place-items: center; font-size: 22px;
+        }
+        .icon-mint { background: rgba(42,157,143,0.12); }
+        .icon-accent { background: rgba(233,196,96,0.18); }
+        .icon-soft { background: rgba(99,123,123,0.10); }
+        .info-card h3 { font-size: 16px; font-weight: 700; color: var(--secondary); margin-bottom: 8px; }
+        .info-card p { font-size: 13px; color: var(--text-soft); line-height: 1.7; }
+
+        /* ── Upgrade banner ── */
+        .upgrade-banner {
+            background: linear-gradient(135deg, var(--secondary), var(--mint));
+            border-radius: var(--radius-xl); padding: 32px 36px;
+            display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+            box-shadow: 0 24px 60px rgba(11,59,60,0.18);
+        }
+        .upgrade-banner h2 { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.03em; margin-bottom: 6px; }
+        .upgrade-banner p { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.6; max-width: 480px; }
+        .btn-upgrade {
+            padding: 14px 26px; border-radius: 16px; font-size: 14px; font-weight: 800;
+            background: var(--accent); color: var(--secondary);
+            border: none; cursor: pointer; font-family: inherit; white-space: nowrap;
+            box-shadow: 0 10px 28px rgba(233,196,96,0.30);
+            transition: opacity .15s;
+        }
+        .btn-upgrade:hover { opacity: .88; }
+
+        /* ── Access notice ── */
+        .notice {
+            background: rgba(42,157,143,0.08); border: 1px solid rgba(42,157,143,0.20);
+            border-radius: var(--radius-md); padding: 18px 22px;
+            font-size: 13px; color: var(--secondary); line-height: 1.7;
+        }
+        .notice strong { color: var(--mint); }
+
+        @media (max-width: 600px) {
+            .main { padding: 28px 16px; }
+            .topbar { padding: 14px 16px; }
+            .profile-card { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="brand">
+        <div class="brand-mark">H</div>
+        <div>
+            <h1>HELMA</h1>
+            <p>My Account</p>
+        </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+</header>
+
+<main class="main">
+
+    <div class="profile-card">
+        <div class="avatar" id="avatarInitial">?</div>
+        <div class="profile-info">
+            <h2 id="userName">Loading…</h2>
+            <p id="userEmail">—</p>
+            <span class="role-chip">Standard User</span>
+        </div>
+    </div>
+
+    <div class="notice">
+        Welcome to <strong>HELMA</strong>. Your account has <strong>standard user access</strong>.
+        To unlock the full financial dashboard — transactions, budgets, AI coach, trust badges, and analytics —
+        contact your platform administrator to upgrade your account to <strong>Entrepreneur</strong> access.
+    </div>
+
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-card-icon icon-mint">📊</div>
+            <h3>Entrepreneur Dashboard</h3>
+            <p>Full-featured financial cockpit with income tracking, budget monitoring, cash flow forecasting, and AI coaching — available with Entrepreneur access.</p>
+        </div>
+        <div class="info-card">
+            <div class="info-card-icon icon-accent">🏅</div>
+            <h3>Trust Badge</h3>
+            <p>Earn credit capacity ratings from Bronze to Platinum based on your financial health. Unlock this by upgrading to an Entrepreneur account.</p>
+        </div>
+        <div class="info-card">
+            <div class="info-card-icon icon-soft">🤖</div>
+            <h3>AI Financial Coach</h3>
+            <p>Get personalised financial advice powered by AI. The coach analyses your transactions and suggests ways to improve your financial health.</p>
+        </div>
+    </div>
+
+    <div class="upgrade-banner">
+        <div>
+            <h2>Ready to unlock the full platform?</h2>
+            <p>Contact your HELMA administrator to upgrade your account to Entrepreneur access and start tracking your business finances.</p>
+        </div>
+        <button class="btn-upgrade" onclick="contactAdmin()">Request Upgrade</button>
+    </div>
+
+</main>
+
+<script>
+    function getSession() {
+        try { return JSON.parse(localStorage.getItem('helma_session') || 'null'); } catch { return null; }
+    }
+
+    function logout() {
+        localStorage.removeItem('helma_session');
+        window.location.href = '/f/admin-login.html';
+    }
+
+    function contactAdmin() {
+        alert('Please contact your HELMA platform administrator at admin@helma.tn to request an account upgrade to Entrepreneur access.');
+    }
+
+    (function init() {
+        const session = getSession();
+        if (!session?.role) {
+            window.location.href = '/f/admin-login.html';
+            return;
+        }
+        if (session.role === 'ADMIN') {
+            window.location.href = '/f/admin-dashboard.html';
+            return;
+        }
+        if (session.role === 'ENTREPRENEUR') {
+            window.location.href = '/f/dashboard.html';
+            return;
+        }
+        const name = session.fullName || 'User';
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userEmail').textContent = session.email || '—';
+        document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+    })();
+</script>
+</body>
+</html>

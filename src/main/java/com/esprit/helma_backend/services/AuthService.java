@@ -26,8 +26,9 @@ public class AuthService {
             throw new IllegalArgumentException("Email already exists");
         }
 
+        User.Role role = req.isEntrepreneur() ? User.Role.ENTREPRENEUR : User.Role.USER;
         User u = User.builder()
-                .role(User.Role.USER)
+                .role(role)
                 .fullName(req.fullName())
                 .email(req.email())
                 .password(encoder.encode(req.password()))

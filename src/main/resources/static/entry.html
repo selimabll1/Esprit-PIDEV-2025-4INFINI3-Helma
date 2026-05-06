@@ -815,6 +815,10 @@
             location.href = '/f/admin-login.html';
             throw new Error('No session');
         }
+        if (session.role === 'USER') {
+            location.href = '/f/user-view.html';
+            throw new Error('Insufficient role');
+        }
         document.getElementById('adminConsoleBtn').classList.toggle('hidden', session.role !== 'ADMIN');
     }
 
@@ -938,8 +942,14 @@
         return viewedUserId ? Number(viewedUserId) : null;
     }
 
+    function authHeaders(extra = {}) {
+        const token = session?.accessToken;
+        return token ? { 'Authorization': 'Bearer ' + token, ...extra } : { ...extra };
+    }
+
     async function request(path, options = {}) {
-        const response = await fetch(API + path, options);
+        const { headers: extraHeaders, ...rest } = options;
+        const response = await fetch(API + path, { headers: authHeaders(extraHeaders || {}), ...rest });
         if (!response.ok) {
             let msg = 'HTTP ' + response.status;
             try {
@@ -1445,7 +1455,7 @@
 
         try {
             const response = await fetch(API + '/reports/cash-flow/' + userId, {
-                headers: { Accept: 'application/pdf' }
+                headers: authHeaders({ Accept: 'application/pdf' })
             });
 
             if (!response.ok) {

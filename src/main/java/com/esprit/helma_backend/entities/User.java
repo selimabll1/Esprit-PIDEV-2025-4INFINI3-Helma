@@ -14,7 +14,7 @@ import lombok.*;
 public class User {
 
     public enum Role {
-        ADMIN, USER
+        ADMIN, ENTREPRENEUR, USER
     }
 
 
@@ -23,7 +23,7 @@ public class User {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     private Role role = Role.USER;
 
     @Column(name = "full_name", nullable = false, length = 255)

@@ -121,6 +121,126 @@ public class AnalyticsController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/month-comparison")
+    public ResponseEntity<Map<String, Object>> getMonthComparison(
+            @RequestParam Long userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month) {
+
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate currentStart  = month.withDayOfMonth(1);
+        LocalDate previousStart = currentStart.minusMonths(1);
+
+        Instant curFrom  = currentStart.atStartOfDay(zone).toInstant();
+        Instant curTo    = currentStart.plusMonths(1).atStartOfDay(zone).toInstant();
+        Instant prevFrom = previousStart.atStartOfDay(zone).toInstant();
+        Instant prevTo   = currentStart.atStartOfDay(zone).toInstant();
+
+        BigDecimal curIncome  = nz(txRepo.sumIncomeForUserBetween(userId, curFrom, curTo));
+        BigDecimal curExpense = nz(txRepo.sumExpenseForUserBetween(userId, curFrom, curTo));
+        BigDecimal curNet     = curIncome.subtract(curExpense);
+
+        BigDecimal prevIncome  = nz(txRepo.sumIncomeForUserBetween(userId, prevFrom, prevTo));
+        BigDecimal prevExpense = nz(txRepo.sumExpenseForUserBetween(userId, prevFrom, prevTo));
+        BigDecimal prevNet     = prevIncome.subtract(prevExpense);
+
+        Map<String, Object> curTopCat  = getTopCategory(userId, curFrom, curTo);
+        Map<String, Object> prevTopCat = getTopCategory(userId, prevFrom, prevTo);
+
+        Map<String, Object> current = new LinkedHashMap<>();
+        current.put("totalIncome",       curIncome.setScale(2, RoundingMode.HALF_UP));
+        current.put("totalExpense",      curExpense.setScale(2, RoundingMode.HALF_UP));
+        current.put("netFlow",           curNet.setScale(2, RoundingMode.HALF_UP));
+        current.put("topCategory",       curTopCat.get("category"));
+        current.put("topCategoryAmount", curTopCat.get("amount"));
+
+        Map<String, Object> previous = new LinkedHashMap<>();
+        previous.put("totalIncome",       prevIncome.setScale(2, RoundingMode.HALF_UP));
+        previous.put("totalExpense",      prevExpense.setScale(2, RoundingMode.HALF_UP));
+        previous.put("netFlow",           prevNet.setScale(2, RoundingMode.HALF_UP));
+        previous.put("topCategory",       prevTopCat.get("category"));
+        previous.put("topCategoryAmount", prevTopCat.get("amount"));
+
+        boolean hasPrevData = prevIncome.compareTo(BigDecimal.ZERO) > 0
+                || prevExpense.compareTo(BigDecimal.ZERO) > 0;
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("currentMonth",  current);
+        result.put("previousMonth", previous);
+
+        if (!hasPrevData) {
+            result.put("changes", null);
+            result.put("insight", null);
+            return ResponseEntity.ok(result);
+        }
+
+        Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("incomeChange",      pctChange(curIncome, prevIncome));
+        changes.put("expenseChange",     pctChange(curExpense, prevExpense));
+        changes.put("netFlowChange",     pctChange(curNet, prevNet));
+        changes.put("topCategoryChange", pctChange(
+                (BigDecimal) curTopCat.getOrDefault("amount", BigDecimal.ZERO),
+                (BigDecimal) prevTopCat.getOrDefault("amount", BigDecimal.ZERO)));
+        result.put("changes", changes);
+
+        result.put("insight", generateInsight(
+                (BigDecimal) changes.get("incomeChange"),
+                (BigDecimal) changes.get("expenseChange"),
+                curTopCat, (BigDecimal) changes.get("topCategoryChange")));
+
+        return ResponseEntity.ok(result);
+    }
+
+    private Map<String, Object> getTopCategory(Long userId, Instant from, Instant to) {
+        var grouped = txRepo.findAll().stream()
+                .filter(t -> t.getUser().getId().equals(userId))
+                .filter(t -> "EXPENSE".equals(t.getType().name()))
+                .filter(t -> t.getTxnDate() != null && !t.getTxnDate().isBefore(from) && t.getTxnDate().isBefore(to))
+                .collect(Collectors.groupingBy(
+                        t -> t.getCategory() != null ? t.getCategory() : "Other",
+                        Collectors.reducing(BigDecimal.ZERO,
+                                t -> t.getAmount() != null ? t.getAmount() : BigDecimal.ZERO,
+                                BigDecimal::add)));
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (grouped.isEmpty()) { out.put("category", null); out.put("amount", BigDecimal.ZERO); return out; }
+        var top = grouped.entrySet().stream().max(Map.Entry.comparingByValue()).orElseThrow();
+        out.put("category", top.getKey());
+        out.put("amount", top.getValue().setScale(2, RoundingMode.HALF_UP));
+        return out;
+    }
+
+    private BigDecimal pctChange(BigDecimal current, BigDecimal previous) {
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) == 0) return null;
+        return current.subtract(previous)
+                .divide(previous.abs(), 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"))
+                .setScale(1, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
+
+    private String generateInsight(BigDecimal incomeChange, BigDecimal expenseChange,
+                                   Map<String, Object> curTopCat, BigDecimal topCatChange) {
+        String topCatName = curTopCat.get("category") instanceof String s ? s : "Miscellaneous";
+
+        if (topCatChange != null && Math.abs(topCatChange.doubleValue()) >= 20) {
+            String dir = topCatChange.compareTo(BigDecimal.ZERO) > 0 ? "increased" : "decreased";
+            return "Your " + topCatName + " spending " + dir + " "
+                    + Math.abs(topCatChange.longValue()) + "% compared to last month";
+        }
+        if (expenseChange != null && Math.abs(expenseChange.doubleValue()) >= 10) {
+            String dir = expenseChange.compareTo(BigDecimal.ZERO) > 0 ? "increased" : "decreased";
+            return "Your total spending " + dir + " "
+                    + Math.abs(expenseChange.longValue()) + "% compared to last month";
+        }
+        if (incomeChange != null && Math.abs(incomeChange.doubleValue()) >= 10) {
+            String dir = incomeChange.compareTo(BigDecimal.ZERO) > 0 ? "increased" : "decreased";
+            return "Your income " + dir + " "
+                    + Math.abs(incomeChange.longValue()) + "% compared to last month";
+        }
+        return "Your spending patterns are consistent with last month";
+    }
+
     @GetMapping("/daily-allowance")
     public ResponseEntity<Map<String, Object>> getDailyAllowance(@RequestParam Long userId) {
 
@@ -134,21 +254,39 @@ public class AnalyticsController {
         Instant to = nextMonth.atStartOfDay(zone).toInstant();
 
         List<Budget> budgets = budgetRepo.findByUserIdAndMonthStartOrderByCategoryAsc(userId, monthStart);
-        BigDecimal totalBudget = budgets.stream()
+        BigDecimal totalBudgetLimit = budgets.stream()
                 .map(b -> b.getLimitAmount() != null ? b.getLimitAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalSpent = txRepo.sumExpenseForUserBetween(userId, from, to);
         if (totalSpent == null) totalSpent = BigDecimal.ZERO;
 
-        BigDecimal remaining = totalBudget.subtract(totalSpent);
+        BigDecimal totalMonthlyIncome = txRepo.sumIncomeForUserBetween(userId, from, to);
+        if (totalMonthlyIncome == null) totalMonthlyIncome = BigDecimal.ZERO;
+
+        BigDecimal remaining;
+        String basis;
+
+        if (!budgets.isEmpty()) {
+            // Budget-based: user has configured category limits for this month
+            remaining = totalBudgetLimit.subtract(totalSpent);
+            basis = "BUDGET";
+        } else {
+            // Income-based fallback: no budgets configured, use income vs spending
+            remaining = totalMonthlyIncome.subtract(totalSpent);
+            basis = "INCOME";
+        }
+
+        // dailyAllowance is 0 when over limit, but we preserve the real (negative) remaining
         BigDecimal dailyAllowance = remaining.compareTo(BigDecimal.ZERO) > 0
                 ? remaining.divide(BigDecimal.valueOf(daysLeft), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("userId", userId);
-        result.put("totalBudget", totalBudget.setScale(2, RoundingMode.HALF_UP));
+        result.put("basis", basis);
+        result.put("totalBudget", totalBudgetLimit.setScale(2, RoundingMode.HALF_UP));
+        result.put("totalMonthlyIncome", totalMonthlyIncome.setScale(2, RoundingMode.HALF_UP));
         result.put("totalSpent", totalSpent.setScale(2, RoundingMode.HALF_UP));
         result.put("remaining", remaining.setScale(2, RoundingMode.HALF_UP));
         result.put("daysLeft", daysLeft);

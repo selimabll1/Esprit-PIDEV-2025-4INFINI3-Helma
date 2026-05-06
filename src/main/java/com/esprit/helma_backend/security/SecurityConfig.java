@@ -1,6 +1,5 @@
 package com.esprit.helma_backend.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,9 +17,6 @@ public class SecurityConfig {
     private final JwtService jwtService;
     private final CustomUserDetailsService uds;
 
-    @Value("${app.security.disabled:true}")
-    private boolean securityDisabled;
-
     public SecurityConfig(JwtService jwtService, CustomUserDetailsService uds) {
         this.jwtService = jwtService;
         this.uds = uds;
@@ -28,32 +24,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable());
-
-        if (securityDisabled) {
-            http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-            http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-            return http.build();
-        }
-
         JwtAuthFilter jwtFilter = new JwtAuthFilter(jwtService, uds);
 
+        http.csrf(csrf -> csrf.disable());
         http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
         http.authorizeHttpRequests(auth -> auth
+                // Static pages, auth, and WebSocket handshake are public
                 .requestMatchers(
-                        "/",
-                        "/entry.html",
-                        "/d.html",
-                        "/a.html",
-                        "/b.html",
+                        "/", "/*.html",
                         "/auth/**",
+                        "/ws/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**",
                         "/error"
                 ).permitAll()
+                // Admin-only API paths
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
+                // All other API calls require any authenticated user
                 .anyRequest().authenticated()
         );
 

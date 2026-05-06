@@ -25,13 +25,14 @@ public class RiskEngineService {
     private static final BigDecimal TWO = new BigDecimal("2.0");
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
-    private static final BigDecimal W_USAGE = new BigDecimal("0.50");
-    private static final BigDecimal W_SPIKE = new BigDecimal("0.30");
-    private static final BigDecimal W_BIGTX = new BigDecimal("0.20");
+    private static final BigDecimal W_USAGE = new BigDecimal("0.40");
+    private static final BigDecimal W_SPIKE = new BigDecimal("0.25");
+    private static final BigDecimal W_BIGTX = new BigDecimal("0.35");
 
     private static final BigDecimal BIGTX_MIN = new BigDecimal("200");
     private static final BigDecimal BIGTX_MAX = new BigDecimal("2000");
-    private static final int TRIGGER_AT = 60;
+    private static final int TRIGGER_AT = 50;
+    private static final BigDecimal HIGH_SINGLE_MULTIPLIER = new BigDecimal("5");
 
     public RiskEngineService(BudgetRepository budgetRepo, TransactionRepository txRepo) {
         this.budgetRepo = budgetRepo;
@@ -132,9 +133,19 @@ public class RiskEngineService {
         BigDecimal max7d = nz(txRepo.maxExpenseForUserBetween(userId, last7d, now));//e moteur regarde la plus grande dépense sur les 7 derniers jours ://
 //transformation linéaire entre 200 et 2000 vers un score 0..100
 //si max7d >= 1000, raison LARGE_TXN_LAST_7D
-        BigDecimal highAmountScore = mapLinearTo100(max7d, BIGTX_MIN, BIGTX_MAX);//transforme cette valeur en score entre 0 et 100 via mapLinearTo100(max7d, 200, 2000).
+        BigDecimal highAmountScore = mapLinearTo100(max7d, BIGTX_MIN, BIGTX_MAX);
         if (max7d.compareTo(new BigDecimal("1000")) >= 0) {
             reasons.add("LARGE_TXN_LAST_7D");
+        }
+
+        // HIGH_SINGLE_AMOUNT: single expense > 5x average monthly baseline always triggers
+        BigDecimal txAmount = nz(savedTx.getAmount());
+        if (base.compareTo(ZERO) > 0) {
+            BigDecimal multiplier = txAmount.divide(base, 6, RoundingMode.HALF_UP);
+            if (multiplier.compareTo(HIGH_SINGLE_MULTIPLIER) >= 0) {
+                reasons.add("HIGH_SINGLE_AMOUNT");
+                highAmountScore = HUNDRED;
+            }
         }
 
         BigDecimal risk = W_USAGE.multiply(usageScore)
@@ -143,6 +154,11 @@ public class RiskEngineService {
 
         int riskLevel = clampInt(risk.setScale(0, RoundingMode.HALF_UP).intValue(), 0, 100);
         boolean triggered = riskLevel >= TRIGGER_AT || max7d.compareTo(new BigDecimal("2000")) >= 0;
+
+        if (reasons.contains("HIGH_SINGLE_AMOUNT") && riskLevel < 70) {
+            riskLevel = 70;
+            triggered = true;
+        }
 
         if (triggered) reasons.add("RISK_TRIGGERED");
         reasons.add("BASE_METHOD_" + baseMethod);

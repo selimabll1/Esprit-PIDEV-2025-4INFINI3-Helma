@@ -17,7 +17,7 @@ import java.util.Map;
  *
  * Groq vision model: meta-llama/llama-4-scout-17b-16e-instruct
  */
-@Service
+// Superseded by ReceiptScanService — kept for reference only, not a Spring bean
 public class ReceiptCategoryService {
 
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";

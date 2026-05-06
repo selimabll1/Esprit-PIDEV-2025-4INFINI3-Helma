@@ -26,6 +26,7 @@ public class CashFlowReportController {
     private final SavingsGoalService savingsGoalService;
     private final FinancialHealthScoreService healthScoreService;
     private final BurnRateService burnRateService;
+    private final TransactionExcelService excelService;
 
     public CashFlowReportController(CashFlowService cashFlowService,
                                     CashFlowForecastService forecastService,
@@ -34,7 +35,8 @@ public class CashFlowReportController {
                                     BudgetService budgetService,
                                     SavingsGoalService savingsGoalService,
                                     FinancialHealthScoreService healthScoreService,
-                                    BurnRateService burnRateService) {
+                                    BurnRateService burnRateService,
+                                    TransactionExcelService excelService) {
         this.cashFlowService = cashFlowService;
         this.forecastService = forecastService;
         this.pdfService = pdfService;
@@ -43,6 +45,7 @@ public class CashFlowReportController {
         this.savingsGoalService = savingsGoalService;
         this.healthScoreService = healthScoreService;
         this.burnRateService = burnRateService;
+        this.excelService = excelService;
     }
 
     /* ── Original endpoint (kept for backward compatibility) ─────────── */
@@ -76,7 +79,6 @@ public class CashFlowReportController {
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month) {
 
-        // Normalize to first of month
         LocalDate monthStart = month.withDayOfMonth(1);
 
         UserDto.Response user = userService.getById(userId);
@@ -118,6 +120,28 @@ public class CashFlowReportController {
         String filename = "helma-yearly-" + year + ".pdf";
 
         return pdfResponse(pdf, filename);
+    }
+
+    /* ── Excel export ────────────────────────────────────────────────── */
+
+    @GetMapping("/transactions-excel/{userId}")
+    @Operation(
+            summary = "Export transactions as Excel (.xlsx)",
+            description = "Generates a formatted Excel file with all transactions for a given month."
+    )
+    public ResponseEntity<byte[]> downloadTransactionsExcel(
+            @PathVariable Long userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month) {
+
+        byte[] excel = excelService.generate(userId, month);
+
+        String filename = "helma-transactions-" +
+                month.withDayOfMonth(1).format(DateTimeFormatter.ofPattern("yyyy-MM")) + ".xlsx";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(excel);
     }
 
     /* ── List available months (for the frontend dropdown) ───────────── */

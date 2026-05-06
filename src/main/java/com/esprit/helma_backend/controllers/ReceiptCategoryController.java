@@ -1,6 +1,7 @@
 package com.esprit.helma_backend.controllers;
 
-import com.esprit.helma_backend.services.ReceiptCategoryService;
+import com.esprit.helma_backend.dto.ReceiptScanDto;
+import com.esprit.helma_backend.services.ReceiptScanService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,28 +11,26 @@ import java.util.Map;
 @RequestMapping("/api/transactions")
 public class ReceiptCategoryController {
 
-    private final ReceiptCategoryService service;
+    private final ReceiptScanService service;
 
-    public ReceiptCategoryController(ReceiptCategoryService service) {
+    public ReceiptCategoryController(ReceiptScanService service) {
         this.service = service;
     }
 
     /**
      * POST /api/transactions/suggest-category
      * Body: { "base64Image": "data:image/jpeg;base64,..." }
-     * Returns: { "category": "groceries", "confidence": "high" }
+     * Returns: ReceiptScanDto { category, type, amount, date, description }
      */
     @PostMapping("/suggest-category")
-    public ResponseEntity<Map<String, String>> suggestCategory(
+    public ResponseEntity<ReceiptScanDto> suggestCategory(
             @RequestBody Map<String, String> body) {
 
         String base64Image = body.get("base64Image");
         if (base64Image == null || base64Image.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "base64Image is required"));
+            return ResponseEntity.badRequest().build();
         }
 
-        String category = service.suggestCategory(base64Image);
-        return ResponseEntity.ok(Map.of("category", category));
+        return ResponseEntity.ok(service.scan(base64Image));
     }
 }

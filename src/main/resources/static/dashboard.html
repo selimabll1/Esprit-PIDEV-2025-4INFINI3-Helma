@@ -983,7 +983,7 @@
     }
 
     function resolveLogoutPath() {
-        return session?.role === 'ADMIN' ? '/f/admin-login.html' : '/f/login.html';
+        return '/f/admin-login.html';
     }
 
     function logout() {
@@ -1017,8 +1017,12 @@
     function requireSession() {
         session = getSession() || coerceLegacyAdmin();
         if (!session?.role) {
-            location.href = '/f/login.html';
+            location.href = '/f/admin-login.html';
             throw new Error('No session');
+        }
+        if (session.role === 'USER') {
+            location.href = '/f/user-view.html';
+            throw new Error('Insufficient role');
         }
         document.getElementById('adminConsoleBtn').style.display = session.role === 'ADMIN' ? 'inline-flex' : 'none';
     }
@@ -1116,8 +1120,14 @@
         );
     }
 
+    function authHeaders(extra = {}) {
+        const token = session?.accessToken;
+        return token ? { 'Authorization': 'Bearer ' + token, ...extra } : { ...extra };
+    }
+
     async function apiGet(path, options = {}) {
-        const response = await fetch(API + path, options);
+        const { headers: extraHeaders, ...rest } = options;
+        const response = await fetch(API + path, { headers: authHeaders(extraHeaders || {}), ...rest });
         if (!response.ok) {
             throw new Error('HTTP ' + response.status);
         }
@@ -1475,7 +1485,7 @@
         try {
             const response = await fetch(API + '/coach/message', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ userId: viewedUserId, message: text })
             });
 
@@ -1504,7 +1514,7 @@
 
         try {
             const response = await fetch(API + '/reports/cash-flow/' + viewedUserId, {
-                headers: { Accept: 'application/pdf' }
+                headers: authHeaders({ Accept: 'application/pdf' })
             });
 
             if (!response.ok) {

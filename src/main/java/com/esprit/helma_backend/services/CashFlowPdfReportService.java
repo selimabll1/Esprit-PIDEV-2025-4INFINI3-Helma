@@ -182,7 +182,7 @@ public class CashFlowPdfReportService {
                 hsTable.setWidths(new float[]{1f, 1f});
                 Color scoreColor = nz(healthScore.score()).compareTo(new BigDecimal("70")) >= 0 ? POSITIVE
                         : nz(healthScore.score()).compareTo(new BigDecimal("50")) >= 0 ? BRAND_GOLD : NEGATIVE;
-                hsTable.addCell(kpiCell("Overall Score", healthScore.score().setScale(0, RoundingMode.HALF_UP) + " / 100", scoreColor));
+                hsTable.addCell(kpiCell("Overall Score", nz(healthScore.score()).setScale(0, RoundingMode.HALF_UP) + " / 100", scoreColor));
                 hsTable.addCell(kpiCell("Status", healthScore.label() != null ? healthScore.label() : "—", scoreColor));
                 doc.add(hsTable);
 
@@ -210,9 +210,10 @@ public class CashFlowPdfReportService {
                 brTable.setWidths(new float[]{1f, 1f, 1f, 1f});
                 brTable.addCell(kpiCell("Burn Rate", money(burnRate.burnRate()) + "/mo", BRAND_DARK));
                 brTable.addCell(kpiCell("Balance", money(burnRate.currentBalance()), nz(burnRate.currentBalance()).signum() >= 0 ? POSITIVE : NEGATIVE));
-                Color statusColor = "CRITICAL".equals(burnRate.status().name()) ? NEGATIVE
-                        : "WARNING".equals(burnRate.status().name()) ? BRAND_GOLD : POSITIVE;
-                brTable.addCell(kpiCell("Status", burnRate.status().name(), statusColor));
+                String statusName = burnRate.status() != null ? burnRate.status().name() : "NO DATA";
+                Color statusColor = "CRITICAL".equals(statusName) ? NEGATIVE
+                        : "WARNING".equals(statusName) ? BRAND_GOLD : POSITIVE;
+                brTable.addCell(kpiCell("Status", statusName, statusColor));
                 brTable.addCell(kpiCell("Runway", burnRate.runwayMonths() != null ? burnRate.runwayMonths().setScale(1, RoundingMode.HALF_UP) + " months" : "N/A", statusColor));
                 doc.add(brTable);
 

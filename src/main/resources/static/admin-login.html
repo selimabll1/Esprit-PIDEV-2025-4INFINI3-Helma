@@ -456,12 +456,12 @@
 
         <div class="info-bar">
             <div class="info-chip">
-                <strong>Admin démo</strong>
-                <span><code>admin@helma.tn</code> / <code>password</code></span>
+                <strong>Admin</strong>
+                <span><code>admin@helma.tn</code> / <code>admin123</code></span>
             </div>
             <div class="info-chip">
-                <strong>User démo</strong>
-                <span><code>user@helma.tn</code> / <code>test123</code></span>
+                <strong>Entrepreneur</strong>
+                <span><code>entrepreneur@helma.tn</code> / <code>test123</code></span>
             </div>
         </div>
 
@@ -489,18 +489,19 @@
         <div class="msg" id="msg"></div>
 
         <p class="footnote">
-            Quand l’email correspond à <code>admin@helma.tn</code>, le login reste hardcodé.
-            Sinon, la page appelle le backend et stocke une vraie session locale avec les infos du user.
+            All accounts use real backend authentication. Your role determines your interface:
+            <code>ADMIN</code> → admin console, <code>ENTREPRENEUR</code> → full dashboard,
+            <code>USER</code> → account page.
         </p>
     </section>
 </div>
 
 <script>
-    const STORAGE_KEY = 'helma_session';
+    const STORAGE_KEY = ‘helma_session’;
 
     function getSession() {
         try {
-            return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || ‘null’);
         } catch (_) {
             return null;
         }
@@ -511,83 +512,68 @@
     }
 
     function clearLegacyState() {
-        localStorage.removeItem('helma_admin');
-        localStorage.removeItem('helma_admin_email');
-        localStorage.removeItem('helma_uid');
+        localStorage.removeItem(‘helma_admin’);
+        localStorage.removeItem(‘helma_admin_email’);
+        localStorage.removeItem(‘helma_uid’);
+        localStorage.removeItem(‘helma_user_session’);
+        localStorage.removeItem(‘helma_access_token’);
+        localStorage.removeItem(‘helma_selected_user_id’);
     }
 
     function showMsg(text, type) {
-        const el = document.getElementById('msg');
-        el.className = 'msg ' + type;
+        const el = document.getElementById(‘msg’);
+        el.className = ‘msg ‘ + type;
         el.textContent = text;
     }
 
     function redirectFor(session) {
         if (!session) return;
-        if (session.role === 'ADMIN') {
-            location.href = '/f/admin-risk-cases.html';
-            return;
+        if (session.role === ‘ADMIN’) {
+            location.href = ‘/f/admin-dashboard.html’;
+        } else if (session.role === ‘ENTREPRENEUR’) {
+            location.href = ‘/f/dashboard.html’;
+        } else {
+            location.href = ‘/f/user-view.html’;
         }
-        location.href = '/f/dashboard.html';
     }
 
     function fillAdmin() {
-        document.getElementById('email').value = 'admin@helma.tn';
-        document.getElementById('password').value = 'password';
-        document.getElementById('email').focus();
+        document.getElementById(‘email’).value = ‘admin@helma.tn’;
+        document.getElementById(‘password’).value = ‘admin123’;
+        document.getElementById(‘email’).focus();
     }
 
     function fillUser() {
-        document.getElementById('email').value = 'user@helma.tn';
-        document.getElementById('password').value = 'test123';
-        document.getElementById('email').focus();
+        document.getElementById(‘email’).value = ‘entrepreneur@helma.tn’;
+        document.getElementById(‘password’).value = ‘test123’;
+        document.getElementById(‘email’).focus();
     }
 
     function clearForm() {
-        document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
-        document.getElementById('msg').className = 'msg';
-        document.getElementById('msg').textContent = '';
+        document.getElementById(‘email’).value = ‘’;
+        document.getElementById(‘password’).value = ‘’;
+        document.getElementById(‘msg’).className = ‘msg’;
+        document.getElementById(‘msg’).textContent = ‘’;
     }
 
     async function login() {
-        const email = document.getElementById('email').value.trim().toLowerCase();
-        const password = document.getElementById('password').value;
-        const btn = document.getElementById('loginBtn');
+        const email = document.getElementById(‘email’).value.trim().toLowerCase();
+        const password = document.getElementById(‘password’).value;
+        const btn = document.getElementById(‘loginBtn’);
 
         if (!email || !password) {
-            showMsg('Merci de renseigner l’email et le mot de passe.', 'error');
+            showMsg(‘Please enter your email and password.’, ‘error’);
             return;
         }
 
         clearLegacyState();
         btn.disabled = true;
-        btn.textContent = 'Connexion…';
+        btn.textContent = ‘Signing in…’;
 
         try {
-            if (email === 'admin@helma.tn') {
-                if (password !== 'password') {
-                    throw new Error('Identifiants admin invalides. Utilise admin@helma.tn / password');
-                }
-
-                saveSession({
-                    id: null,
-                    role: 'ADMIN',
-                    fullName: 'Helma Admin',
-                    email: 'admin@helma.tn',
-                    isEntrepreneur: false,
-                    accessToken: 'admin-hardcoded',
-                    hardcoded: true
-                });
-
-                showMsg('Connexion admin réussie — redirection…', 'success');
-                setTimeout(() => redirectFor(getSession()), 450);
-                return;
-            }
-
-            const response = await fetch('/f/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const response = await fetch(‘/f/auth/login’, {
+                method: ‘POST’,
+                headers: { ‘Content-Type’: ‘application/json’ },
                 body: JSON.stringify({ email, password })
             });
 
@@ -595,11 +581,11 @@
             try { data = await response.json(); } catch (_) {}
 
             if (!response.ok) {
-                throw new Error(data?.message || 'Email ou mot de passe invalide');
+                throw new Error(data?.message || ‘Invalid email or password.’);
             }
 
             if (!data?.user) {
-                throw new Error('Réponse login incomplète côté backend.');
+                throw new Error(‘Incomplete login response from server.’);
             }
 
             saveSession({
@@ -608,17 +594,16 @@
                 fullName: data.user.fullName,
                 email: data.user.email,
                 isEntrepreneur: data.user.isEntrepreneur,
-                accessToken: data.accessToken,
-                hardcoded: false
+                accessToken: data.accessToken
             });
 
-            showMsg('Connexion réussie — bienvenue ' + (data.user.fullName || 'sur HELMA') + '.', 'success');
+            showMsg(‘Welcome back, ‘ + (data.user.fullName || ‘to HELMA’) + ‘! Redirecting…’, ‘success’);
             setTimeout(() => redirectFor(getSession()), 450);
         } catch (error) {
-            showMsg(error.message || 'Connexion impossible pour le moment.', 'error');
+            showMsg(error.message || ‘Unable to connect. Please try again.’, ‘error’);
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Se connecter';
+            btn.textContent = ‘Se connecter’;
         }
     }
 

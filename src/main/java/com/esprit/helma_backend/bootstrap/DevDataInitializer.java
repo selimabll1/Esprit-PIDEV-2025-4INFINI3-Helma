@@ -20,19 +20,27 @@ public class DevDataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         ensureUser(
-                "user@helma.tn",
-                "Test User",
-                User.Role.USER,
-                true,
-                "test123"
-        );
-
-        ensureUser(
                 "admin@helma.tn",
                 "Helma Admin",
                 User.Role.ADMIN,
                 false,
                 "admin123"
+        );
+
+        ensureUser(
+                "entrepreneur@helma.tn",
+                "Demo Entrepreneur",
+                User.Role.ENTREPRENEUR,
+                true,
+                "test123"
+        );
+
+        ensureUser(
+                "user@helma.tn",
+                "Demo User",
+                User.Role.USER,
+                false,
+                "test123"
         );
     }
 

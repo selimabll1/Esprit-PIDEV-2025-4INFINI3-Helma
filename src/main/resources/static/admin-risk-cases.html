@@ -471,8 +471,14 @@
         });
     }
 
+    function authHeaders(extra = {}) {
+        const session = getSession();
+        const token = session?.accessToken;
+        return token ? { 'Authorization': 'Bearer ' + token, ...extra } : { ...extra };
+    }
+
     async function apiGet(path) {
-        const response = await fetch(API + path);
+        const response = await fetch(API + path, { headers: authHeaders() });
         if (!response.ok) throw new Error('HTTP ' + response.status);
         return response.json();
     }
@@ -480,7 +486,7 @@
     async function apiPatch(path, payload = null) {
         const response = await fetch(API + path, {
             method: 'PATCH',
-            headers: payload ? { 'Content-Type': 'application/json' } : {},
+            headers: authHeaders(payload ? { 'Content-Type': 'application/json' } : {}),
             body: payload ? JSON.stringify(payload) : null
         });
         let data = null;

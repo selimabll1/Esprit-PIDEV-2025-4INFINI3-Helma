@@ -18,13 +18,16 @@ public class RiskCaseService {
     private final RiskCaseRepository riskRepo;
     private final UserRepository userRepo;
     private final AuditLogService auditLogService;
+    private final RiskNotificationService riskNotificationService;
 
     public RiskCaseService(RiskCaseRepository riskRepo,
                            UserRepository userRepo,
-                           AuditLogService auditLogService) {
+                           AuditLogService auditLogService,
+                           RiskNotificationService riskNotificationService) {
         this.riskRepo = riskRepo;
         this.userRepo = userRepo;
         this.auditLogService = auditLogService;
+        this.riskNotificationService = riskNotificationService;
     }
 
     private static RiskCaseDto.Response toResponse(RiskCase rc) {
@@ -46,7 +49,10 @@ public class RiskCaseService {
                 .findTopByUserIdAndStatusOrderByDetectedAtDesc(userId, RiskCase.Status.OPEN)
                 .orElse(null);
 
-        if (rc == null) {
+        boolean isNew = rc == null;
+        int previousLevel = isNew ? 0 : rc.getRiskLevel();
+
+        if (isNew) {
             rc = RiskCase.builder()
                     .user(user)
                     .riskLevel(riskLevel)
@@ -69,6 +75,13 @@ public class RiskCaseService {
                         + ",status=" + saved.getStatus()
                         + ",reasons=" + String.join("|", reasons)
         );
+
+        // Always notify — the risk engine already decided this transaction is trigger-worthy.
+        // Suppressing on "not escalating" hides valid alerts when a case already exists.
+        String notifyMessage = isNew
+                ? "Risk detected. Score: " + riskLevel + ". Reasons: " + String.join(", ", reasons)
+                : "Risk updated. Score: " + riskLevel + " (was " + previousLevel + "). Reasons: " + String.join(", ", reasons);
+        riskNotificationService.sendRiskAlert(userId, notifyMessage, riskLevel, reasons);
 
         return toResponse(saved);
     }
@@ -135,6 +148,9 @@ public class RiskCaseService {
         RiskCase rc = riskRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("RiskCase not found"));
 
+        int previousLevel = rc.getRiskLevel();
+        Long userId = rc.getUser().getId();
+
         rc.setRiskLevel(req.riskLevel());
 
         if (req.assignedAdminId() == null) {
@@ -150,7 +166,15 @@ public class RiskCaseService {
         }
 
         rc.setDetectedAt(Instant.now());
-        return toResponse(riskRepo.save(rc));
+        RiskCaseDto.Response response = toResponse(riskRepo.save(rc));
+
+        if (req.riskLevel() > previousLevel) {
+            riskNotificationService.sendRiskAlert(userId,
+                    "Risk level escalated from " + previousLevel + " to " + req.riskLevel(),
+                    req.riskLevel(), List.of("RISK_TRIGGERED"));
+        }
+
+        return response;
     }
 
     public void delete(Long id) {

@@ -6,7 +6,6 @@ import com.esprit.helma_backend.repositories.UserRepository;
 import com.esprit.helma_backend.services.AdminRiskCaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -21,9 +20,6 @@ public class AdminRiskCaseController {
 
     private final AdminRiskCaseService service;
     private final UserRepository userRepository;
-
-    @Value("${app.security.disabled:true}")
-    private boolean securityDisabled;
 
     public AdminRiskCaseController(AdminRiskCaseService service,
                                    UserRepository userRepository) {
@@ -83,14 +79,6 @@ public class AdminRiskCaseController {
     }
 
     private Long requireAdmin(Authentication authentication) {
-        if (securityDisabled) {
-            return userRepository.findAll().stream()
-                    .filter(user -> user.getRole() == User.Role.ADMIN)
-                    .findFirst()
-                    .map(User::getId)
-                    .orElseThrow(() -> new AccessDeniedException("No ADMIN user found. Check DevDataInitializer."));
-        }
-
         if (authentication == null || authentication.getName() == null) {
             throw new AccessDeniedException("Authentication required");
         }
