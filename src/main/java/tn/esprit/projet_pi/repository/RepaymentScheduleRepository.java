@@ -26,4 +26,7 @@ public interface RepaymentScheduleRepository extends JpaRepository<RepaymentSche
 
     @Query("SELECT SUM(r.paidAmount) FROM RepaymentSchedule r WHERE r.loanId = :loanId AND r.status = 'PAID'")
     BigDecimal getTotalPaidByLoanId(@Param("loanId") Long loanId);
+
+    @Query("SELECT r FROM RepaymentSchedule r WHERE r.status = 'PENDING' AND r.dueDate = :date")
+    List<RepaymentSchedule> findPendingByDueDate(@Param("date") LocalDate date);
 }

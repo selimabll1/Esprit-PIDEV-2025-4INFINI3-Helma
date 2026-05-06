@@ -16,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -53,15 +54,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                // ✅ Rôles extraits directement du token, pas besoin de MySQL
+                // ✅ Rôles extraits directement du token (claim "role" ou "roles")
                 List<String> roles = jwtUtil.extractRoles(jwt);
+                Long userId = jwtUtil.extractUserId(jwt);
                 List<SimpleGrantedAuthority> authorities = roles.stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(email, null, authorities);
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                authToken.setDetails(Map.of(
+                        "userId", userId == null ? -1L : userId,
+                        "request", new WebAuthenticationDetailsSource().buildDetails(request)
+                ));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
                 log.debug("User '{}' authentifié avec rôles : {}", email, roles);

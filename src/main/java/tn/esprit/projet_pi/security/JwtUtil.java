@@ -1,78 +1,48 @@
 package tn.esprit.projet_pi.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
+    @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
-
-    // ----------------------------------------------------------------
-    // Génération du token
-    // ----------------------------------------------------------------
-    public String generateToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        List<String> roles = userDetails.getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-        claims.put("roles", roles);
-        return buildToken(claims, userDetails.getUsername());
-    }
-
-    private String buildToken(Map<String, Object> extraClaims, String subject) {
-        return Jwts.builder()
-                .claims(extraClaims)
-                .subject(subject)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey())
-                .compact();
-    }
-
-    // ----------------------------------------------------------------
-    // Extraction des claims
-    // ----------------------------------------------------------------
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * User-Backend émet claim "role" (string, sans préfixe ROLE_).
+     * Ex : "YOUTH_BENEFICIARY", "ADMIN", "INVESTOR", "COMPLIANCE"
+     */
     public List<String> extractRoles(String token) {
-        return (List<String>) getClaims(token).get("roles");
-    }
-
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        try {
-            String username = extractUsername(token);
-            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
-        } catch (JwtException | IllegalArgumentException e) {
-            log.warn("Token JWT invalide : {}", e.getMessage());
-            return false;
+        Claims claims = getClaims(token);
+        Object role = claims.get("role");
+        if (role != null && !role.toString().isBlank()) {
+            return List.of(normalizeAuthority(role.toString()));
         }
+        return List.of();
     }
 
-    private boolean isTokenExpired(String token) {
-        return getClaims(token).getExpiration().before(new Date());
+    public Long extractUserId(String token) {
+        Object userId = getClaims(token).get("userId");
+        if (userId instanceof Number number) {
+            return number.longValue();
+        }
+        if (userId instanceof String value && !value.isBlank()) {
+            return Long.parseLong(value);
+        }
+        return null;
     }
 
     private Claims getClaims(String token) {
@@ -84,13 +54,20 @@ public class JwtUtil {
     }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(
-                java.util.Base64.getEncoder().encodeToString(jwtSecret.getBytes())
-        );
-        return Keys.hmacShaKeyFor(keyBytes);
+        // User-Backend signe avec Keys.hmacShaKeyFor(secret.getBytes(UTF_8))
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public long getExpirationMs() {
-        return jwtExpiration;
+    /**
+     * Normalise un rôle vers le format Spring Security attendu ("ROLE_XXX").
+     * User-Backend envoie les rôles sans préfixe ("YOUTH_BENEFICIARY"),
+     * cette méthode ajoute "ROLE_" pour que hasAuthority() fonctionne.
+     */
+    private String normalizeAuthority(String rawRole) {
+        String normalized = rawRole == null ? "" : rawRole.trim().toUpperCase();
+        if (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring(5);
+        }
+        return "ROLE_" + normalized;
     }
 }

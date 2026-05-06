@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import tn.esprit.projet_pi.entity.Loan;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface LoanRepository extends JpaRepository<Loan, Long> {
@@ -33,4 +34,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
 
     @Query("SELECT SUM(l.principalAmount) FROM Loan l WHERE l.status = 'ACTIVE'")
     BigDecimal getTotalActiveLoanAmount();
+
+    @Query("SELECT COUNT(l) FROM Loan l WHERE l.userId = :userId AND l.startDate >= :since")
+    long countLoansByUserSince(@Param("userId") Long userId, @Param("since") LocalDate since);
 }

@@ -78,7 +78,8 @@ public class AIDecisionService {
             RestTemplate restTemplate = new RestTemplate();
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + groqApiKey);
+            String apiKey = groqApiKey == null ? "" : groqApiKey.trim();
+            headers.setBearerAuth(apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             ObjectMapper objectMapper = new ObjectMapper();

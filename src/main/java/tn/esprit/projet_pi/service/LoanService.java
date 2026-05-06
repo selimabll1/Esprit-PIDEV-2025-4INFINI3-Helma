@@ -1,5 +1,6 @@
 package tn.esprit.projet_pi.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,18 +17,25 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@Slf4j
 public class LoanService {
 
     private final LoanRepository loanRepository;
     private final AmortizationService amortizationService;
     private final RepaymentScheduleRepository repaymentScheduleRepository;
+    private final EmailService emailService;
+    private final PdfContractService pdfContractService;
 
     public LoanService(LoanRepository loanRepository,
             AmortizationService amortizationService,
-            RepaymentScheduleRepository repaymentScheduleRepository) {
+            RepaymentScheduleRepository repaymentScheduleRepository,
+            EmailService emailService,
+            PdfContractService pdfContractService) {
         this.loanRepository = loanRepository;
         this.amortizationService = amortizationService;
         this.repaymentScheduleRepository = repaymentScheduleRepository;
+        this.emailService = emailService;
+        this.pdfContractService = pdfContractService;
     }
 
     // ──────────────────────────────────────────
@@ -44,7 +52,13 @@ public class LoanService {
                 .status(LoanStatus.PENDING)
                 .build();
 
-        return loanRepository.save(loan);
+        Loan saved = loanRepository.save(loan);
+        try {
+            emailService.sendLoanCreated(saved);
+        } catch (Exception e) {
+            log.warn("Email creation pret {} non envoye: {}", saved.getId(), e.getMessage());
+        }
+        return saved;
     }
 
     // ──────────────────────────────────────────
@@ -62,8 +76,16 @@ public class LoanService {
         loan.setStartDate(LocalDate.now());
         loan = loanRepository.save(loan);
 
-        amortizationService.generateSchedule(loan);
-
+        List<RepaymentSchedule> schedules = amortizationService.generateSchedule(loan);
+        if (!schedules.isEmpty()) {
+            loan.setMonthlyPayment(schedules.get(0).getExpectedAmount());
+            loan = loanRepository.save(loan);
+        }
+        try {
+            emailService.sendLoanApproved(loan, pdfContractService.generateContract(loan));
+        } catch (Exception e) {
+            log.warn("Email approbation pret {} non envoye: {}", loan.getId(), e.getMessage());
+        }
         return loan;
     }
 
@@ -75,7 +97,13 @@ public class LoanService {
                 .orElseThrow(() -> new LoanNotFoundException(loanId));
 
         loan.setStatus(LoanStatus.CLOSED);
-        return loanRepository.save(loan);
+        Loan saved = loanRepository.save(loan);
+        try {
+            emailService.sendLoanRejected(saved, "Le dossier ne respecte pas les criteres de risque HELMA actuels.");
+        } catch (Exception e) {
+            log.warn("Email refus pret {} non envoye: {}", saved.getId(), e.getMessage());
+        }
+        return saved;
     }
 
     // ──────────────────────────────────────────
@@ -118,11 +146,31 @@ public class LoanService {
         existing.setDurationMonths(loan.getDurationMonths());
         existing.setMonthlyPayment(loan.getMonthlyPayment());
         existing.setStartDate(loan.getStartDate());
+        LoanStatus previousStatus = existing.getStatus();
         existing.setStatus(loan.getStatus());
-        return loanRepository.save(existing);
+        Loan saved = loanRepository.save(existing);
+        notifyStatusChange(previousStatus, saved);
+        return saved;
     }
 
     public void deleteLoan(Long id) {
         loanRepository.deleteById(id);
+    }
+
+    private void notifyStatusChange(LoanStatus previousStatus, Loan loan) {
+        if (previousStatus == loan.getStatus()) {
+            return;
+        }
+        try {
+            if (loan.getStatus() == LoanStatus.ACTIVE) {
+                emailService.sendLoanApproved(loan, pdfContractService.generateContract(loan));
+            } else if (loan.getStatus() == LoanStatus.CLOSED) {
+                emailService.sendLoanRejected(loan, "Changement de statut vers CLOSED.");
+            } else if (loan.getStatus() == LoanStatus.DEFAULTED) {
+                emailService.sendDefaultAlert(loan);
+            }
+        } catch (Exception e) {
+            log.warn("Notification changement statut pret {} non envoyee: {}", loan.getId(), e.getMessage());
+        }
     }
 }
