@@ -3,8 +3,10 @@ package com.helma.helmabackend.service.auth;
 import com.helma.helmabackend.dto.auth.AuthResponse;
 import com.helma.helmabackend.dto.auth.LoginRequest;
 import com.helma.helmabackend.dto.auth.RegisterRequest;
+import com.helma.helmabackend.entity.user.Role;
 import com.helma.helmabackend.entity.user.User;
 import com.helma.helmabackend.entity.user.UserProfile;
+import com.helma.helmabackend.exception.FieldValidationException;
 import com.helma.helmabackend.exception.UnauthorizedException;
 import com.helma.helmabackend.security.jwt.JwtService;
 import com.helma.helmabackend.service.user.IUserService;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 @Service
@@ -26,6 +29,8 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest req) {
+        validateYouthBeneficiaryAge(req);
+
         if (userService.existsByEmail(req.email())) {
             throw new RuntimeException("Email already exists");
         }
@@ -52,6 +57,28 @@ public class AuthServiceImpl implements IAuthService {
 
         User saved = userService.add(user);
         return buildAuthResponse(saved);
+    }
+
+    private void validateYouthBeneficiaryAge(RegisterRequest req) {
+        if (req.role() != Role.YOUTH_BENEFICIARY) {
+            return;
+        }
+
+        LocalDate dateOfBirth = req.dateOfBirth();
+        if (dateOfBirth == null) {
+            throw FieldValidationException.single(
+                    "dateOfBirth",
+                    "Date of birth is required for youth beneficiaries."
+            );
+        }
+
+        LocalDate twentyFifthBirthdayCutoff = LocalDate.now().minusYears(25);
+        if (!dateOfBirth.isAfter(twentyFifthBirthdayCutoff)) {
+            throw FieldValidationException.single(
+                    "dateOfBirth",
+                    "Youth beneficiaries must be under 25 years old."
+            );
+        }
     }
 
     @Override

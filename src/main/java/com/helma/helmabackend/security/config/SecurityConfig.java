@@ -84,6 +84,10 @@ public class SecurityConfig {
                 // Current user profile
                 .requestMatchers(HttpMethod.GET, "/api/users/me/profile").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/me/profile").authenticated()
+                .requestMatchers("/api/users/me/kyc/**").authenticated()
+
+                // Admin + compliance KYC review
+                .requestMatchers("/api/admin/kyc/**").hasAnyAuthority(ADMIN_COMPLIANCE_AUTHORITIES)
 
                 // Admin + compliance endpoints
                 .requestMatchers(

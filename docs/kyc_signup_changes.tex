@@ -1,0 +1,117 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{Rendu des changements: Signup et KYC CIN}
+\author{Helma Backend}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Changements sur la contrainte d'age}
+
+La contrainte d'age a ete ajoutee dans le service d'authentification:
+\texttt{src/main/java/com/helma/helmabackend/service/auth/AuthServiceImpl.java}.
+
+\subsection{Regle appliquee}
+
+\begin{itemize}
+    \item Si le role est \texttt{YOUTH\_BENEFICIARY}, la date de naissance devient obligatoire.
+    \item Si le role est \texttt{YOUTH\_BENEFICIARY}, l'utilisateur doit avoir strictement moins de 25 ans.
+    \item Si le role est \texttt{INVESTOR}, aucune limite d'age n'est appliquee.
+    \item En cas d'erreur, le backend renvoie une erreur de validation sur le champ \texttt{dateOfBirth}.
+\end{itemize}
+
+\subsection{Scenario de test}
+
+\begin{enumerate}
+    \item Envoyer un \texttt{POST /api/auth/register} avec \texttt{role = YOUTH\_BENEFICIARY} et une date de naissance qui donne moins de 25 ans.
+    \item Resultat attendu: le compte est cree.
+    \item Envoyer un \texttt{POST /api/auth/register} avec \texttt{role = YOUTH\_BENEFICIARY} et une date de naissance qui donne 25 ans ou plus.
+    \item Resultat attendu: erreur \texttt{400 Bad Request} avec un message indiquant que le youth beneficiary doit avoir moins de 25 ans.
+    \item Envoyer un \texttt{POST /api/auth/register} avec \texttt{role = INVESTOR} et une date de naissance qui donne 25 ans ou plus.
+    \item Resultat attendu: le compte investor est accepte, car il n'a pas de limite d'age.
+\end{enumerate}
+
+\section{Changements KYC CIN}
+
+Un KYC minimal a ete ajoute avec stockage direct de la photo de CIN tunisienne dans la base de donnees.
+Le systeme n'utilise pas de service externe ni de stockage fichier separe.
+
+\subsection{Nouveaux fichiers principaux}
+
+\begin{itemize}
+    \item \texttt{entity/kyc/KycDocument.java}: entite JPA qui stocke le document KYC et l'image en \texttt{@Lob byte[]}.
+    \item \texttt{entity/kyc/KycStatus.java}: statuts \texttt{NOT\_STARTED}, \texttt{PENDING\_REVIEW}, \texttt{APPROVED}, \texttt{REJECTED}.
+    \item \texttt{entity/kyc/KycDocumentType.java}: type \texttt{CIN\_TUNISIA}.
+    \item \texttt{repository/kyc/KycDocumentRepository.java}: acces base pour les documents KYC.
+    \item \texttt{service/kyc/KycService.java}: logique d'upload, validation image, statut, approbation et rejet.
+    \item \texttt{controller/kyc/UserKycController.java}: endpoints utilisateur.
+    \item \texttt{controller/kyc/AdminKycController.java}: endpoints admin/compliance.
+    \item \texttt{dto/kyc/*}: reponses de statut, reponses de review et requete de rejet.
+\end{itemize}
+
+\subsection{Endpoints utilisateur}
+
+\begin{itemize}
+    \item \texttt{POST /api/users/me/kyc/cin}: upload de la photo CIN en \texttt{multipart/form-data}, champ \texttt{file}.
+    \item \texttt{GET /api/users/me/kyc/status}: consulter son statut KYC.
+\end{itemize}
+
+\subsection{Endpoints admin/compliance}
+
+\begin{itemize}
+    \item \texttt{GET /api/admin/kyc/pending}: consulter les demandes KYC en attente.
+    \item \texttt{GET /api/admin/kyc/\{documentId\}/image}: afficher l'image CIN.
+    \item \texttt{POST /api/admin/kyc/\{documentId\}/approve}: approuver une demande KYC.
+    \item \texttt{POST /api/admin/kyc/\{documentId\}/reject}: rejeter une demande KYC avec une raison.
+\end{itemize}
+
+\subsection{Regles de validation de l'image}
+
+\begin{itemize}
+    \item Le fichier est obligatoire.
+    \item Taille maximale: 5 MB.
+    \item Formats acceptes: JPG et PNG.
+    \item Le backend verifie aussi que le contenu est une vraie image lisible.
+\end{itemize}
+
+\subsection{Scenario de test KYC}
+
+\begin{enumerate}
+    \item Se connecter avec un utilisateur normal et recuperer le token JWT.
+    \item Appeler \texttt{GET /api/users/me/kyc/status}.
+    \item Resultat attendu si aucun document n'a ete envoye: \texttt{status = NOT\_STARTED}.
+    \item Envoyer une photo CIN avec \texttt{POST /api/users/me/kyc/cin}.
+    \item Resultat attendu: \texttt{status = PENDING\_REVIEW}.
+    \item Se connecter avec un compte \texttt{ADMIN} ou \texttt{COMPLIANCE}.
+    \item Appeler \texttt{GET /api/admin/kyc/pending}.
+    \item Resultat attendu: la demande apparait dans la liste sans renvoyer les bytes de l'image.
+    \item Appeler \texttt{GET /api/admin/kyc/\{documentId\}/image}.
+    \item Resultat attendu: l'image CIN est retournee en reponse HTTP securisee.
+    \item Pour accepter: appeler \texttt{POST /api/admin/kyc/\{documentId\}/approve}.
+    \item Resultat attendu: \texttt{status = APPROVED}.
+    \item Pour refuser: appeler \texttt{POST /api/admin/kyc/\{documentId\}/reject} avec un body JSON comme \texttt{\{"reason":"Image floue"\}}.
+    \item Resultat attendu: \texttt{status = REJECTED} et la raison est sauvegardee.
+\end{enumerate}
+
+\section{Securite}
+
+\begin{itemize}
+    \item Les routes \texttt{/api/users/me/kyc/**} demandent un utilisateur authentifie.
+    \item Les routes \texttt{/api/admin/kyc/**} demandent le role \texttt{ADMIN} ou \texttt{COMPLIANCE}.
+    \item L'image n'est pas exposee dans les reponses JSON de listing.
+    \item L'image est stockee en base dans une colonne \texttt{LONGBLOB}.
+\end{itemize}
+
+\section{Verification technique}
+
+La commande \texttt{mvn test} a ete executee avec succes.
+Le projet compile correctement, mais il n'y a actuellement pas de tests automatises dans \texttt{src/test}.
+
+\end{document}
