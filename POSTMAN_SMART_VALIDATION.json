@@ -1,0 +1,380 @@
+{
+  "info": {
+    "name": "Helma Bank API - Smart Periodicity Validation",
+    "description": "Collection de tests pour les 3 modes de transaction avec validation intelligente",
+    "version": "2.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "✅ VALID - NOW (Immédiat, sans dates)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"MAHMOUD\",\n  \"beneficiaryRib\": \"12233455TNZ\",\n  \"amount\": 300,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"MASROUF\",\n  \"description\": \"Versement salaire maintenant\",\n  \"periodicity\": \"NOW\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "✅ Mode NOW (immédiat): Aucune date requise\n- Montant débité/crédité IMMÉDIATEMENT\n- Status = CONFIRMED\n- Les champs scheduledDate/nextExecutionDate seront ignorés\n\nRésultat attendu: 200 OK"
+      },
+      "response": []
+    },
+    {
+      "name": "⚠️ INVALID - NOW (avec dates inutiles)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"MAHMOUD\",\n  \"beneficiaryRib\": \"12233455TNZ\",\n  \"amount\": 300,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"MASROUF\",\n  \"description\": \"Versement salaire (dates inutiles)\",\n  \"periodicity\": \"NOW\",\n  \"scheduledDate\": \"2026-02-25T10:00:00\",\n  \"nextExecutionDate\": \"2026-03-25T10:00:00\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "⚠️ Mode NOW avec dates inutiles:\n- Les dates seront acceptées mais IGNORÉES/NETTOYÉES\n- Dans la réponse: scheduledDate = null, nextExecutionDate = null\n- Transaction exécutée immédiatement quand même\n\nRésultat attendu: 200 OK (mais dates supprimées)\n\n❌ À ÉVITER: C'est du bruit qui sera supprimé"
+      },
+      "response": []
+    },
+    {
+      "name": "✅ VALID - SCHEDULED (avec date future)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Ahmed Bennour\",\n  \"beneficiaryRib\": \"98765432TNZ\",\n  \"amount\": 1000,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"LOYER\",\n  \"description\": \"Paiement loyer février 2026\",\n  \"periodicity\": \"SCHEDULED\",\n  \"scheduledDate\": \"2026-02-25T10:00:00\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "✅ Mode SCHEDULED (programmé):\n- scheduledDate OBLIGATOIRE et future\n- Montant NE PAS débité maintenant\n- Status = PENDING (jusqu'à la date)\n- nextExecutionDate ignorée = null\n\nRésultat attendu: 200 OK avec status=PENDING"
+      },
+      "response": []
+    },
+    {
+      "name": "❌ INVALID - SCHEDULED (sans scheduledDate)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Ahmed Bennour\",\n  \"beneficiaryRib\": \"98765432TNZ\",\n  \"amount\": 1000,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"LOYER\",\n  \"description\": \"Paiement loyer (SANS DATE!)\",\n  \"periodicity\": \"SCHEDULED\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "❌ Mode SCHEDULED sans scheduledDate:\n- scheduledDate est OBLIGATOIRE pour SCHEDULED\n- Rejeté avec message d'erreur détaillé\n\nRésultat attendu: 400 Bad Request\nMessage: \"❌ Mode SCHEDULED obligatoire: 'scheduledDate' est REQUISE...\\nExemple: { \\\"periodicity\\\": \\\"SCHEDULED\\\", \\\"scheduledDate\\\": \\\"2026-02-22T10:00:00\\\" }\""
+      },
+      "response": []
+    },
+    {
+      "name": "❌ INVALID - SCHEDULED (date passée)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Ahmed Bennour\",\n  \"beneficiaryRib\": \"98765432TNZ\",\n  \"amount\": 1000,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"LOYER\",\n  \"description\": \"Paiement loyer (date passée!)\",\n  \"periodicity\": \"SCHEDULED\",\n  \"scheduledDate\": \"2020-02-20T10:00:00\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "❌ Mode SCHEDULED avec date passée:\n- scheduledDate doit être FUTURE\n- Les dates passées sont rejetées\n\nRésultat attendu: 400 Bad Request\nMessage: \"La date programmée doit être dans le futur\""
+      },
+      "response": []
+    },
+    {
+      "name": "✅ VALID - PERMANENT (avec nextExecutionDate)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Orange Telecom\",\n  \"beneficiaryRib\": \"11111111TNZ\",\n  \"amount\": 50,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"ABONNEMENT\",\n  \"description\": \"Abonnement mobile récurrent\",\n  \"periodicity\": \"PERMANENT\",\n  \"nextExecutionDate\": \"2026-03-21T00:00:00\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "✅ Mode PERMANENT (récurrent):\n- nextExecutionDate OPTIONNELLE (fournie ici)\n- Montant débité/crédité IMMÉDIATEMENT (1ère exécution)\n- Status = CONFIRMED\n- Prochaine exécution programmée à nextExecutionDate\n- lastExecutionDate = maintenant\n\nRésultat attendu: 200 OK avec status=CONFIRMED"
+      },
+      "response": []
+    },
+    {
+      "name": "✅ VALID - PERMANENT (sans nextExecutionDate, défaut auto)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Maroc Telecom\",\n  \"beneficiaryRib\": \"22222222TNZ\",\n  \"amount\": 75,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"ABONNEMENT\",\n  \"description\": \"Abonnement internet (défaut auto +30j)\",\n  \"periodicity\": \"PERMANENT\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "✅ Mode PERMANENT sans nextExecutionDate:\n- nextExecutionDate OPTIONNELLE (absente ici)\n- Le serveur auto-calcule: nextExecutionDate = LocalDateTime.now() + 30 jours\n- Montant débité/crédité IMMÉDIATEMENT\n- Status = CONFIRMED\n\nRésultat attendu: 200 OK\nLa réponse inclura nextExecutionDate auto-calculée (~30j à partir de maintenant)"
+      },
+      "response": []
+    },
+    {
+      "name": "❌ INVALID - PERMANENT (date passée)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Maroc Telecom\",\n  \"beneficiaryRib\": \"22222222TNZ\",\n  \"amount\": 75,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"ABONNEMENT\",\n  \"description\": \"Abonnement internet (date passée!)\",\n  \"periodicity\": \"PERMANENT\",\n  \"nextExecutionDate\": \"2020-03-21T00:00:00\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/add/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "❌ Mode PERMANENT avec date passée:\n- nextExecutionDate doit être FUTURE\n- Les dates passées sont rejetées\n\nRésultat attendu: 400 Bad Request\nMessage: \"La date de prochaine exécution doit être dans le futur\""
+      },
+      "response": []
+    },
+    {
+      "name": "ℹ️ GET /transactions (voir toutes les transactions)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8082/helma/transactions/account/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "transactions",
+            "account",
+            "1"
+          ]
+        },
+        "description": "Récupère toutes les transactions du compte 1\nVous verrez les 3 types de périodicité que vous avez créés"
+      },
+      "response": []
+    },
+    {
+      "name": "ℹ️ POST /accounts/create (créer un compte test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "*/*",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rib\": \"99999999TNZ\",\n  \"balance\": 50000,\n  \"currency\": \"TND\",\n  \"accountType\": \"CHECKING\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/helma/accounts/create",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "helma",
+            "accounts",
+            "create"
+          ]
+        },
+        "description": "Crée un nouveau compte pour tester\n(Utilisez ensuite son ID dans les transactions)"
+      },
+      "response": []
+    }
+  ]
+}

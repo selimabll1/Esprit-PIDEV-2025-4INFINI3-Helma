@@ -1,0 +1,252 @@
+{
+  "info": {
+    "name": "Helma Bank - Transaction Periodicity API",
+    "description": "Collection de tests pour les 3 types de transactions: NOW, SCHEDULED, PERMANENT",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1️⃣ NOW - Transaction Immédiate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Ahmed Ben Ali\",\n  \"beneficiaryRib\": \"12345678901234567890123456\",\n  \"amount\": 500,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"Transfert Urgent\",\n  \"description\": \"Paiement immédiat - Facture Internet\",\n  \"periodicity\": \"NOW\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/transactions/add/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "❌ Transaction EXÉCUTÉE IMMÉDIATEMENT\n\n✅ Soldes débité/crédité: MAINTENANT\n✅ Status: CONFIRMED\n✅ confirmed_at: Maintenant\n\n⏱️ Délai: 0 secondes (instantané)"
+      }
+    },
+    {
+      "name": "2️⃣ SCHEDULED - Transaction Programmée",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Fatima Zahra Mansouri\",\n  \"beneficiaryRib\": \"98765432109876543210987654\",\n  \"amount\": 1000,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"Loyer\",\n  \"description\": \"Paiement loyer mars 2026\",\n  \"periodicity\": \"SCHEDULED\",\n  \"scheduledDate\": \"2026-03-15T10:30:00\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/transactions/add/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "📅 Transaction PROGRAMMÉE pour 15/03/2026 à 10:30\n\n⏳ Soldes débité/crédité: NON (sera à la date prévue)\n⏳ Status: PENDING\n⏳ confirmed_at: null (sera mis à jour à la date)\n\n⏱️ Délai: 22 jours"
+      }
+    },
+    {
+      "name": "3️⃣ PERMANENT - Transaction Permanente (Mensuelle)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Orange Tunisie - Abonnement\",\n  \"beneficiaryRib\": \"11111111111111111111111111\",\n  \"amount\": 49.99,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"Abonnement Internet\",\n  \"description\": \"Abonnement Internet Fibre 100Mbps - Paiement mensuel\",\n  \"periodicity\": \"PERMANENT\",\n  \"nextExecutionDate\": \"2026-03-21T00:00:00\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/transactions/add/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "🔄 Transaction RÉCURRENTE (exécutée maintenant + prochaine le 21/03)\n\n✅ Soldes débité/crédité: MAINTENANT (première exécution)\n✅ Status: CONFIRMED\n✅ lastExecutionDate: Maintenant\n✅ nextExecutionDate: 21/03/2026 00:00:00\n\n⏱️ Récurrence: Chaque 30 jours (par défaut)"
+      }
+    },
+    {
+      "name": "PERMANENT - Transaction Permanente (Hebdomadaire)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Gym Power - Abonnement\",\n  \"beneficiaryRib\": \"22222222222222222222222222\",\n  \"amount\": 20,\n  \"type\": \"EXTERNAL\",\n  \"category\": \"Fitness\",\n  \"description\": \"Abonnement salle de sport - Paiement hebdomadaire\",\n  \"periodicity\": \"PERMANENT\",\n  \"nextExecutionDate\": \"2026-02-28T00:00:00\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/transactions/add/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "🔄 Transaction RÉCURRENTE hebdomadaire\n\n✅ Première exécution: Maintenant\n✅ Status: CONFIRMED\n✅ Prochaine exécution: 28/02/2026\n\n⏱️ Récurrence: Chaque 7 jours"
+      }
+    },
+    {
+      "name": "TEST ERREUR: SCHEDULED sans date",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Test Erreur\",\n  \"beneficiaryRib\": \"12345678901234567890123456\",\n  \"amount\": 100,\n  \"type\": \"EXTERNAL\",\n  \"periodicity\": \"SCHEDULED\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/transactions/add/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "❌ ERREUR ATTENDUE:\n'La date programmée est obligatoire pour une transaction SCHEDULED'"
+      }
+    },
+    {
+      "name": "TEST ERREUR: Solde insuffisant (NOW)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"beneficiaryName\": \"Test Erreur\",\n  \"beneficiaryRib\": \"12345678901234567890123456\",\n  \"amount\": 999999999,\n  \"type\": \"EXTERNAL\",\n  \"periodicity\": \"NOW\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/transactions/add/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "add",
+            "1"
+          ]
+        },
+        "description": "❌ ERREUR ATTENDUE:\n'Solde insuffisant'"
+      }
+    },
+    {
+      "name": "GET - Récupérer une transaction",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/transactions/get/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "get",
+            "1"
+          ]
+        },
+        "description": "Récupère les détails d'une transaction spécifique"
+      }
+    },
+    {
+      "name": "GET - Lister toutes les transactions du compte",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/transactions/account/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "account",
+            "1"
+          ]
+        },
+        "description": "Liste toutes les transactions du compte 1, y compris les status PENDING et CONFIRMED"
+      }
+    },
+    {
+      "name": "GET - Transactions entre deux dates",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/transactions/account/1/between?startDate=2026-02-01T00:00:00&endDate=2026-02-28T23:59:59",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "transactions",
+            "account",
+            "1",
+            "between"
+          ],
+          "query": [
+            {
+              "key": "startDate",
+              "value": "2026-02-01T00:00:00"
+            },
+            {
+              "key": "endDate",
+              "value": "2026-02-28T23:59:59"
+            }
+          ]
+        },
+        "description": "Liste les transactions du compte pour février 2026"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}
